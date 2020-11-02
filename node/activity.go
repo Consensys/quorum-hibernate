@@ -1,8 +1,9 @@
 package node
 
 import (
-	"log"
 	"time"
+
+	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
 type NodeMonitor struct {
@@ -21,28 +22,24 @@ func (nm *NodeMonitor) StartInactivityTimer() {
 	go func() {
 		timer := time.NewTicker(time.Second)
 		defer timer.Stop()
-		log.Printf("node inactivity tracker started")
+		log.Info("node inactivity tracker started")
 		for {
 			select {
 			case <-timer.C:
 				nm.inactiveTimeCount++
-				//log.Printf("node is inactive for %d seconds", nodeMonitor.inactiveTimeCount)
-				if nm.inactiveTimeCount == quorumNode.inactiveTime {
-					log.Printf("going to stop node as it has been inactive for %d seconds", quorumNode.inactiveTime)
-					nm.qrmNode.stopNodeCh <- true
-					log.Printf("waiting for shutdown complete")
-					shutdownStatus := <-nm.qrmNode.shutdownCompleteCh
-					if shutdownStatus {
-						log.Printf("shutown completed resuming inactivity time tracker")
-					} else {
-						log.Printf("shutown not successful")
-					}
+				log.Debug("node is inactive", "seconds", nodeMonitor.inactiveTimeCount)
+				if nm.inactiveTimeCount == quorumNode.config.GethInactivityTime {
+					log.Info("going to stop node as it has been inactive", "inactivetime", quorumNode.config.GethInactivityTime)
+					nm.qrmNode.RequestStopNode()
+					log.Info("waiting for shutdown complete")
+					nm.qrmNode.WaitStopNode()
+					log.Info("shutown completed resuming inactivity time tracker")
 					nm.inactiveTimeCount = 0
 				}
 			case <-nm.qrmNode.inactivityResetCh:
 				wasInactive := nm.inactiveTimeCount
 				nodeMonitor.inactiveTimeCount = 0
-				log.Printf("iactivity reset, was inactive for %d seconds", wasInactive)
+				log.Info("iactivity reset, was inactive", "seconds", wasInactive)
 			}
 		}
 	}()

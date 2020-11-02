@@ -2,32 +2,32 @@ package proxy
 
 import (
 	"fmt"
-	"github.com/ConsenSysQuorum/node-manager/node"
 	"io"
-	"log"
 	"net"
 	"net/http"
+
+	"github.com/ConsenSysQuorum/node-manager/log"
+	"github.com/ConsenSysQuorum/node-manager/node"
 )
 
-func StartWsProxyServer(qn *node.QuorumNode) {
+func StartWsProxyServer(qn *node.QuorumNode, name string, destUrl string, proxyUrl string) {
 	go func() {
-		proxyUrl, port := qn.GetProxyInfo("WS")
-		http.Handle("/ws", WebsocketProxy(proxyUrl))
-		log.Printf("ListenAndServe for %s node %s started at http://localhost:%d%s", "WS", proxyUrl, port, "/ws")
-		err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+		http.Handle(fmt.Sprintf("/%s", name), WebsocketProxy(destUrl, qn))
+		log.Info("ListenAndServe started", "name", name, "destUrl", destUrl, "proxy", proxyUrl, "path", name)
+		err := http.ListenAndServe(proxyUrl, nil)
 		if err != nil {
-			log.Fatalf("ListenAndServe for WS node %s failed: %v", proxyUrl, err)
+			log.Error("ListenAndServe failed", "destUrl", destUrl, "err", err)
 		}
 	}()
 }
 
-func WebsocketProxy(target string) http.Handler {
+func WebsocketProxy(target string, qn *node.QuorumNode) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("WS request recieved %s", r.RequestURI)
+		log.Info("WS request recieved", "reqUri", r.RequestURI)
 		d, err := net.Dial("tcp", target)
 		if err != nil {
 			http.Error(w, "Error contacting backend server.", 500)
-			log.Printf("Error dialing websocket backend %s: %v", target, err)
+			log.Error("Error dialing websocket", "backend", target, "err", err)
 			return
 		}
 		hj, ok := w.(http.Hijacker)
@@ -37,7 +37,7 @@ func WebsocketProxy(target string) http.Handler {
 		}
 		nc, _, err := hj.Hijack()
 		if err != nil {
-			log.Printf("Hijack error: %v", err)
+			log.Error("Hijack error", "err", err)
 			return
 		}
 		defer nc.Close()
@@ -45,13 +45,14 @@ func WebsocketProxy(target string) http.Handler {
 
 		err = r.Write(d)
 		if err != nil {
-			log.Printf("Error copying request to target: %v", err)
+			log.Error("Error copying request to target", "err", err)
 			return
 		}
 
 		errc := make(chan error, 2)
 		cp := func(dst io.Writer, src io.Reader) {
-			log.Printf("copy data")
+			log.Info("copy data")
+			qn.ResetInactiveTime()
 			_, err := io.Copy(dst, src)
 			errc <- err
 		}

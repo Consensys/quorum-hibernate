@@ -6,11 +6,11 @@ import (
 )
 
 type ProxyServer struct {
-	qrmNode   *node.QuorumNode
-	name      string
-	destUrl   string
-	proxyPort int
-	rp        *httputil.ReverseProxy
+	qrmNode  *node.QuorumNode
+	name     string
+	destUrl  string
+	proxyUrl string
+	rp       *httputil.ReverseProxy
 }
 
 type Proxy interface {

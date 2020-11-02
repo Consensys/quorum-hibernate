@@ -1,16 +1,31 @@
 package main
 
 import (
-	"github.com/ConsenSysQuorum/node-manager/node"
-	"github.com/ConsenSysQuorum/node-manager/proxy"
-	"log"
+	"flag"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/ConsenSysQuorum/node-manager/core/types"
+	"github.com/ConsenSysQuorum/node-manager/log"
+	"github.com/ConsenSysQuorum/node-manager/node"
+	"github.com/ConsenSysQuorum/node-manager/proxy"
 )
 
 func main() {
-	qn := node.NewQuorumNode()
+	var verbosity int
+	flag.IntVar(&verbosity, "verbosity", log.InfoLevel, "logging verbosity")
+	// Read config file path
+	var configFile string
+	flag.StringVar(&configFile, "config", "config.toml", "config file")
+	var nodeConfig types.NodeConfig
+	var err error
+	if nodeConfig, err = types.ReadConfig(configFile); err != nil {
+		log.Error("loading config file failed", "configfile", configFile, "err", err)
+		return
+	}
+	log.Info("config file read", "config", nodeConfig)
+	qn := node.NewQuorumNode(&nodeConfig)
 	qn.Start()
 	proxy.StartProxyServerServices(qn)
 	sigc := make(chan os.Signal, 1)
@@ -19,5 +34,5 @@ func main() {
 	select {
 	case <-sigc:
 	}
-	log.Printf("Received interrupt signal, shutting down...")
+	log.Info("Received interrupt signal, shutting down...")
 }

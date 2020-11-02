@@ -4,60 +4,53 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strings"
 
+	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
 )
 
 func StartProxyServerServices(qn *node.QuorumNode) {
-	var proxyNames = []string{"RPC", "GRAPHQL"}
-	for _, pname := range proxyNames {
-		destUrl, proxyPort := qn.GetProxyInfo(pname)
-		pserver, err := NewProxyServer(qn, pname, destUrl, proxyPort)
-		if err != nil {
-			log.Fatalf("RPC proxy failed for url %s %s", pname, destUrl)
-		}
-		pserver.Start()
-	}
 
-	StartWsProxyServer(qn)
+	for _, p := range qn.GetProxyConfig() {
+		if p.IsHttp() {
+			pserver, err := NewProxyServer(qn, p.Name, p.DestUrl, p.ProxyUrl)
+			if err != nil {
+				log.Error("RPC proxy failed", "name", p.Name, "destUrl", p.DestUrl)
+			}
+			pserver.Start()
+		} else if p.IsWS() {
+			StartWsProxyServer(qn, p.Name, p.DestUrl, p.ProxyUrl)
+		}
+	}
 
 }
 
-func NewProxyServer(qn *node.QuorumNode, name string, proxyUrl string, port int) (Proxy, error) {
-	url, err := url.Parse(proxyUrl)
+func NewProxyServer(qn *node.QuorumNode, name string, destUrl string, proxyUrl string) (Proxy, error) {
+	url, err := url.Parse(destUrl)
 	if err != nil {
 		return nil, err
 	}
 	rp := httputil.NewSingleHostReverseProxy(url)
 	rp.ModifyResponse = func(res *http.Response) error {
 		respStatus := res.Status
-		resBody, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			log.Printf("ERROR: reading response body failed err:%v", err)
-		}
-		// you can reassign the body if you need to parse it as multipart
-		res.Body = ioutil.NopCloser(bytes.NewReader(resBody))
-		log.Printf("%s response status:%s body:%s\n", name, respStatus, resBody)
+		log.Info("response status", "status", respStatus)
 		qn.ResetInactiveTime()
 		return nil
 	}
-	rpcProxy := ProxyServer{qn, name, proxyUrl, port, rp}
+	rpcProxy := ProxyServer{qn, name, destUrl, proxyUrl, rp}
 	return rpcProxy, nil
 }
 
 func (np ProxyServer) Start() {
 	go func() {
-		path := fmt.Sprintf("/%s", strings.ToLower(np.name))
-		http.HandleFunc(path, np.forwardRequest)
-		log.Printf("ListenAndServe for %s node %s started at http://localhost:%d%s", np.name, np.destUrl, np.proxyPort, path)
-		err := http.ListenAndServe(fmt.Sprintf(":%d", np.proxyPort), nil)
+		http.HandleFunc(fmt.Sprintf("/%s", np.name), np.forwardRequest)
+		log.Info("ListenAndServe started", "name", np.name, "destUrl", np.destUrl, "proxy", np.proxyUrl, "path", np.name)
+		err := http.ListenAndServe(np.proxyUrl, nil)
 		if err != nil {
-			log.Fatalf("ListenAndServe for %s node %s failed: %v", np.name, np.destUrl, err)
+			log.Error("ListenAndServe failed", "name", np.name, "destUrl", np.destUrl, "err", err)
 		}
 	}()
 }
@@ -69,7 +62,7 @@ func (np ProxyServer) Stop() {
 func (np ProxyServer) forwardRequest(res http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		log.Printf("ERROR: reading body failed err:%v", err)
+		log.Error("reading body failed", "err", err)
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -80,22 +73,23 @@ func (np ProxyServer) forwardRequest(res http.ResponseWriter, req *http.Request)
 	np.qrmNode.ResetInactiveTime()
 	if up, err := np.qrmNode.IsNodeUp(); err != nil {
 		np.qrmNode.RequestStartNode()
-		log.Printf("waiting for node start to complete...")
+		log.Info("waiting for node start to complete...")
 		np.qrmNode.WaitStartNode()
-		log.Printf("node start completed")
-		np.qrmNode.GetProcessIdOfNode()
+		log.Info("node start completed")
 	} else if !up {
 		np.qrmNode.SetNodeDown()
-		np.qrmNode.StartNode(true)
-		np.qrmNode.GetProcessIdOfNode()
+		np.qrmNode.RequestStartNode()
+		log.Info("waiting for node start to complete...")
+		np.qrmNode.WaitStartNode()
+		log.Info("node start completed")
 	} else {
 		np.qrmNode.SetNodeUp()
-		log.Printf("node %s is UP", np.destUrl)
+		log.Info("node UP", "destUrl", np.destUrl)
 	}
 	// Forward request to original request
-	log.Printf("forwarding request to node %s %s\n", np.destUrl, body)
+	log.Info("forwarding request to node", "destUrl", np.destUrl, "body", string(body))
 	np.serveReverseProxy(res, req)
-	log.Printf("-----------------------\n")
+	log.Info("-----------------------")
 }
 
 func (np ProxyServer) serveReverseProxy(res http.ResponseWriter, req *http.Request) {
@@ -104,5 +98,5 @@ func (np ProxyServer) serveReverseProxy(res http.ResponseWriter, req *http.Reque
 }
 
 func (np ProxyServer) logRequestPayload(reqUrl string, body string) {
-	log.Printf("%s Request recieved -> reqUrl:%s destUrl:%s body:%s", np.name, reqUrl, np.destUrl, body)
+	log.Info("Request received", "name", np.name, "reqUrl", reqUrl, "destUrl", np.destUrl, "body", body)
 }
