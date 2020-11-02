@@ -3,13 +3,14 @@ package proxy
 import (
 	"bytes"
 	"fmt"
+	"github.com/ConsenSysQuorum/node-manager/core"
+	"github.com/ConsenSysQuorum/node-manager/core/types"
+	"github.com/ConsenSysQuorum/node-manager/log"
+	"github.com/ConsenSysQuorum/node-manager/node"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-
-	"github.com/ConsenSysQuorum/node-manager/log"
-	"github.com/ConsenSysQuorum/node-manager/node"
 )
 
 func StartProxyServerServices(qn *node.QuorumNode) {
@@ -59,6 +60,16 @@ func (np ProxyServer) Stop() {
 	panic("not implemented")
 }
 
+func (np ProxyServer) preparePrivateTx(tx types.EthTransaction) bool {
+	log.Info("private tx prepare complete", "tx private for", tx.Params[0].PrivateFor)
+	res, err := np.qrmNode.RequestNodeManagerForPrivateTxPrep(tx.Params[0].PrivateFor)
+	if err != nil {
+		log.Error("preparePrivateTx failed", "err", err)
+		return false
+	}
+	return res
+}
+
 func (np ProxyServer) forwardRequest(res http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
@@ -69,7 +80,23 @@ func (np ProxyServer) forwardRequest(res http.ResponseWriter, req *http.Request)
 	// you can reassign the body if you need to parse it as multipart
 	req.Body = ioutil.NopCloser(bytes.NewReader(body))
 	// Log the request
+	bodyStr := string(body)
 	np.logRequestPayload(req.URL.String(), string(body))
+
+	if core.IsPrivateTransaction(bodyStr) {
+		if tx, err := core.GetPrivateTx(body); err != nil {
+			// TODO handle error - return error to client?
+			log.Error("failed to unmarshal tx from body", "err", err)
+		} else {
+			if tx.Method == "eth_sendTransaction" {
+				log.Info("private transaction request")
+				if !np.preparePrivateTx(tx) {
+					http.Error(res, "private tx prep failed", http.StatusInternalServerError)
+				}
+			}
+		}
+	}
+
 	np.qrmNode.ResetInactiveTime()
 	if up, err := np.qrmNode.IsNodeUp(); err != nil {
 		np.qrmNode.RequestStartNode()

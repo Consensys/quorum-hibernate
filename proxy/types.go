@@ -1,8 +1,9 @@
 package proxy
 
 import (
-	"github.com/ConsenSysQuorum/node-manager/node"
 	"net/http/httputil"
+
+	"github.com/ConsenSysQuorum/node-manager/node"
 )
 
 type ProxyServer struct {

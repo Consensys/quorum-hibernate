@@ -1,0 +1,37 @@
+#node manager name
+name = "node1"
+
+#geth RPC URL
+gethRpcUrl = "http://localhost:22000"
+
+#geth inactivity timeout
+gethInactivityTime = 1000000
+
+#geth's http/ws services that need to be exposed as proxy services
+proxies = [
+    { name = "rpc", type = "http", proxyUrl = ":9091", destUrl = "http://localhost:22000" },
+    { name = "graphql", type = "http", proxyUrl = ":9092", destUrl = "http://localhost:8547/graphql" },
+    { name = "ws", type = "ws", proxyUrl = ":9093", destUrl = ":23000" }
+]
+
+nodeManagers = [
+    { name = "node1", tesseraKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", rpcUrl = "http://localhost:8081" },
+    { name = "node2", tesseraKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", rpcUrl = "http://localhost:8082" },
+    { name = "node3", tesseraKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8083" },
+    { name = "node4", tesseraKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8084" }
+]
+
+#rpc server details of node manager
+[server]
+# The interface + port the application should bind to
+rpcAddr = "localhost:8081"
+rpcCorsList = ["*"]
+rpcvHosts = ["*"]
+
+#geth's process control config
+[gethProcess]
+controlType = "shell"
+stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
+startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"]
+
+	

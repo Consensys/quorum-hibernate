@@ -22,7 +22,7 @@ func (nm *NodeMonitor) StartInactivityTimer() {
 	go func() {
 		timer := time.NewTicker(time.Second)
 		defer timer.Stop()
-		log.Info("node inactivity tracker started")
+		log.Info("node inactivity tracker started", "inactivityTime", nm.qrmNode.config.GethInactivityTime)
 		for {
 			select {
 			case <-timer.C:
@@ -39,7 +39,7 @@ func (nm *NodeMonitor) StartInactivityTimer() {
 			case <-nm.qrmNode.inactivityResetCh:
 				wasInactive := nm.inactiveTimeCount
 				nodeMonitor.inactiveTimeCount = 0
-				log.Info("iactivity reset, was inactive", "seconds", wasInactive)
+				log.Info("inactivity reset, was inactive", "seconds", wasInactive)
 			}
 		}
 	}()

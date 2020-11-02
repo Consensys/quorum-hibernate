@@ -2,7 +2,9 @@ package node
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os/exec"
@@ -12,6 +14,15 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
+
+type NodeManagerPrivateTxPrepResult struct {
+	Result PrivateTxPrepStatus `json:"result"`
+	Error  error               `json:"error"`
+}
+
+type PrivateTxPrepStatus struct {
+	Status bool `json:"status"`
+}
 
 type QuorumNode struct {
 	config             *types.NodeConfig
@@ -54,10 +65,10 @@ func (qn *QuorumNode) StartMonitor() {
 			select {
 			case <-qn.stopNodeCh:
 				log.Info("request recieved to stop node as it was inactive")
-				qn.StopNode(false)
+				qn.StopNode(false, true)
 			case <-qn.startNodeCh:
 				log.Info("request recieved to start node as it was down")
-				qn.StartNode(false)
+				qn.StartNode(false, true)
 			}
 		}
 	}()
@@ -83,40 +94,55 @@ func (qn *QuorumNode) WaitStopNode() {
 	<-qn.shutdownCompleteCh
 }
 
-func (qn *QuorumNode) StopNode(fake bool) error {
+func (qn *QuorumNode) StopNode(fake bool, completeCheck bool) error {
 	defer qn.startStopMux.Unlock()
 	defer qn.startStopMux.Lock()
 	if fake {
 		log.Info("node shutdown")
-		qn.shutdownCompleteCh <- true
+		if completeCheck {
+			qn.shutdownCompleteCh <- true
+		}
 		return nil
 	}
 	if err := qn.ExecuteShellCommand("stop node", qn.config.GethProcess.StopCommand); err == nil {
 		qn.SetNodeDown()
 		time.Sleep(time.Second)
-		qn.shutdownCompleteCh <- true
+		if completeCheck {
+			qn.shutdownCompleteCh <- true
+		}
+		return nil
 	} else {
 		log.Error("stop node failed", "err", err)
+		if completeCheck {
+			qn.shutdownCompleteCh <- false
+		}
+		return err
 	}
-	return nil
 }
 
-func (qn *QuorumNode) StartNode(fake bool) error {
+func (qn *QuorumNode) StartNode(fake bool, completeCheck bool) error {
 	defer qn.startStopMux.Unlock()
 	defer qn.startStopMux.Lock()
 	if fake {
 		log.Info("start node done")
-		qn.startCompleteCh <- true
+		if completeCheck {
+			qn.startCompleteCh <- true
+		}
 	}
 	if err := qn.ExecuteShellCommand("start node", qn.config.GethProcess.StartCommand); err == nil {
 		time.Sleep(time.Second)
 		qn.SetNodeUp()
-		qn.startCompleteCh <- true
+		if completeCheck {
+			qn.startCompleteCh <- true
+		}
+		return nil
 	} else {
 		log.Error("failed to start node")
+		if completeCheck {
+			qn.startCompleteCh <- false
+		}
 		return err
 	}
-	return nil
 }
 
 func (qn *QuorumNode) ExecuteShellCommand(desc string, cmdArr []string) error {
@@ -143,6 +169,63 @@ func (qn *QuorumNode) SetNodeUp() {
 	qn.nodeUp = true
 }
 
+// TODO request node managers in parallel
+func (qn *QuorumNode) RequestNodeManagerForPrivateTxPrep(tesseraKeys []string) (bool, error) {
+	var blockNumberJsonStr = []byte(fmt.Sprintf(`{"jsonrpc":"2.0", "method":"node.PrepareForPrivateTx", "params":["%s"], "id":77}`, qn.config.Name))
+	var statusArr []bool
+	for _, tessKey := range tesseraKeys {
+		nmCfg := qn.GetNodeManagerConfig(tessKey)
+		if nmCfg != nil {
+			req, err := http.NewRequest("POST", nmCfg.RpcUrl, bytes.NewBuffer(blockNumberJsonStr))
+			if err != nil {
+				log.Error("node manager private tx prep reply - creating request failed", "err", err)
+				return false, err
+			}
+			req.Header.Set("Content-Type", "application/json")
+
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			if err != nil {
+				log.Error("node manager private tx prep do req failed", "err", err)
+				return false, err
+			}
+
+			log.Info("node manager private tx prep response Status", "status", resp.Status)
+			if resp.StatusCode == http.StatusOK {
+				body, _ := ioutil.ReadAll(resp.Body)
+				log.Info("node manager private tx prep response Body:", string(body))
+				respResult := NodeManagerPrivateTxPrepResult{}
+				jerr := json.Unmarshal(body, &respResult)
+				if jerr == nil {
+					log.Info("response result", "result", respResult)
+					statusArr = append(statusArr, respResult.Result.Status)
+				} else {
+					log.Info("response result json decode failed", "err", jerr)
+					statusArr = append(statusArr, false)
+				}
+			} else {
+				statusArr = append(statusArr, false)
+			}
+			resp.Body.Close()
+		} else {
+			log.Error("tesseraKey's node manager config missing", "key", tessKey)
+			return false, errors.New("config missing for key")
+		}
+
+	}
+
+	finalStatus := true
+	for _, s := range statusArr {
+		if !s {
+			finalStatus = false
+			break
+		}
+	}
+	log.Info("node manager private tx prep result", "final status", finalStatus, "statusArr", statusArr)
+	return finalStatus, nil
+
+}
+
 func (qn *QuorumNode) IsNodeUp() (bool, error) {
 	defer qn.startStopMux.Unlock()
 	defer qn.startStopMux.Lock()
@@ -163,7 +246,6 @@ func (qn *QuorumNode) IsNodeUp() (bool, error) {
 	defer resp.Body.Close()
 
 	log.Info("nodeUp check response Status", "status", resp.Status)
-	log.Info("nodeUp check response Headers", "header", resp.Header)
 	body, _ := ioutil.ReadAll(resp.Body)
 	log.Info("nodeUp check response Body:", string(body))
 	if resp.StatusCode == http.StatusOK {
@@ -178,4 +260,18 @@ func (qn *QuorumNode) SetNodeDown() {
 
 func (nm *QuorumNode) ResetInactiveTime() {
 	nm.inactivityResetCh <- true
+}
+
+func (qn *QuorumNode) GetRPCConfig() *types.RPCServerConfig {
+	return qn.config.Server
+}
+
+func (qn *QuorumNode) GetNodeManagerConfig(key string) *types.NodeManagerConfig {
+	for _, n := range qn.config.NodeManagers {
+		if n.TesseraKey == key {
+			log.Info("tesseraKey matched", "node", n)
+			return n
+		}
+	}
+	return nil
 }
