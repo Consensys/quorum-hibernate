@@ -21,43 +21,68 @@ func StartWsProxyServer(qn *node.QuorumNode, name string, destUrl string, proxyU
 	}()
 }
 
-func WebsocketProxy(target string, qn *node.QuorumNode) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Info("WS request recieved", "reqUri", r.RequestURI)
-		d, err := net.Dial("tcp", target)
+// TODO handle reading request, handling private tx and checking response message status
+// TODO try gorilla websocket
+func WebsocketProxy(destUrl string, qn *node.QuorumNode) http.Handler {
+	return http.HandlerFunc(func(repsonse http.ResponseWriter, request *http.Request) {
+		defer log.Info("WS handlerFunc finished", "remoteAddr", request.RemoteAddr, "uri", request.RequestURI)
+		log.Info("WS request recieved", "reqUri", request.RequestURI, "remoteAddr", request.RemoteAddr)
+		qn.ResetInactiveTime()
+		if qn.PrepareNode() {
+			log.Info("node prepared")
+		} else {
+			log.Info("node prepare failed")
+			http.Error(repsonse, "node prepare failed", http.StatusInternalServerError)
+			return
+		}
+		log.Info("WS dial tcp", "destUrl", destUrl)
+		destConn, err := net.Dial("tcp", destUrl)
 		if err != nil {
-			http.Error(w, "Error contacting backend server.", 500)
-			log.Error("Error dialing websocket", "backend", target, "err", err)
+			log.Error("Error dialing websocket", "backend", destUrl, "err", err)
+			http.Error(repsonse, "Error contacting backend server.", http.StatusInternalServerError)
 			return
 		}
-		hj, ok := w.(http.Hijacker)
+		srcRespHijack, ok := repsonse.(http.Hijacker)
 		if !ok {
-			http.Error(w, "Not a hijacker?", 500)
+			http.Error(repsonse, "ws request failed. Not a hijacker", http.StatusInternalServerError)
 			return
 		}
-		nc, _, err := hj.Hijack()
+		srcRespNetConn, _, err := srcRespHijack.Hijack()
 		if err != nil {
 			log.Error("Hijack error", "err", err)
+			http.Error(repsonse, "WS request failed. Hijack error", http.StatusInternalServerError)
 			return
 		}
-		defer nc.Close()
-		defer d.Close()
+		defer srcRespNetConn.Close()
+		defer destConn.Close()
 
-		err = r.Write(d)
+		err = request.Write(destConn)
 		if err != nil {
 			log.Error("Error copying request to target", "err", err)
 			return
 		}
 
 		errc := make(chan error, 2)
-		cp := func(dst io.Writer, src io.Reader) {
-			log.Info("copy data")
+		copyFunc := func(dst io.Writer, src io.Reader, isSrc bool) {
+			defer log.Info("copy func finished")
+			if isSrc {
+				log.Info("WS copy data from src -> dest")
+			} else {
+				log.Info("WS copy data from dest -> src")
+			}
 			qn.ResetInactiveTime()
-			_, err := io.Copy(dst, src)
+			n, err := io.Copy(dst, src)
+			log.Info("WS copied data", "n", n, "err", err)
 			errc <- err
 		}
-		go cp(d, nc)
-		go cp(nc, d)
-		<-errc
+		go copyFunc(destConn, srcRespNetConn, true)
+		log.Info("go src to dest started")
+		go copyFunc(srcRespNetConn, destConn, false)
+		log.Info("go dest to src started")
+		if err := <-errc; err != nil {
+			log.Info("copyFunc failed", "err", err)
+		} else {
+			log.Info("copy func successful")
+		}
 	})
 }
