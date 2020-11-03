@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/ConsenSysQuorum/node-manager/core"
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
 	"io/ioutil"
@@ -60,59 +59,53 @@ func (np ProxyServer) Stop() {
 	panic("not implemented")
 }
 
-func (np ProxyServer) preparePrivateTx(tx types.EthTransaction) bool {
-	log.Info("private tx prepare complete", "tx private for", tx.Params[0].PrivateFor)
-	res, err := np.qrmNode.RequestNodeManagerForPrivateTxPrep(tx.Params[0].PrivateFor)
-	if err != nil {
-		log.Error("preparePrivateTx failed", "err", err)
-		return false
-	}
-	return res
-}
-
 func (np ProxyServer) forwardRequest(res http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("reading body failed", "err", err)
-		http.Error(res, err.Error(), http.StatusInternalServerError)
+		http.Error(res, "reading request body failed", http.StatusInternalServerError)
 		return
 	}
 	// you can reassign the body if you need to parse it as multipart
 	req.Body = ioutil.NopCloser(bytes.NewReader(body))
 	// Log the request
 	bodyStr := string(body)
+
 	np.logRequestPayload(req.URL.String(), string(body))
+
+	np.qrmNode.ResetInactiveTime()
+
+	if np.qrmNode.PrepareNode() {
+		log.Info("node prepared to accept request")
+	} else {
+		http.Error(res, "node prepare failed", http.StatusInternalServerError)
+		return
+	}
 
 	if core.IsPrivateTransaction(bodyStr) {
 		if tx, err := core.GetPrivateTx(body); err != nil {
 			// TODO handle error - return error to client?
-			log.Error("failed to unmarshal tx from body", "err", err)
+			log.Error("failed to unmarshal private tx from request", "err", err)
+			http.Error(res, "failed to unmarshal private tx", http.StatusInternalServerError)
+			return
 		} else {
 			if tx.Method == "eth_sendTransaction" {
 				log.Info("private transaction request")
-				if !np.preparePrivateTx(tx) {
+				if status, err := np.qrmNode.RequestNodeManagerForPrivateTxPrep(tx.Params[0].PrivateFor); err != nil {
+					log.Error("preparePrivateTx failed", "err", err)
 					http.Error(res, "private tx prep failed", http.StatusInternalServerError)
+					return
+				} else if !status {
+					log.Error("preparePrivateTx failed some participants are down", "err", err)
+					http.Error(res, "private tx prep failed, some participants are down", http.StatusInternalServerError)
+					return
+				} else {
+					log.Info("private tx prep completed successfully.")
 				}
 			}
 		}
 	}
 
-	np.qrmNode.ResetInactiveTime()
-	if up, err := np.qrmNode.IsNodeUp(); err != nil {
-		np.qrmNode.RequestStartNode()
-		log.Info("waiting for node start to complete...")
-		np.qrmNode.WaitStartNode()
-		log.Info("node start completed")
-	} else if !up {
-		np.qrmNode.SetNodeDown()
-		np.qrmNode.RequestStartNode()
-		log.Info("waiting for node start to complete...")
-		np.qrmNode.WaitStartNode()
-		log.Info("node start completed")
-	} else {
-		np.qrmNode.SetNodeUp()
-		log.Info("node UP", "destUrl", np.destUrl)
-	}
 	// Forward request to original request
 	log.Info("forwarding request to node", "destUrl", np.destUrl, "body", string(body))
 	np.serveReverseProxy(res, req)

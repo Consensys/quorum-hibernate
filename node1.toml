@@ -4,8 +4,8 @@ name = "node1"
 #geth RPC URL
 gethRpcUrl = "http://localhost:22000"
 
-#geth inactivity timeout
-gethInactivityTime = 1000000
+#geth inactivity timeout seconds
+gethInactivityTime = 60
 
 #geth's http/ws services that need to be exposed as proxy services
 proxies = [

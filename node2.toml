@@ -5,7 +5,7 @@ name = "node2"
 gethRpcUrl = "http://localhost:22001"
 
 #geth inactivity timeout
-gethInactivityTime = 120
+gethInactivityTime = 60
 
 #geth's http/ws services that need to be exposed as proxy services
 proxies = [

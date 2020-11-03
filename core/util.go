@@ -17,7 +17,7 @@ func GetPrivateTx(body []byte) (types.EthTransaction, error) {
 	if err != nil {
 		return types.EthTransaction{}, err
 	} else {
-		log.Info("tx details", "Tx", tx)
+		log.Debug("tx details", "Tx", tx)
 	}
 	return tx, nil
 }
