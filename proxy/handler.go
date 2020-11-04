@@ -27,6 +27,7 @@ func makeHttpHandler(qn *node.QuorumNode, destUrl string) (http.HandlerFunc, err
 	}
 
 	return func(res http.ResponseWriter, req *http.Request) {
+		log.Info("request", "dest", destUrl, "url", req.RequestURI)
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
 			log.Error("reading body failed", "err", err)

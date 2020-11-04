@@ -8,13 +8,13 @@ gethRpcUrl = "http://localhost:22001"
 proxyAddr = ":9092"
 
 #geth inactivity timeout
-gethInactivityTime = 60
+gethInactivityTime = 1000000
 
 #geth's http/ws services that need to be exposed as proxy services
 proxies = [
-    { name = "rpc", type = "http", destUrl = "http://localhost:22001" },
-    { name = "ws", type = "ws", destUrl = ":23001" },
-    { name = "tessera", type = "http", destUrl = "http://localhost:9002" }
+    { name = "rpc", path = "rpc", type = "http", destUrl = "http://localhost:22001" },
+    { name = "ws", path = "ws", type = "ws", destUrl = ":23001" },
+    { name = "tessera", path = "tessera", type = "http", destUrl = "http://localhost:9002" }
 ]
 
 nodeManagers = [

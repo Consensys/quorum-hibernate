@@ -10,6 +10,7 @@ import (
 type ProxyConfig struct {
 	Name    string `toml:"name"`
 	Type    string `toml:"type"` // http or ws
+	Path    string `toml:"path"`
 	DestUrl string `toml:"destUrl"`
 }
 

@@ -1,21 +1,20 @@
 #node manager name
-name = "node1"
+name = "node4"
 
 #geth RPC URL
-gethRpcUrl = "http://localhost:22000"
+gethRpcUrl = "http://localhost:22003"
 
 #proxy address
-proxyAddr = ":9091"
+proxyAddr = ":9094"
 
-#geth inactivity timeout seconds
+#geth inactivity timeout
 gethInactivityTime = 1000000
 
 #geth's http/ws services that need to be exposed as proxy services
 proxies = [
-    { name = "rpc", path = "rpc", type = "http", destUrl = "http://localhost:22000" },
-    { name = "graphql", path = "graphql", type = "http", destUrl = "http://localhost:8547/graphql" },
-    { name = "ws", path = "ws", type = "ws", destUrl = ":23000" },
-    { name = "tessera", path = "tessera", type = "http", destUrl = "http://localhost:9001" }
+    { name = "rpc", path = "rpc", type = "http", destUrl = "http://localhost:22003" },
+    { name = "ws", path = "ws", type = "ws", destUrl = ":23003" },
+    { name = "tessera", path = "tessera", type = "http", destUrl = "http://localhost:9004" }
 ]
 
 nodeManagers = [
@@ -28,14 +27,14 @@ nodeManagers = [
 #rpc server details of node manager
 [server]
 # The interface + port the application should bind to
-rpcAddr = "localhost:8081"
+rpcAddr = "localhost:8084"
 rpcCorsList = ["*"]
 rpcvHosts = ["*"]
 
 #geth's process control config
 [gethProcess]
 controlType = "shell"
-stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
-startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"]
+stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22003"]
+startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "4"]
 
 	
