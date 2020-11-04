@@ -5,7 +5,7 @@ name = "node1"
 gethRpcUrl = "http://localhost:22000"
 
 #proxy address
-proxyAddr = ":9091"
+proxyAddr = "127.0.0.1:9091"
 
 #geth inactivity timeout seconds
 gethInactivityTime = 1000000
@@ -14,8 +14,8 @@ gethInactivityTime = 1000000
 proxies = [
     { name = "rpc", path = "rpc", type = "http", destUrl = "http://localhost:22000" },
     { name = "graphql", path = "graphql", type = "http", destUrl = "http://localhost:8547/graphql" },
-    { name = "ws", path = "ws", type = "ws", destUrl = ":23000" },
-    { name = "tessera", path = "tessera", type = "http", destUrl = "http://localhost:9001" }
+    { name = "ws", path = "ws", type = "ws", destUrl = "ws://localhost:23000" },
+    { name = "tessera", path = "tessera", type = "http", destUrl = "http://127.0.0.1:9001" },
 ]
 
 nodeManagers = [

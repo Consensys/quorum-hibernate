@@ -14,6 +14,7 @@ func NewProxyServer(qn *node.QuorumNode, errc chan error) Proxy {
 func (np ProxyServer) Start() {
 	go func() {
 		for _, p := range np.qrmNode.GetProxyConfig() {
+
 			var path string
 			if p.Path == "/" {
 				path = p.Name
@@ -29,7 +30,13 @@ func (np ProxyServer) Start() {
 				}
 				http.HandleFunc(path, handler)
 			} else if p.IsWS() {
-				http.HandleFunc(path, makeWSHandler(np.qrmNode, p.DestUrl))
+				handler, err := WSProxyHandler(np.qrmNode, p.DestUrl)
+				if err != nil {
+					np.errCh <- err
+					return
+				}
+				http.HandleFunc(path, handler.ServeHTTP)
+				//http.HandleFunc(path, makeWSHandler(np.qrmNode, p.DestUrl))
 			}
 			log.Info("added handler for proxy", "name", p.Name, "path", p.Path, "destUrl", p.DestUrl)
 		}

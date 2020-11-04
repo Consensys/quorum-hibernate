@@ -13,8 +13,8 @@ gethInactivityTime = 1000000
 #geth's http/ws services that need to be exposed as proxy services
 proxies = [
     { name = "rpc", path = "rpc", type = "http", destUrl = "http://localhost:22003" },
-    { name = "ws", path = "ws", type = "ws", destUrl = ":23003" },
-    { name = "tessera", path = "tessera", type = "http", destUrl = "http://localhost:9004" }
+    { name = "ws", path = "ws", type = "ws", destUrl = "ws://localhost:23003" },
+    { name = "tessera", path = "tessera", type = "http", destUrl = "http://127.0.0.1:9004" }
 ]
 
 nodeManagers = [
