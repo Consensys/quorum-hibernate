@@ -21,20 +21,20 @@ const (
 )
 
 type RPCService struct {
-	qn                     *node.QuorumNode
-	cors                   []string
-	httpAddress            string
-	httpServer             *http.Server
-	httpServerErrorChannel chan error
-	shutdownWg             sync.WaitGroup
+	qn          *node.QuorumNode
+	cors        []string
+	httpAddress string
+	httpServer  *http.Server
+	errCh       chan error
+	shutdownWg  sync.WaitGroup
 }
 
 func NewRPCService(qn *node.QuorumNode, config *types.RPCServerConfig, backendErrorChan chan error) *RPCService {
 	return &RPCService{
-		qn:                     qn,
-		cors:                   config.RPCCorsList,
-		httpAddress:            config.RpcAddr,
-		httpServerErrorChannel: backendErrorChan,
+		qn:          qn,
+		cors:        config.RPCCorsList,
+		httpAddress: config.RpcAddr,
+		errCh:       backendErrorChan,
 	}
 }
 
@@ -63,7 +63,7 @@ func (r *RPCService) Start() error {
 		log.Info("Started JSON-RPC server", "Addr", r.httpAddress)
 		if err := r.httpServer.ListenAndServe(); err != http.ErrServerClosed {
 			log.Error("Unable to start JSON-RPC server", "err", err)
-			r.httpServerErrorChannel <- err
+			r.errCh <- err
 		}
 	}()
 

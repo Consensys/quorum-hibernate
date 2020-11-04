@@ -4,14 +4,18 @@ name = "node1"
 #geth RPC URL
 gethRpcUrl = "http://localhost:22000"
 
+#proxy address
+proxyAddr = ":9091"
+
 #geth inactivity timeout seconds
-gethInactivityTime = 60
+gethInactivityTime = 1000000
 
 #geth's http/ws services that need to be exposed as proxy services
 proxies = [
-    { name = "rpc", type = "http", proxyUrl = ":9091", destUrl = "http://localhost:22000" },
-    { name = "graphql", type = "http", proxyUrl = ":9092", destUrl = "http://localhost:8547/graphql" },
-    { name = "ws", type = "ws", proxyUrl = ":9093", destUrl = ":23000" }
+    { name = "rpc", type = "http", destUrl = "http://localhost:22000" },
+    { name = "graphql", type = "http", destUrl = "http://localhost:8547/graphql" },
+    { name = "ws", type = "ws", destUrl = ":23000" },
+    { name = "tessera", type = "http", destUrl = "http://localhost:9001" }
 ]
 
 nodeManagers = [

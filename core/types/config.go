@@ -8,10 +8,9 @@ import (
 )
 
 type ProxyConfig struct {
-	Name     string `toml:"name"`
-	Type     string `toml:"type"` // http or ws
-	DestUrl  string `toml:"destUrl"`
-	ProxyUrl string `toml:"proxyUrl"`
+	Name    string `toml:"name"`
+	Type    string `toml:"type"` // http or ws
+	DestUrl string `toml:"destUrl"`
 }
 
 func (c ProxyConfig) IsHttp() bool {
@@ -43,6 +42,7 @@ type RPCServerConfig struct {
 type NodeConfig struct {
 	Name               string               `toml:"name"`
 	GethRpcUrl         string               `toml:"gethRpcUrl"`
+	ProxyAddr          string               `toml:"proxyAddr"`
 	GethInactivityTime int                  `toml:"gethInactivityTime"`
 	Server             *RPCServerConfig     `toml:"server"`
 	GethProcess        *GethProcessConfig   `toml:"gethProcess"`

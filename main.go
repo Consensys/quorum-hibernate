@@ -28,12 +28,13 @@ func main() {
 		return
 	}
 	log.Info("config file read")
-	backendErrorChan := make(chan error)
+	rpcBackendErrCh := make(chan error)
+	proxyBackendErrCh := make(chan error)
 	qn := node.NewQuorumNode(&nodeConfig)
 	qn.Start()
-	proxy.StartProxyServerServices(qn)
+	proxy.NewProxyServer(qn, proxyBackendErrCh).Start()
 
-	rpcService := rpc.NewRPCService(qn, qn.GetRPCConfig(), backendErrorChan)
+	rpcService := rpc.NewRPCService(qn, qn.GetRPCConfig(), rpcBackendErrCh)
 	if err := rpcService.Start(); err != nil {
 		log.Info("rpc server failed", "err", err)
 		return
@@ -43,8 +44,12 @@ func main() {
 	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(sigc)
 	select {
-	case <-sigc:
-	case <-backendErrorChan:
+	case err := <-sigc:
+		log.Error("Received interrupt signal, shutting down...", "err", err)
+	case err := <-rpcBackendErrCh:
+		log.Error("RPC backend failed, shutting down...", "err", err)
+	case err := <-proxyBackendErrCh:
+		log.Error("Proxy backend failed, shutting down...", "err", err)
 	}
-	log.Info("Received interrupt signal, shutting down...")
+
 }

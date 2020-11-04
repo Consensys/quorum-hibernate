@@ -1,17 +1,13 @@
 package proxy
 
 import (
-	"net/http/httputil"
-
 	"github.com/ConsenSysQuorum/node-manager/node"
 )
 
 type ProxyServer struct {
-	qrmNode  *node.QuorumNode
-	name     string
-	destUrl  string
-	proxyUrl string
-	rp       *httputil.ReverseProxy
+	qrmNode   *node.QuorumNode
+	proxyAddr string
+	errCh     chan error
 }
 
 type Proxy interface {

@@ -215,7 +215,7 @@ func (qn *QuorumNode) RequestNodeManagerForPrivateTxPrep(tesseraKeys []string) (
 				return false, fmt.Errorf("node manager private tx prep reply - creating request failed err=%v", err)
 			}
 			req.Header.Set("Content-Type", "application/json")
-
+			log.Info("node manager private tx prep sending req", "to", nmCfg.RpcUrl)
 			client := &http.Client{}
 			resp, err := client.Do(req)
 			if err != nil {
@@ -229,7 +229,7 @@ func (qn *QuorumNode) RequestNodeManagerForPrivateTxPrep(tesseraKeys []string) (
 				respResult := NodeManagerPrivateTxPrepResult{}
 				jerr := json.Unmarshal(body, &respResult)
 				if jerr == nil {
-					log.Info("node manager private tx prep - response OK", "result", respResult)
+					log.Info("node manager private tx prep - response OK", "from", nmCfg.RpcUrl, "result", respResult)
 					statusArr = append(statusArr, respResult.Result.Status)
 				} else {
 					log.Info("response result json decode failed", "err", jerr)
@@ -313,4 +313,8 @@ func (qn *QuorumNode) GetNodeManagerConfig(key string) *types.NodeManagerConfig 
 
 func (qn *QuorumNode) IsNodeUp() bool {
 	return qn.nodeUp
+}
+
+func (qn *QuorumNode) GetProxyAddr() string {
+	return qn.config.ProxyAddr
 }
