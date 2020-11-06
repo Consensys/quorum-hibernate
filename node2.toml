@@ -1,20 +1,17 @@
 #node manager name
-name = "node2"
+name = "node1"
 
 #geth RPC URL
 gethRpcUrl = "http://localhost:22001"
 
-#proxy address
-proxyAddr = ":9092"
-
-#geth inactivity timeout
+#geth inactivity timeout seconds
 gethInactivityTime = 1000000
 
 #geth's http/ws services that need to be exposed as proxy services
 proxies = [
-    { name = "rpc", path = "rpc", type = "http", destUrl = "http://localhost:22001" },
-    { name = "ws", path = "ws", type = "ws", destUrl = "ws://localhost:23001" },
-    { name = "tessera", path = "tessera", type = "http", destUrl = "http://127.0.0.1:9002" }
+    { name = "geth-rpc", type = "http", proxyAddr = "localhost:9092", upstreamAddr = "http://localhost:22001", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
+    { name = "geth-ws", type = "ws", proxyAddr = "localhost:9292", upstreamAddr = "ws://localhost:23001", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
+    { name = "tessera", type = "http", proxyAddr = "localhost:9392", upstreamAddr = "http://127.0.0.1:9002", proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], readTimeout = 15, writeTimeout = 15 },
 ]
 
 nodeManagers = [

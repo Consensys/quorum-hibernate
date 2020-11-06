@@ -27,11 +27,13 @@ type PrivateTxPrepStatus struct {
 type QuorumNode struct {
 	config             *types.NodeConfig
 	nodeUp             bool
+	nm                 *NodeMonitor
 	inactivityResetCh  chan bool
 	stopNodeCh         chan bool
 	shutdownCompleteCh chan bool
 	startNodeCh        chan bool
 	startCompleteCh    chan bool
+	stopCh             chan bool
 	startStopMux       sync.Mutex
 }
 
@@ -42,6 +44,8 @@ var quorumNode *QuorumNode
 func NewQuorumNode(cfg *types.NodeConfig) *QuorumNode {
 	quorumNode = &QuorumNode{cfg,
 		true,
+		nil,
+		make(chan bool, 1),
 		make(chan bool, 1),
 		make(chan bool, 1),
 		make(chan bool, 1),
@@ -54,8 +58,13 @@ func NewQuorumNode(cfg *types.NodeConfig) *QuorumNode {
 
 func (qn *QuorumNode) Start() {
 	qn.StartMonitor()
-	ac := NewNodeInactivityMonitor(qn)
-	ac.StartInactivityTimer()
+	qn.nm = NewNodeInactivityMonitor(qn)
+	qn.nm.StartInactivityTimer()
+}
+
+func (qn *QuorumNode) Stop() {
+	qn.nm.Stop()
+	qn.stopCh <- true
 }
 
 func (qn *QuorumNode) StartMonitor() {
@@ -70,6 +79,9 @@ func (qn *QuorumNode) StartMonitor() {
 			case <-qn.startNodeCh:
 				log.Info("request received to start node")
 				qn.StartNode(false, true)
+			case <-qn.stopCh:
+				log.Info("stopped node start/stop monitor service")
+				return
 			}
 		}
 	}()
@@ -313,8 +325,4 @@ func (qn *QuorumNode) GetNodeManagerConfig(key string) *types.NodeManagerConfig 
 
 func (qn *QuorumNode) IsNodeUp() bool {
 	return qn.nodeUp
-}
-
-func (qn *QuorumNode) GetProxyAddr() string {
-	return qn.config.ProxyAddr
 }

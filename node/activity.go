@@ -9,12 +9,13 @@ import (
 type NodeMonitor struct {
 	qrmNode           *QuorumNode
 	inactiveTimeCount int
+	stopCh            chan bool
 }
 
 var nodeMonitor *NodeMonitor
 
 func NewNodeInactivityMonitor(qn *QuorumNode) *NodeMonitor {
-	nodeMonitor = &NodeMonitor{qn, 0}
+	nodeMonitor = &NodeMonitor{qn, 0, make(chan bool)}
 	return nodeMonitor
 }
 
@@ -40,7 +41,14 @@ func (nm *NodeMonitor) StartInactivityTimer() {
 				wasInactive := nm.inactiveTimeCount
 				nodeMonitor.inactiveTimeCount = 0
 				log.Info("inactivity reset, was inactive", "seconds", wasInactive)
+			case <-nm.stopCh:
+				log.Info("stopped inactivity monitor")
+				return
 			}
 		}
 	}()
+}
+
+func (nm *NodeMonitor) Stop() {
+	nm.stopCh <- true
 }

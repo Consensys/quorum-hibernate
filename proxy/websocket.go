@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"fmt"
-	"github.com/ConsenSysQuorum/node-manager/node"
 	"io"
 	"net"
 	"net/http"
@@ -29,7 +28,7 @@ var (
 // WebsocketProxy is an HTTP Handler that takes an incoming WebSocket
 // connection and proxies it to another server.
 type WebsocketProxy struct {
-	qn *node.QuorumNode
+	ps *ProxyServer
 	// Director, if non-nil, is a function that may copy additional request
 	// headers from the incoming WebSocket connection into the output headers
 	// which will be forwarded to another server.
@@ -51,17 +50,17 @@ type WebsocketProxy struct {
 
 // ProxyHandler returns a new http.Handler interface that reverse proxies the
 // request to the given target.
-func WSProxyHandler(qn *node.QuorumNode, destUrl string) (http.Handler, error) {
+func WSProxyHandler(ps *ProxyServer, destUrl string) (*WebsocketProxy, error) {
 	url, err := url.Parse(destUrl)
 	if err != nil {
 		return nil, err
 	}
-	return NewWSProxy(qn, url), nil
+	return NewWSProxy(ps, url), nil
 }
 
 // NewProxy returns a new Websocket reverse proxy that rewrites the
 // URL's to the scheme, host and base path provider in target.
-func NewWSProxy(qn *node.QuorumNode, target *url.URL) *WebsocketProxy {
+func NewWSProxy(ps *ProxyServer, target *url.URL) *WebsocketProxy {
 	backend := func(r *http.Request) *url.URL {
 		// Shallow copy
 		u := *target
@@ -70,7 +69,7 @@ func NewWSProxy(qn *node.QuorumNode, target *url.URL) *WebsocketProxy {
 		u.RawQuery = r.URL.RawQuery
 		return &u
 	}
-	return &WebsocketProxy{qn: qn, Backend: backend}
+	return &WebsocketProxy{ps: ps, Backend: backend}
 }
 
 // ServeHTTP implements the http.Handler that proxies WebSocket connections.
@@ -108,6 +107,7 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		log.Info("request header", "cookie", cookie, "key", "Cookie")
 		requestHeader.Add("Cookie", cookie)
 	}
+
 	if req.Host != "" {
 		log.Info("req set host", "host", req.Host)
 		requestHeader.Set("Host", req.Host)
@@ -159,7 +159,11 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 		return
 	}
-	defer connBackend.Close()
+	log.Info("WS handler connected to backend", "name", w.ps.proxyCfg.Name, "dest", w.ps.proxyCfg.UpstreamAddr)
+	defer func() {
+		connBackend.Close()
+		log.Info("WS handler disconnected from backend", "name", w.ps.proxyCfg.Name, "dest", w.ps.proxyCfg.UpstreamAddr)
+	}()
 
 	upgrader := w.Upgrader
 	if w.Upgrader == nil {
@@ -191,7 +195,7 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	replicateWebsocketConn := func(dst, src *websocket.Conn, errc chan error, isSrc bool) {
 		for {
 			msgType, msg, err := src.ReadMessage()
-			w.qn.ResetInactiveTime()
+			w.ps.qrmNode.ResetInactiveTime()
 			if err != nil {
 				m := websocket.FormatCloseMessage(websocket.CloseNormalClosure, fmt.Sprintf("%v", err))
 				if e, ok := err.(*websocket.CloseError); ok {
@@ -222,10 +226,9 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	var message string
 	select {
 	case err = <-errClient:
-		message = "websocketproxy: Error when copying from backend to client: %v"
+		message = fmt.Sprintf("websocketproxy: Error when copying from backend to client: %v", err)
 	case err = <-errBackend:
-		message = "websocketproxy: Error when copying from client to backend: %v"
-
+		message = fmt.Sprintf("websocketproxy: Error when copying from client to backend: %v", err)
 	}
 	if e, ok := err.(*websocket.CloseError); !ok || e.Code == websocket.CloseAbnormalClosure {
 		log.Error(message, "err", err)

@@ -1,55 +1,110 @@
 package proxy
 
 import (
-	"fmt"
+	"context"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"sync"
+	"time"
+
+	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
-	"net/http"
 )
 
-func NewProxyServer(qn *node.QuorumNode, errc chan error) Proxy {
-	return &ProxyServer{qn, qn.GetProxyAddr(), errc}
+type ProxyServer struct {
+	qrmNode    *node.QuorumNode
+	proxyCfg   *types.ProxyConfig
+	mux        *http.ServeMux
+	srv        *http.Server
+	rp         *httputil.ReverseProxy // handler for http reverse proxy
+	wp         *WebsocketProxy        // handler for websocket
+	errCh      chan error
+	shutdownWg sync.WaitGroup
 }
 
-func (np ProxyServer) Start() {
-	go func() {
-		for _, p := range np.qrmNode.GetProxyConfig() {
+func NewProxyServer(qn *node.QuorumNode, pc *types.ProxyConfig, errc chan error) (Proxy, error) {
+	ps := &ProxyServer{qn, pc, nil, nil, nil, nil, errc, sync.WaitGroup{}}
+	url, err := url.Parse(ps.proxyCfg.UpstreamAddr)
+	if err != nil {
+		return nil, err
+	}
 
-			var path string
-			if p.Path == "/" {
-				path = p.Name
-			} else {
-				path = fmt.Sprintf("/%s", p.Path)
-			}
+	ps.mux = http.NewServeMux()
 
-			if p.IsHttp() {
-				handler, err := makeHttpHandler(np.qrmNode, p.DestUrl)
-				if err != nil {
-					np.errCh <- err
-					return
-				}
-				http.HandleFunc(path, handler)
-			} else if p.IsWS() {
-				handler, err := WSProxyHandler(np.qrmNode, p.DestUrl)
-				if err != nil {
-					np.errCh <- err
-					return
-				}
-				http.HandleFunc(path, handler.ServeHTTP)
-				//http.HandleFunc(path, makeWSHandler(np.qrmNode, p.DestUrl))
-			}
-			log.Info("added handler for proxy", "name", p.Name, "path", p.Path, "destUrl", p.DestUrl)
-		}
-
-		log.Info("ListenAndServe started", "proxyAddr", np.proxyAddr)
-		err := http.ListenAndServe(np.proxyAddr, nil)
+	if ps.proxyCfg.IsHttp() {
+		err = initHttpHandler(ps, url)
 		if err != nil {
-			log.Error("ListenAndServe failed", "proxyAddr", np.proxyAddr, "err", err)
-			np.errCh <- err
+			return nil, err
+		}
+	} else if ps.proxyCfg.IsWS() {
+		err = initWSHandler(ps)
+		if err != nil {
+			return nil, err
+		}
+	}
+	ps.srv = &http.Server{
+		Handler:      ps.mux,
+		Addr:         ps.proxyCfg.ProxyAddr,
+		WriteTimeout: time.Duration(ps.proxyCfg.WriteTimeout) * time.Second,
+		ReadTimeout:  time.Duration(ps.proxyCfg.ReadTimeout) * time.Second,
+	}
+	log.Info("created proxy server for config", "cfg", *pc)
+	return ps, nil
+}
+
+func initHttpHandler(ps *ProxyServer, url *url.URL) error {
+	ps.rp = httputil.NewSingleHostReverseProxy(url)
+	ps.rp.ModifyResponse = func(res *http.Response) error {
+		respStatus := res.Status
+		log.Info("response status", "status", respStatus, "code", res.StatusCode)
+		return nil
+	}
+	for _, p := range ps.proxyCfg.ProxyPaths {
+		if h, err := makeHttpHandler(ps); err != nil {
+			return err
+		} else {
+			ps.mux.Handle(p, h)
+			log.Info("registering http handler", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstrAddr", ps.proxyCfg.UpstreamAddr, "name", ps.proxyCfg.Name, "type", ps.proxyCfg.Type, "path", p)
+		}
+	}
+	return nil
+}
+
+func initWSHandler(ps *ProxyServer) error {
+	var err error
+	if ps.wp, err = WSProxyHandler(ps, ps.proxyCfg.UpstreamAddr); err != nil {
+		return err
+	}
+	for _, p := range ps.proxyCfg.ProxyPaths {
+		ps.mux.Handle(p, ps.wp)
+		log.Info("registering WS handler", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstrAddr", ps.proxyCfg.UpstreamAddr, "name", ps.proxyCfg.Name, "type", ps.proxyCfg.Type, "path", p)
+	}
+	return nil
+}
+
+func (ps ProxyServer) Start() {
+	ps.shutdownWg.Add(1)
+	go func() {
+		defer ps.shutdownWg.Done()
+		log.Info("ListenAndServe started", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstream", ps.proxyCfg.UpstreamAddr)
+		err := ps.srv.ListenAndServe()
+		if err != nil {
+			log.Error("ListenAndServe failed", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstream", ps.proxyCfg.UpstreamAddr, "err", err)
+			ps.errCh <- err
 		}
 	}()
 }
 
-func (np ProxyServer) Stop() {
-	panic("not implemented")
+func (ps ProxyServer) Stop() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if ps.srv != nil {
+		if err := ps.srv.Shutdown(ctx); err != nil {
+			log.Error("failed to shutdown", "name", ps.proxyCfg.Name, "err", err)
+		}
+		ps.shutdownWg.Wait()
+		log.Info("server shutdown completed", "name", ps.proxyCfg.Name)
+	}
 }
