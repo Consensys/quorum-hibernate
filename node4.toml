@@ -7,6 +7,8 @@ gethRpcUrl = "http://localhost:22003"
 #geth inactivity timeout seconds
 gethInactivityTime = 1000000
 
+tesseraUpcheckUrl = "http://localhost:9004/upcheck"
+
 #geth's http/ws services that need to be exposed as proxy services
 proxies = [
     { name = "geth-rpc", type = "http", proxyAddr = "localhost:9094", upstreamAddr = "http://localhost:22003", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
@@ -31,7 +33,17 @@ rpcvHosts = ["*"]
 #geth's process control config
 [gethProcess]
 controlType = "shell"
+name = "geth"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22003"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "4"]
+
+#tessera's process control config
+[tesseraProcess]
+controlType = "shell"
+name = "tessera"
+stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "4"]
+startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "4"]
+
+
 
 	

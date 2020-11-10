@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"os"
+	"strings"
 
 	"github.com/naoina/toml"
 )
@@ -31,10 +32,19 @@ type NodeManagerConfig struct {
 	RpcUrl     string `toml:"rpcUrl"`
 }
 
-type GethProcessConfig struct {
+type ProcessConfig struct {
+	Name         string   `toml:"name"`
 	ControlType  string   `toml:"controlType"` // SHELL or Docker
 	StopCommand  []string `toml:"stopCommand"`
 	StartCommand []string `toml:"startCommand"`
+}
+
+func (c ProcessConfig) IsShell() bool {
+	return strings.ToLower(c.ControlType) == "shell"
+}
+
+func (c ProcessConfig) IsDocker() bool {
+	return strings.ToLower(c.ControlType) == "docker"
 }
 
 type RPCServerConfig struct {
@@ -46,9 +56,11 @@ type RPCServerConfig struct {
 type NodeConfig struct {
 	Name               string               `toml:"name"`
 	GethRpcUrl         string               `toml:"gethRpcUrl"`
+	TesseraUpcheckUrl  string               `toml:"tesseraUpcheckUrl"`
 	GethInactivityTime int                  `toml:"gethInactivityTime"`
 	Server             *RPCServerConfig     `toml:"server"`
-	GethProcess        *GethProcessConfig   `toml:"gethProcess"`
+	GethProcess        *ProcessConfig       `toml:"gethProcess"`
+	TesseraProcess     *ProcessConfig       `toml:"tesseraProcess"`
 	Proxies            []*ProxyConfig       `toml:"proxies"`
 	NodeManagers       []*NodeManagerConfig `toml:"nodeManagers"`
 }

@@ -1,8 +1,10 @@
 package node
 
 import (
-	"github.com/ConsenSysQuorum/node-manager/log"
+	"errors"
 	"net/http"
+
+	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
 type NodeRPCAPIs struct {
@@ -24,11 +26,10 @@ func NewNodeRPCAPIs(qn *QuorumNode) *NodeRPCAPIs {
 func (n *NodeRPCAPIs) IsNodeUp(req *http.Request, from *string, reply *NodeUpReply) error {
 	log.Info("rpc call isNodeUp", "from", *from)
 	ok := false
-	var err error
-	if ok, err = n.qn.PingNodeToCheckIfItIsUp(); err != nil {
-		log.Info("is node up failed", "err", err)
+	if !n.qn.IsNodeUp() {
+		log.Info("is node up failed")
 		ok = false
-		return err
+		return errors.New("is node up failed")
 	}
 	*reply = NodeUpReply{
 		ok,

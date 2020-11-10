@@ -6,20 +6,20 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
-type NodeMonitor struct {
+type InactivityMonitor struct {
 	qrmNode           *QuorumNode
 	inactiveTimeCount int
 	stopCh            chan bool
 }
 
-var nodeMonitor *NodeMonitor
+var nodeMonitor *InactivityMonitor
 
-func NewNodeInactivityMonitor(qn *QuorumNode) *NodeMonitor {
-	nodeMonitor = &NodeMonitor{qn, 0, make(chan bool)}
+func NewNodeInactivityMonitor(qn *QuorumNode) *InactivityMonitor {
+	nodeMonitor = &InactivityMonitor{qn, 0, make(chan bool)}
 	return nodeMonitor
 }
 
-func (nm *NodeMonitor) StartInactivityTimer() {
+func (nm *InactivityMonitor) StartInactivityTimer() {
 	go func() {
 		timer := time.NewTicker(time.Second)
 		defer timer.Stop()
@@ -49,6 +49,6 @@ func (nm *NodeMonitor) StartInactivityTimer() {
 	}()
 }
 
-func (nm *NodeMonitor) Stop() {
+func (nm *InactivityMonitor) Stop() {
 	nm.stopCh <- true
 }

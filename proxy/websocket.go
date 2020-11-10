@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -74,6 +75,7 @@ func NewWSProxy(ps *ProxyServer, target *url.URL) *WebsocketProxy {
 
 // ServeHTTP implements the http.Handler that proxies WebSocket connections.
 func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	defer log.Info("exit serveHTTP websocket", "req", req.RequestURI, "remoteAddr", req.RemoteAddr)
 	if w.Backend == nil {
 		log.Error("websocketproxy: backend function is not defined")
 		http.Error(rw, "backend missing", http.StatusInternalServerError)
@@ -84,6 +86,15 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if backendURL == nil {
 		log.Error("websocketproxy: backend URL is nil")
 		http.Error(rw, "backend url is nil", http.StatusInternalServerError)
+		return
+	}
+
+	if w.ps.qrmNode.PrepareNode() {
+		log.Info("node prepared to accept request")
+	} else {
+		err := errors.New("node prepare failed")
+		log.Error("websocket: failed", "err", err)
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -193,25 +204,40 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	errClient := make(chan error, 1)
 	errBackend := make(chan error, 1)
 	replicateWebsocketConn := func(dst, src *websocket.Conn, errc chan error, isSrc bool) {
+		defer log.Info("exit replicateWebsocketConn", "src", isSrc)
 		for {
 			msgType, msg, err := src.ReadMessage()
-			w.ps.qrmNode.ResetInactiveTime()
 			if err != nil {
-				m := websocket.FormatCloseMessage(websocket.CloseNormalClosure, fmt.Sprintf("%v", err))
-				if e, ok := err.(*websocket.CloseError); ok {
-					if e.Code != websocket.CloseNoStatusReceived {
-						m = websocket.FormatCloseMessage(e.Code, e.Text)
-					}
-				}
+				w.closeConnWithError(dst, err)
 				errc <- err
-				dst.WriteMessage(websocket.CloseMessage, m)
 				break
 			}
+
+			w.ps.qrmNode.ResetInactiveTime()
+
+			if w.ps.qrmNode.PrepareNode() {
+				log.Info("node prepared to accept request")
+			} else {
+				err = errors.New("node prepare failed")
+				w.closeConnWithError(dst, err)
+				errc <- err
+				break
+			}
+
 			if isSrc {
 				log.Info("received request from source", "msgType", msgType, "msg", string(msg))
 			} else {
 				log.Info("sending response to destination", "msgType", msgType, "msg", string(msg))
 			}
+
+			if isSrc {
+				if err := HandlePrivateTx(msg, w.ps); err != nil {
+					w.closeConnWithError(dst, err)
+					errc <- err
+					break
+				}
+			}
+
 			err = dst.WriteMessage(msgType, msg)
 			if err != nil {
 				errc <- err
@@ -233,6 +259,16 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if e, ok := err.(*websocket.CloseError); !ok || e.Code == websocket.CloseAbnormalClosure {
 		log.Error(message, "err", err)
 	}
+}
+
+func (w *WebsocketProxy) closeConnWithError(dst *websocket.Conn, err error) {
+	m := websocket.FormatCloseMessage(websocket.CloseNormalClosure, fmt.Sprintf("%v", err))
+	if e, ok := err.(*websocket.CloseError); ok {
+		if e.Code != websocket.CloseNoStatusReceived {
+			m = websocket.FormatCloseMessage(e.Code, e.Text)
+		}
+	}
+	dst.WriteMessage(websocket.CloseMessage, m)
 }
 
 func copyHeader(dst, src http.Header) {

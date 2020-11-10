@@ -3,6 +3,7 @@ name = "node1"
 
 #geth RPC URL
 gethRpcUrl = "http://localhost:22000"
+tesseraUpcheckUrl = "http://localhost:9001/upcheck"
 
 #geth inactivity timeout seconds
 gethInactivityTime = 1000000
@@ -32,8 +33,14 @@ rpcvHosts = ["*"]
 
 #geth's process control config
 [gethProcess]
+name="geth"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"]
 
-	
+#tessera's process control config
+[tesseraProcess]
+name="tessera"
+controlType = "shell"
+stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"]
+startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"]
