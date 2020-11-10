@@ -35,6 +35,7 @@ type NodeManagerConfig struct {
 type ProcessConfig struct {
 	Name         string   `toml:"name"`
 	ControlType  string   `toml:"controlType"` // SHELL or Docker
+	ContainerId  string   `toml:"containerId"`
 	StopCommand  []string `toml:"stopCommand"`
 	StartCommand []string `toml:"startCommand"`
 }

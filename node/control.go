@@ -53,12 +53,17 @@ func NewQuorumNode(cfg *types.NodeConfig) *QuorumNode {
 		make(chan bool, 1),
 		sync.Mutex{},
 	}
+
 	if cfg.GethProcess.IsShell() {
 		quorumNode.gethp = NewShellProcess(cfg.GethProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
+	} else if cfg.GethProcess.IsDocker() {
+		quorumNode.gethp = NewDockerProcess(cfg.GethProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
 	}
 
 	if cfg.TesseraProcess.IsShell() {
 		quorumNode.tesserap = NewShellProcess(cfg.TesseraProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
+	} else if cfg.TesseraProcess.IsDocker() {
+		quorumNode.gethp = NewDockerProcess(cfg.TesseraProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
 	}
 	return quorumNode
 }
