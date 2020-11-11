@@ -1,0 +1,45 @@
+#node manager name
+name = "node1"
+
+#geth RPC URL
+gethRpcUrl = "http://localhost:22005"
+tesseraUpcheckUrl = "http://localhost:9086/upcheck"
+
+#geth inactivity timeout seconds
+gethInactivityTime = 1000000
+
+#geth's http/ws services that need to be exposed as proxy services
+proxies = [
+    { name = "geth-rpc", type = "http", proxyAddr = "localhost:9096", upstreamAddr = "http://localhost:22005", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
+    { name = "tessera", type = "http", proxyAddr = "localhost:9396", upstreamAddr = "http://127.0.0.1:9086", proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], readTimeout = 15, writeTimeout = 15 }
+]
+
+nodeManagers = [
+    { name = "node1", tesseraKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", rpcUrl = "http://localhost:8081" },
+    { name = "node2", tesseraKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", rpcUrl = "http://localhost:8082" },
+    { name = "node3", tesseraKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8083" },
+    { name = "node4", tesseraKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8084" },
+    { name = "node5", tesseraKey = "R56gy4dn24YOjwyesTczYa8m5xhP6hF2uTMCju/1xkY=", rpcUrl = "http://localhost:8085" },
+    { name = "node6", tesseraKey = "UfNSeSGySeKg11DVNEnqrUtxYRVor4+CvluI8tVv62Y=", rpcUrl = "http://localhost:8086" },
+    { name = "node7", tesseraKey = "ROAZBWtSacxXQrOe3FGAqJDyJjFePR5ce4TSIzmJ0Bc=", rpcUrl = "http://localhost:8087" }
+]
+
+#rpc server details of node manager
+[server]
+# The interface + port the application should bind to
+rpcAddr = "localhost:8086"
+rpcCorsList = ["*"]
+rpcvHosts = ["*"]
+
+#geth's process control config
+[gethProcess]
+name="geth"
+controlType = "docker"
+containerId = "7e4b7f9521f7"
+
+
+#tessera's process control config
+[tesseraProcess]
+name="tessera"
+controlType = "docker"
+containerId = "25a8e0db133f"
