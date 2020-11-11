@@ -19,18 +19,18 @@ type ShellProcessControl struct {
 }
 
 func NewShellProcess(p *types.ProcessConfig, grpc string, turl string, s bool) Process {
-	sp := ShellProcessControl{p, grpc, turl, s, sync.Mutex{}}
+	sp := &ShellProcessControl{p, grpc, turl, s, sync.Mutex{}}
 	sp.IsUp()
 	log.Debug("shell process created", "name", sp.cfg.Name)
 	return sp
 }
 
-func (sp ShellProcessControl) setStatus(s bool) {
+func (sp *ShellProcessControl) setStatus(s bool) {
 	sp.status = s
-	log.Info("setStatus process "+sp.cfg.Name, "status", sp.status)
+	log.Debug("setStatus process "+sp.cfg.Name, "status", sp.status)
 }
 
-func (sp ShellProcessControl) IsUp() bool {
+func (sp *ShellProcessControl) IsUp() bool {
 	s := false
 	var err error
 	switch strings.ToLower(sp.cfg.Name) {
@@ -51,15 +51,15 @@ func (sp ShellProcessControl) IsUp() bool {
 			sp.setStatus(s)
 		}
 	}
-	log.Info("IsUp", "name", sp.cfg.Name, "return", sp.status)
-	return s
+	log.Debug("IsUp", "name", sp.cfg.Name, "return", sp.status)
+	return sp.status
 }
 
-func (sp ShellProcessControl) Stop() error {
+func (sp *ShellProcessControl) Stop() error {
 	defer log.Info("defer stopped", "process", sp.cfg.Name, "status", sp.status)
 	defer sp.muxLock.Unlock()
 	sp.muxLock.Lock()
-	if !sp.IsUp() {
+	if !sp.status {
 		log.Info("process is already down", "name", sp.cfg.Name)
 		return nil
 	}
@@ -74,11 +74,11 @@ func (sp ShellProcessControl) Stop() error {
 	return nil
 }
 
-func (sp ShellProcessControl) Start() error {
+func (sp *ShellProcessControl) Start() error {
 	defer log.Info("defer started", "process", sp.cfg.Name, "status", sp.status)
 	defer sp.muxLock.Unlock()
 	sp.muxLock.Lock()
-	if sp.IsUp() {
+	if sp.status {
 		log.Info("process is already up", "name", sp.cfg.Name)
 		return nil
 	}
@@ -100,7 +100,7 @@ func (sp ShellProcessControl) Start() error {
 	return nil
 }
 
-func (sp ShellProcessControl) WaitToComeUp() bool {
+func (sp *ShellProcessControl) WaitToComeUp() bool {
 	retryCount := 10
 	c := 1
 	for c <= retryCount {

@@ -15,6 +15,7 @@ type Process interface {
 	IsUp() bool
 }
 
+// TODO when geth is started by QNM it starts and runs ok. but when QNM is shutdown, geth gets shutdown
 func ExecuteShellCommand(desc string, cmdArr []string) error {
 	log.Info("executing command", "desc", desc, "command", cmdArr)
 	var cmd *exec.Cmd
@@ -37,7 +38,7 @@ func IsGethUp(gethRpcUrl string) (bool, error) {
 	var blockNumberJsonStr = []byte(`{"jsonrpc":"2.0", "method":"eth_blockNumber", "params":[], "id":67}`)
 	req, err := http.NewRequest("POST", gethRpcUrl, bytes.NewBuffer(blockNumberJsonStr))
 	if err != nil {
-		log.Error("geth up check reading body failed", "err", err)
+		log.Error("geth up check new req failed", "err", err)
 		return false, err
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -45,7 +46,7 @@ func IsGethUp(gethRpcUrl string) (bool, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Error("geth up check client do req failed", "err", err)
+		log.Warn("geth up check client do req failed", "err", err)
 		return false, err
 	}
 	defer resp.Body.Close()
@@ -54,7 +55,7 @@ func IsGethUp(gethRpcUrl string) (bool, error) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	log.Debug("geth up check response Body:", string(body))
 	if resp.StatusCode == http.StatusOK {
-		log.Info("geth is up, replied to eth_blockNumber call", "reply", string(body))
+		log.Debug("geth is up, replied to eth_blockNumber call", "reply", string(body))
 		return true, nil
 	}
 	return false, ErrNodeDown
@@ -63,7 +64,7 @@ func IsGethUp(gethRpcUrl string) (bool, error) {
 func IsTesseraUp(tesseraUpcheckUrl string) (bool, error) {
 	resp, err := http.Get(tesseraUpcheckUrl)
 	if err != nil {
-		log.Error("tessera up check reading body failed", "err", err)
+		log.Error("tessera up check new get req failed", "err", err)
 		return false, err
 	}
 
@@ -73,7 +74,7 @@ func IsTesseraUp(tesseraUpcheckUrl string) (bool, error) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	log.Debug("tessera up check response Body:", string(body))
 	if resp.StatusCode == http.StatusOK && string(body) == "I'm up!" {
-		log.Info("tessera is up, replied to upcheck call", "reply", string(body))
+		log.Debug("tessera is up, replied to upcheck call", "reply", string(body))
 		return true, nil
 	}
 	return false, ErrNodeDown
