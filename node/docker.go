@@ -22,18 +22,18 @@ type DockerControl struct {
 }
 
 func NewDockerProcess(p *types.ProcessConfig, grpc string, turl string, s bool) Process {
-	sp := DockerControl{p, grpc, turl, s, sync.Mutex{}}
+	sp := &DockerControl{p, grpc, turl, s, sync.Mutex{}}
 	sp.IsUp()
 	log.Debug("shell process created", "name", sp.cfg.Name)
 	return sp
 }
 
-func (dp DockerControl) setStatus(s bool) {
+func (dp *DockerControl) setStatus(s bool) {
 	dp.status = s
-	log.Info("setStatus process "+dp.cfg.Name, "status", dp.status)
+	log.Debug("setStatus process "+dp.cfg.Name, "status", dp.status)
 }
 
-func (dp DockerControl) IsUp() bool {
+func (dp *DockerControl) IsUp() bool {
 	s := false
 	var err error
 	switch strings.ToLower(dp.cfg.Name) {
@@ -54,15 +54,15 @@ func (dp DockerControl) IsUp() bool {
 			dp.setStatus(s)
 		}
 	}
-	log.Info("IsUp", "name", dp.cfg.Name, "return", dp.status)
-	return s
+	log.Debug("IsUp", "name", dp.cfg.Name, "return", dp.status)
+	return dp.status
 }
 
-func (dp DockerControl) Stop() error {
+func (dp *DockerControl) Stop() error {
 	defer log.Info("defer stopped", "process", dp.cfg.Name, "status", dp.status)
 	defer dp.muxLock.Unlock()
 	dp.muxLock.Lock()
-	if !dp.IsUp() {
+	if !dp.status {
 		log.Info("process is already down", "name", dp.cfg.Name)
 		return nil
 	}
@@ -85,11 +85,11 @@ func (dp DockerControl) Stop() error {
 	return nil
 }
 
-func (dp DockerControl) Start() error {
+func (dp *DockerControl) Start() error {
 	defer log.Info("defer started", "process", dp.cfg.Name, "status", dp.status)
 	defer dp.muxLock.Unlock()
 	dp.muxLock.Lock()
-	if dp.IsUp() {
+	if dp.status {
 		log.Info("process is already up", "name", dp.cfg.Name)
 		return nil
 	}
@@ -118,8 +118,8 @@ func (dp DockerControl) Start() error {
 	return nil
 }
 
-func (dp DockerControl) WaitToComeUp() bool {
-	retryCount := 10
+func (dp *DockerControl) WaitToComeUp() bool {
+	retryCount := 30
 	c := 1
 	for c <= retryCount {
 		if dp.IsUp() {

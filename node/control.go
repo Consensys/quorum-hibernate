@@ -63,7 +63,7 @@ func NewQuorumNode(cfg *types.NodeConfig) *QuorumNode {
 	if cfg.TesseraProcess.IsShell() {
 		quorumNode.tesserap = NewShellProcess(cfg.TesseraProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
 	} else if cfg.TesseraProcess.IsDocker() {
-		quorumNode.gethp = NewDockerProcess(cfg.TesseraProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
+		quorumNode.tesserap = NewDockerProcess(cfg.TesseraProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
 	}
 	return quorumNode
 }
