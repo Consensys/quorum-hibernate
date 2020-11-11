@@ -203,51 +203,9 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	errClient := make(chan error, 1)
 	errBackend := make(chan error, 1)
-	replicateWebsocketConn := func(dst, src *websocket.Conn, errc chan error, isSrc bool) {
-		defer log.Info("exit replicateWebsocketConn", "src", isSrc)
-		for {
-			msgType, msg, err := src.ReadMessage()
-			if err != nil {
-				w.closeConnWithError(dst, err)
-				errc <- err
-				break
-			}
 
-			w.ps.qrmNode.ResetInactiveTime()
-
-			if w.ps.qrmNode.PrepareNode() {
-				log.Info("node prepared to accept request")
-			} else {
-				err = errors.New("node prepare failed")
-				w.closeConnWithError(dst, err)
-				errc <- err
-				break
-			}
-
-			if isSrc {
-				log.Info("received request from source", "msgType", msgType, "msg", string(msg))
-			} else {
-				log.Info("sending response to destination", "msgType", msgType, "msg", string(msg))
-			}
-
-			if isSrc {
-				if err := HandlePrivateTx(msg, w.ps); err != nil {
-					w.closeConnWithError(dst, err)
-					errc <- err
-					break
-				}
-			}
-
-			err = dst.WriteMessage(msgType, msg)
-			if err != nil {
-				errc <- err
-				break
-			}
-		}
-	}
-
-	go replicateWebsocketConn(connSrc, connBackend, errClient, false)
-	go replicateWebsocketConn(connBackend, connSrc, errBackend, true)
+	go w.replicateWebsocketConn(connSrc, connBackend, errClient, false)
+	go w.replicateWebsocketConn(connBackend, connSrc, errBackend, true)
 
 	var message string
 	select {
@@ -258,6 +216,51 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 	if e, ok := err.(*websocket.CloseError); !ok || e.Code == websocket.CloseAbnormalClosure {
 		log.Error(message, "err", err)
+	}
+}
+
+func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc chan error, isReqFromSource bool) {
+	defer log.Info("exit replicateWebsocketConn", "src", isReqFromSource)
+	for {
+		msgType, msg, err := src.ReadMessage()
+		if err != nil {
+			w.closeConnWithError(dst, err)
+			errc <- err
+			break
+		}
+
+		if isReqFromSource {
+			log.Info("received request from source", "msgType", msgType, "msg", string(msg))
+		} else {
+			log.Info("sending response to destination", "msgType", msgType, "msg", string(msg))
+		}
+
+		if isReqFromSource {
+			w.ps.qrmNode.ResetInactiveTime()
+
+			if w.ps.qrmNode.PrepareNode() {
+				log.Info("node prepared to accept request")
+			} else {
+				err = errors.New("node prepare failed")
+				w.closeConnWithError(dst, err)
+				errc <- err
+				break
+			}
+		}
+
+		if isReqFromSource {
+			if err := HandlePrivateTx(msg, w.ps); err != nil {
+				w.closeConnWithError(dst, err)
+				errc <- err
+				break
+			}
+		}
+
+		err = dst.WriteMessage(msgType, msg)
+		if err != nil {
+			errc <- err
+			break
+		}
 	}
 }
 
