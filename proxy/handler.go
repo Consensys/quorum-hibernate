@@ -34,6 +34,11 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 
 		log.Info("request", "path", req.RequestURI)
 
+		if err := ps.qrmNode.IsNodeBusy(); err != nil {
+			http.Error(res, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		if req.RequestURI != "/partyinfo" {
 			if ps.qrmNode.PrepareNode() {
 				log.Info("node prepared to accept request")

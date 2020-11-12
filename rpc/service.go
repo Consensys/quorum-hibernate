@@ -21,7 +21,7 @@ const (
 )
 
 type RPCService struct {
-	qn          *node.QuorumNode
+	qn          *node.QuorumNodeControl
 	cors        []string
 	httpAddress string
 	httpServer  *http.Server
@@ -29,7 +29,7 @@ type RPCService struct {
 	shutdownWg  sync.WaitGroup
 }
 
-func NewRPCService(qn *node.QuorumNode, config *types.RPCServerConfig, backendErrorChan chan error) *RPCService {
+func NewRPCService(qn *node.QuorumNodeControl, config *types.RPCServerConfig, backendErrorChan chan error) *RPCService {
 	return &RPCService{
 		qn:          qn,
 		cors:        config.RPCCorsList,

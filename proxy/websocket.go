@@ -238,6 +238,11 @@ func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc c
 		if isReqFromSource {
 			w.ps.qrmNode.ResetInactiveTime()
 
+			if err := w.ps.qrmNode.IsNodeBusy(); err != nil {
+				w.closeConnWithError(dst, err)
+				return
+			}
+
 			if w.ps.qrmNode.PrepareNode() {
 				log.Info("node prepared to accept request")
 			} else {

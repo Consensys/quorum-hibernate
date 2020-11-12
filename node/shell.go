@@ -101,7 +101,7 @@ func (sp *ShellProcessControl) Start() error {
 }
 
 func (sp *ShellProcessControl) WaitToComeUp() bool {
-	retryCount := 10
+	retryCount := 30
 	c := 1
 	for c <= retryCount {
 		if sp.IsUp() {

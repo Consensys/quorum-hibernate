@@ -14,7 +14,7 @@ import (
 )
 
 type ProxyServer struct {
-	qrmNode    *node.QuorumNode
+	qrmNode    *node.QuorumNodeControl
 	proxyCfg   *types.ProxyConfig
 	mux        *http.ServeMux
 	srv        *http.Server
@@ -24,7 +24,7 @@ type ProxyServer struct {
 	shutdownWg sync.WaitGroup
 }
 
-func NewProxyServer(qn *node.QuorumNode, pc *types.ProxyConfig, errc chan error) (Proxy, error) {
+func NewProxyServer(qn *node.QuorumNodeControl, pc *types.ProxyConfig, errc chan error) (Proxy, error) {
 	ps := &ProxyServer{qn, pc, nil, nil, nil, nil, errc, sync.WaitGroup{}}
 	url, err := url.Parse(ps.proxyCfg.UpstreamAddr)
 	if err != nil {

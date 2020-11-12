@@ -29,6 +29,7 @@ func (c ProxyConfig) IsWS() bool {
 type NodeManagerConfig struct {
 	Name       string `toml:"name"`
 	TesseraKey string `toml:"tesseraKey"`
+	EnodeId    string `toml:"enodeId"`
 	RpcUrl     string `toml:"rpcUrl"`
 }
 
@@ -58,6 +59,8 @@ type NodeConfig struct {
 	Name               string               `toml:"name"`
 	GethRpcUrl         string               `toml:"gethRpcUrl"`
 	TesseraUpcheckUrl  string               `toml:"tesseraUpcheckUrl"`
+	EnodeId            string               `toml:"enodeId"`
+	Consensus          string               `toml:"consensus"`
 	GethInactivityTime int                  `toml:"gethInactivityTime"`
 	Server             *RPCServerConfig     `toml:"server"`
 	GethProcess        *ProcessConfig       `toml:"gethProcess"`

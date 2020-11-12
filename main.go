@@ -15,7 +15,7 @@ import (
 )
 
 type QNMApp struct {
-	qrmNode      *node.QuorumNode
+	qrmNode      *node.QuorumNodeControl
 	proxyServers []proxy.Proxy
 	rpcService   *rpc.RPCService
 }
@@ -43,7 +43,7 @@ func main() {
 
 	rpcBackendErrCh := make(chan error)
 	proxyBackendErrCh := make(chan error)
-	qnmApp.qrmNode = node.NewQuorumNode(&nodeConfig)
+	qnmApp.qrmNode = node.NewQuorumNodeControl(&nodeConfig)
 	if qnmApp.proxyServers, err = proxy.MakeProxyServices(qnmApp.qrmNode, proxyBackendErrCh); err != nil {
 		log.Error("creating proxies failed", "err", err)
 		return
