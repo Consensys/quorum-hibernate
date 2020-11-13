@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ConsenSysQuorum/node-manager/core"
+
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
@@ -28,12 +30,8 @@ type NodeStatus uint8
 const (
 	ShutdownInitiated NodeStatus = iota
 	ShutdownInprogress
-	ShutdownFailed
-	ShutdownCompleted
 	StartupInitiated
 	StartupInprogress
-	StartupFailed
-	StartupCompleted
 	Up
 	Down
 )
@@ -43,7 +41,9 @@ type QuorumNodeControl struct {
 	im                 *InactivityMonitor
 	gethp              Process
 	tesserap           Process
+	consensus          Consensus
 	nodeStatus         NodeStatus
+	client             *http.Client
 	inactivityResetCh  chan bool
 	stopNodeCh         chan bool
 	shutdownCompleteCh chan bool
@@ -63,7 +63,9 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 		nil,
 		nil,
 		nil,
+		nil,
 		Up,
+		core.NewHttpClient(),
 		make(chan bool, 1),
 		make(chan bool, 1),
 		make(chan bool, 1),
@@ -84,6 +86,10 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 		quorumNode.tesserap = NewShellProcess(cfg.TesseraProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
 	} else if cfg.TesseraProcess.IsDocker() {
 		quorumNode.tesserap = NewDockerProcess(cfg.TesseraProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
+	}
+
+	if quorumNode.IsRaft() {
+		quorumNode.consensus = NewRaftConsensus(quorumNode)
 	}
 	return quorumNode
 }
@@ -162,9 +168,7 @@ func (qn *QuorumNodeControl) IsNodeBusy() error {
 		return errors.New("node is being shutdown, try after sometime")
 	case StartupInprogress, StartupInitiated:
 		return errors.New("node is being started, try after sometime")
-	case StartupFailed:
-		return errors.New("node failed to start, try after sometime")
-	case ShutdownCompleted, StartupCompleted, Up, Down:
+	case Up, Down:
 		return nil
 	}
 	return nil
@@ -195,8 +199,7 @@ func (qn *QuorumNodeControl) RequestNodeManagerForPrivateTxPrep(tesseraKeys []st
 			}
 			req.Header.Set("Content-Type", "application/json")
 			log.Info("node manager private tx prep sending req", "to", nmCfg.RpcUrl)
-			client := &http.Client{}
-			resp, err := client.Do(req)
+			resp, err := qn.client.Do(req)
 			if err != nil {
 				return false, fmt.Errorf("node manager private tx prep do req failed err=%v", err)
 			}
@@ -273,15 +276,15 @@ func (qn *QuorumNodeControl) StopNode() bool {
 	qn.startStopMux.Lock()
 	qn.SetNodeStatus(ShutdownInitiated)
 	qn.SetNodeStatus(ShutdownInprogress)
-	if qn.IsRaft() {
-		if RaftConsensusCheck(qn) {
-			log.Info("raft consensus check passed, node can be shutdown")
-		} else {
-			log.Info("raft consensus check failed, node cannot be shutdown")
-			qn.SetNodeStatus(StartupCompleted)
-			return true
-		}
+
+	if err := qn.consensus.ValidateShutdown(); err == nil {
+		log.Info("raft consensus check passed, node can be shutdown")
+	} else {
+		log.Info("raft consensus check failed, node cannot be shutdown", "err", err)
+		qn.SetNodeStatus(Up)
+		return true
 	}
+
 	gs := true
 	ts := true
 	if qn.gethp.Stop() != nil {
@@ -291,9 +294,7 @@ func (qn *QuorumNodeControl) StopNode() bool {
 		ts = false
 	}
 	if gs && ts {
-		qn.SetNodeStatus(ShutdownCompleted)
-	} else {
-		qn.SetNodeStatus(ShutdownFailed)
+		qn.SetNodeStatus(Down)
 	}
 	return gs && ts
 }
@@ -312,9 +313,7 @@ func (qn *QuorumNodeControl) StartNode() bool {
 		ts = false
 	}
 	if gs && ts {
-		qn.SetNodeStatus(StartupCompleted)
-	} else {
-		qn.SetNodeStatus(StartupFailed)
+		qn.SetNodeStatus(Up)
 	}
 	return gs && ts
 }

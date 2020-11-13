@@ -3,21 +3,22 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"sync"
+	"time"
+
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
 	"github.com/gorilla/rpc/v2"
 	"github.com/gorilla/rpc/v2/json"
 	"github.com/rs/cors"
-	"net/http"
-	"sync"
-	"time"
 )
 
 const (
-	ReadTimeout  = 30 * time.Second
-	WriteTimeout = 30 * time.Second
-	IdleTimeout  = 120 * time.Second
+	ReadTimeout  = 10 * time.Second
+	WriteTimeout = 10 * time.Second
+	IdleTimeout  = 60 * time.Second
 )
 
 type RPCService struct {

@@ -2,9 +2,12 @@ package core
 
 import (
 	"encoding/json"
+	"net"
+	"net/http"
+	"strings"
+
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
-	"strings"
 )
 
 func IsPrivateTransaction(bodyStr string) bool {
@@ -20,4 +23,18 @@ func GetPrivateTx(body []byte) (types.EthTransaction, error) {
 		log.Debug("tx details", "Tx", tx)
 	}
 	return tx, nil
+}
+
+func NewHttpClient() *http.Client {
+	var netTransport = &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout: HttpClientRequestDialerTimeout,
+		}).DialContext,
+		TLSHandshakeTimeout: TLSHandshakeTimeout,
+	}
+	var netClient = &http.Client{
+		Timeout:   HttpClientRequestTimeout,
+		Transport: netTransport,
+	}
+	return netClient
 }

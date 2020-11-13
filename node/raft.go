@@ -3,9 +3,12 @@ package node
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/ConsenSysQuorum/node-manager/core"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
@@ -24,15 +27,23 @@ type RaftClusterResp struct {
 	Error  error              `json:"error"`
 }
 
-func GetRaftClusterInfo(qrmRpcUrl string) ([]RaftClusterEntry, error) {
+type RaftConsensus struct {
+	qn     *QuorumNodeControl
+	client *http.Client
+}
+
+func NewRaftConsensus(qn *QuorumNodeControl) Consensus {
+	return &RaftConsensus{qn: qn, client: core.NewHttpClient()}
+}
+
+func (r *RaftConsensus) GetRaftClusterInfo(qrmRpcUrl string) ([]RaftClusterEntry, error) {
 	raftClusterJsonStr := []byte(`{"jsonrpc":"2.0", "method":"raft_cluster", "params":[], "id":67}`)
 	req, err := http.NewRequest("POST", qrmRpcUrl, bytes.NewBuffer(raftClusterJsonStr))
 	if err != nil {
 		return nil, fmt.Errorf("raft cluster - creating request failed err=%v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := r.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("raft cluster do req failed err=%v", err)
 	}
@@ -51,12 +62,11 @@ func GetRaftClusterInfo(qrmRpcUrl string) ([]RaftClusterEntry, error) {
 	return respResult.Result, respResult.Error
 }
 
-func RaftConsensusCheck(qn *QuorumNodeControl) bool {
-
-	cluster, err := GetRaftClusterInfo(qn.config.GethRpcUrl)
+func (r *RaftConsensus) ValidateShutdown() error {
+	cluster, err := r.GetRaftClusterInfo(r.qn.config.GethRpcUrl)
 	if err != nil {
 		log.Error("raft cluster failed", "err", err)
-		return false
+		return err
 	}
 	role := "verifier"
 	activeNodes := 0
@@ -65,17 +75,17 @@ func RaftConsensusCheck(qn *QuorumNodeControl) bool {
 		if n.NodeActive {
 			activeNodes++
 		}
-		if n.NodeId == qn.config.EnodeId {
+		if n.NodeId == r.qn.config.EnodeId {
 			role = n.Role
 		}
 	}
 	minActiveNodes := (totalNodes / 2) + 1
 	log.Info("raft consensus check", "role", role, "minActiveNodes", minActiveNodes, "totalNodes", totalNodes, "ActiveNodes", activeNodes)
 	if role == "minter" {
-		return false
+		return errors.New("minter node, cannot be shutdown")
 	}
-	if activeNodes >= minActiveNodes {
-		return true
+	if activeNodes <= minActiveNodes {
+		return fmt.Errorf("raft quorum failed, activeNodes=%d minimmumActiveNodesRequired=%d cannot be shutdown", activeNodes, minActiveNodes)
 	}
-	return false
+	return nil
 }

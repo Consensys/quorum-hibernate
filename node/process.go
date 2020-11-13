@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os/exec"
 
+	"github.com/ConsenSysQuorum/node-manager/core"
+
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
@@ -14,6 +16,8 @@ type Process interface {
 	Stop() error
 	IsUp() bool
 }
+
+var httpClnt = core.NewHttpClient()
 
 // TODO when geth is started by QNM it starts and runs ok. but when QNM is shutdown, geth gets shutdown
 func ExecuteShellCommand(desc string, cmdArr []string) error {
@@ -42,9 +46,7 @@ func IsGethUp(gethRpcUrl string) (bool, error) {
 		return false, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClnt.Do(req)
 	if err != nil {
 		log.Warn("geth up check client do req failed", "err", err)
 		return false, err
@@ -62,12 +64,18 @@ func IsGethUp(gethRpcUrl string) (bool, error) {
 }
 
 func IsTesseraUp(tesseraUpcheckUrl string) (bool, error) {
-	resp, err := http.Get(tesseraUpcheckUrl)
+
+	req, err := http.NewRequest("GET", tesseraUpcheckUrl, nil)
 	if err != nil {
 		log.Error("tessera up check new get req failed", "err", err)
 		return false, err
 	}
 
+	resp, err := httpClnt.Do(req)
+	if err != nil {
+		log.Warn("geth up check client do req failed", "err", err)
+		return false, err
+	}
 	defer resp.Body.Close()
 
 	log.Debug("tessera up check response Status", "status", resp.Status)
