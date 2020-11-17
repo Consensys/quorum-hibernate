@@ -44,5 +44,13 @@ func (n *NodeRPCAPIs) PrepareForPrivateTx(req *http.Request, from *string, reply
 	*reply = PrivateTxPrepReply{Status: status}
 	log.Info("rpc call PrepareForPrivateTx - request processed to prepare node", "from", *from, "status", status)
 	return nil
+}
 
+func (n *NodeRPCAPIs) NodeStatus(req *http.Request, from *string, reply *NodeStatusInfo) error {
+	status := n.qn.GetNodeStatus()
+	inactiveTimeLimit := n.qn.config.GethInactivityTime
+	curInactiveTimeCount := n.qn.im.GetInactivityTimeCount()
+	*reply = NodeStatusInfo{Status: status, InactiveTimeLimit: inactiveTimeLimit, InactiveTime: curInactiveTimeCount, TimeToShutdown: inactiveTimeLimit - curInactiveTimeCount}
+	log.Info("rpc call NodeStatus", "from", *from, "status", status)
+	return nil
 }

@@ -33,6 +33,10 @@ func (dp *DockerControl) setStatus(s bool) {
 	log.Debug("setStatus process "+dp.cfg.Name, "status", dp.status)
 }
 
+func (dp *DockerControl) Status() bool {
+	return dp.status
+}
+
 func (dp *DockerControl) IsUp() bool {
 	s := false
 	var err error

@@ -30,6 +30,10 @@ func (sp *ShellProcessControl) setStatus(s bool) {
 	log.Debug("setStatus process "+sp.cfg.Name, "status", sp.status)
 }
 
+func (sp *ShellProcessControl) Status() bool {
+	return sp.status
+}
+
 func (sp *ShellProcessControl) IsUp() bool {
 	s := false
 	var err error

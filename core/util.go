@@ -2,9 +2,11 @@ package core
 
 import (
 	"encoding/json"
+	"math/rand"
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
@@ -37,4 +39,11 @@ func NewHttpClient() *http.Client {
 		Transport: netTransport,
 	}
 	return netClient
+}
+
+func GetRandomRetryWaitTime() int {
+	rand.Seed(time.Now().UnixNano())
+	min := 100
+	max := 1000
+	return rand.Intn(max-min+1) + min
 }

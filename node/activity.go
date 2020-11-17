@@ -59,3 +59,7 @@ func (nm *InactivityMonitor) StartInactivityTimer() {
 func (nm *InactivityMonitor) Stop() {
 	nm.stopCh <- true
 }
+
+func (nm *InactivityMonitor) GetInactivityTimeCount() int {
+	return nm.inactiveTimeCount
+}

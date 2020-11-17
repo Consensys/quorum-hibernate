@@ -15,6 +15,7 @@ type Process interface {
 	Start() error
 	Stop() error
 	IsUp() bool
+	Status() bool
 }
 
 var httpClnt = core.NewHttpClient()
