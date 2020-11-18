@@ -79,7 +79,14 @@ func (dp *DockerControl) Stop() error {
 
 	if err := cli.ContainerStop(context.Background(), dp.cfg.ContainerId, nil); err == nil {
 		log.Info("docker container stopped", "name", dp.cfg.Name, "id", dp.cfg.ContainerId)
-		dp.setStatus(false)
+		if dp.WaitToBeDown() {
+			dp.setStatus(false)
+			log.Info("is down", "process", dp.cfg.Name, "status", dp.status)
+		} else {
+			dp.setStatus(true)
+			log.Error("failed to stop " + dp.cfg.Name)
+			return fmt.Errorf("%s failed to stop", dp.cfg.Name)
+		}
 	} else {
 		log.Error("docker container stop failed", "name", dp.cfg.Name, "id", dp.cfg.ContainerId, "err", err)
 		dp.setStatus(false)
@@ -131,6 +138,20 @@ func (dp *DockerControl) WaitToComeUp() bool {
 		}
 		time.Sleep(time.Second)
 		log.Info("wait for up "+dp.cfg.Name, "c", c)
+		c++
+	}
+	return false
+}
+
+func (sp *DockerControl) WaitToBeDown() bool {
+	retryCount := 30
+	c := 1
+	for c <= retryCount {
+		if !sp.IsUp() {
+			return true
+		}
+		time.Sleep(time.Second)
+		log.Info("wait for down "+sp.cfg.Name, "c", c)
 		c++
 	}
 	return false

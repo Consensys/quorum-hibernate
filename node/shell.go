@@ -68,7 +68,14 @@ func (sp *ShellProcessControl) Stop() error {
 		return nil
 	}
 	if err := ExecuteShellCommand("stop "+sp.cfg.Name, sp.cfg.StopCommand); err == nil {
-		time.Sleep(1 * time.Second)
+		if sp.WaitToBeDown() {
+			sp.setStatus(false)
+			log.Info("stopped", "process", sp.cfg.Name, "status", sp.status)
+		} else {
+			sp.setStatus(true)
+			log.Error("failed to stop " + sp.cfg.Name)
+			return fmt.Errorf("%s failed to stop", sp.cfg.Name)
+		}
 		sp.setStatus(false)
 		log.Info("stopped", "process", sp.cfg.Name, "status", sp.status)
 	} else {
@@ -113,6 +120,20 @@ func (sp *ShellProcessControl) WaitToComeUp() bool {
 		}
 		time.Sleep(time.Second)
 		log.Info("wait for up "+sp.cfg.Name, "c", c)
+		c++
+	}
+	return false
+}
+
+func (sp *ShellProcessControl) WaitToBeDown() bool {
+	retryCount := 30
+	c := 1
+	for c <= retryCount {
+		if !sp.IsUp() {
+			return true
+		}
+		time.Sleep(time.Second)
+		log.Info("wait for down "+sp.cfg.Name, "c", c)
 		c++
 	}
 	return false
