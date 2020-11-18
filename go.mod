@@ -1,6 +1,6 @@
 module github.com/ConsenSysQuorum/node-manager
 
-go 1.13
+go 1.15
 
 require (
 	github.com/docker/distribution v2.7.1+incompatible // indirect

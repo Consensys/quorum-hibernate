@@ -109,6 +109,8 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 
 	if quorumNode.IsRaft() {
 		quorumNode.consensus = NewRaftConsensus(quorumNode)
+	} else if quorumNode.IsIstanbul() {
+		quorumNode.consensus = NewIstanbulConsensus(quorumNode)
 	}
 	return quorumNode
 }
@@ -332,6 +334,7 @@ func (qn *QuorumNodeControl) StopNode() bool {
 
 	qn.SetNodeStatus(ShutdownInprogress)
 
+	// TODO parallelize / loop
 	gs := true
 	ts := true
 	if qn.gethp.Stop() != nil {
@@ -401,6 +404,10 @@ func (qn *QuorumNodeControl) validateOtherQnms() ([]NodeStatusInfo, error) {
 			jerr := json.Unmarshal(body, &respResult)
 			if jerr == nil {
 				log.Info("node manager NodeStatus - response OK", "from", nm.RpcUrl, "result", respResult)
+				if respResult.Error != nil {
+					log.Error("node manager NodeStatus - error in response", "err", respResult.Error)
+					return nil, respResult.Error
+				}
 				statusArr = append(statusArr, respResult.Result)
 			} else {
 				log.Error("node manager NodeStatus response result json decode failed", "err", jerr)
@@ -428,4 +435,8 @@ func (qn *QuorumNodeControl) validateOtherQnms() ([]NodeStatusInfo, error) {
 	}
 
 	return statusArr, nil
+}
+
+func (qn *QuorumNodeControl) IsIstanbul() bool {
+	return strings.ToLower(qn.config.Consensus) == "istanbul"
 }

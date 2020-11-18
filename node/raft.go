@@ -55,7 +55,7 @@ func (r *RaftConsensus) GetRaftClusterInfo(qrmRpcUrl string) ([]RaftClusterEntry
 		if jerr == nil {
 			log.Debug("raft cluster - response OK", "from", qrmRpcUrl, "result", respResult)
 		} else {
-			log.Error("response result json decode failed", "err", jerr)
+			log.Error("raft cluster - response result json decode failed", "err", jerr)
 			return nil, err
 		}
 	}
