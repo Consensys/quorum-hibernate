@@ -24,8 +24,8 @@ func (nm *InactivityMonitor) StartInactivityTimer() {
 		for {
 			select {
 			case <-timer.C:
-				if nm.inactiveTimeCount == quorumNode.config.GethInactivityTime {
-					log.Info("going to try stop node as it has been inactive", "inactivetime", quorumNode.config.GethInactivityTime)
+				if nm.inactiveTimeCount == nm.qrmNode.config.GethInactivityTime {
+					log.Info("going to try stop node as it has been inactive", "inactivetime", nm.qrmNode.config.GethInactivityTime)
 					if err := nm.qrmNode.IsNodeBusy(); err != nil {
 						log.Info("node is busy", "msg", err.Error())
 						// reset inactivity as node is busy, to prevent shutdown right after node start up

@@ -69,10 +69,8 @@ type QuorumNodeControl struct {
 
 var ErrNodeDown = errors.New("node is not up")
 
-var quorumNode *QuorumNodeControl
-
 func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
-	quorumNode = &QuorumNodeControl{cfg,
+	quorumNode := &QuorumNodeControl{cfg,
 		nil,
 		nil,
 		nil,
@@ -115,6 +113,56 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 	return quorumNode
 }
 
+func (qn *QuorumNodeControl) GetRPCConfig() *types.RPCServerConfig {
+	return qn.config.Server
+}
+
+func (qn *QuorumNodeControl) GetNodeStatus() NodeStatus {
+	return qn.nodeStatus
+}
+
+func (qn *QuorumNodeControl) GetProxyConfig() []*types.ProxyConfig {
+	return qn.config.Proxies
+}
+
+func (qn *QuorumNodeControl) SetNodeStatus(ns NodeStatus) {
+	defer qn.statusMux.Unlock()
+	qn.statusMux.Lock()
+	qn.nodeStatus = ns
+}
+
+func (qn *QuorumNodeControl) IsNodeUp() bool {
+	gs := qn.gethp.IsUp()
+	ts := qn.tesserap.IsUp()
+	log.Info("IsNodeUp", "geth", gs, "tessera", ts)
+	if gs && ts {
+		qn.SetNodeStatus(Up)
+	} else {
+		qn.SetNodeStatus(Down)
+	}
+	return gs && ts
+}
+
+func (qn *QuorumNodeControl) IsNodeBusy() error {
+	switch qn.nodeStatus {
+	case ShutdownInprogress, ShutdownInitiated:
+		return errors.New("node is being shutdown, try after sometime")
+	case StartupInprogress, StartupInitiated:
+		return errors.New("node is being started, try after sometime")
+	case Up, Down:
+		return nil
+	}
+	return nil
+}
+
+func (qn *QuorumNodeControl) IsRaft() bool {
+	return strings.ToLower(qn.config.Consensus) == "raft"
+}
+
+func (qn *QuorumNodeControl) IsIstanbul() bool {
+	return strings.ToLower(qn.config.Consensus) == "istanbul"
+}
+
 func (qn *QuorumNodeControl) Start() {
 	qn.StartStopNodeMonitor()
 	qn.im = NewNodeInactivityMonitor(qn)
@@ -124,6 +172,10 @@ func (qn *QuorumNodeControl) Start() {
 func (qn *QuorumNodeControl) Stop() {
 	qn.im.Stop()
 	qn.stopCh <- true
+}
+
+func (nm *QuorumNodeControl) ResetInactiveTime() {
+	nm.inactivityResetCh <- true
 }
 
 func (qn *QuorumNodeControl) StartStopNodeMonitor() {
@@ -155,10 +207,6 @@ func (qn *QuorumNodeControl) StartStopNodeMonitor() {
 	}()
 }
 
-func (qn *QuorumNodeControl) GetProxyConfig() []*types.ProxyConfig {
-	return qn.config.Proxies
-}
-
 func (qn *QuorumNodeControl) RequestStartNode() {
 	qn.startNodeCh <- true
 }
@@ -175,24 +223,6 @@ func (qn *QuorumNodeControl) WaitStartNode() bool {
 func (qn *QuorumNodeControl) WaitStopNode() bool {
 	status := <-qn.shutdownCompleteCh
 	return status
-}
-
-func (qn *QuorumNodeControl) SetNodeStatus(ns NodeStatus) {
-	defer qn.statusMux.Unlock()
-	qn.statusMux.Lock()
-	qn.nodeStatus = ns
-}
-
-func (qn *QuorumNodeControl) IsNodeBusy() error {
-	switch qn.nodeStatus {
-	case ShutdownInprogress, ShutdownInitiated:
-		return errors.New("node is being shutdown, try after sometime")
-	case StartupInprogress, StartupInitiated:
-		return errors.New("node is being started, try after sometime")
-	case Up, Down:
-		return nil
-	}
-	return nil
 }
 
 // TODO handle error if node failed to start
@@ -243,9 +273,8 @@ func (qn *QuorumNodeControl) RequestNodeManagerForPrivateTxPrep(tesseraKeys []st
 			}
 			resp.Body.Close()
 		} else {
-			return false, fmt.Errorf("tesseraKey's node manager config missing, key=%s", tessKey)
+			log.Warn("tessera key not found, probably node not using qnm", "key", tessKey)
 		}
-
 	}
 
 	finalStatus := true
@@ -259,14 +288,6 @@ func (qn *QuorumNodeControl) RequestNodeManagerForPrivateTxPrep(tesseraKeys []st
 	return finalStatus, nil
 }
 
-func (nm *QuorumNodeControl) ResetInactiveTime() {
-	nm.inactivityResetCh <- true
-}
-
-func (qn *QuorumNodeControl) GetRPCConfig() *types.RPCServerConfig {
-	return qn.config.Server
-}
-
 func (qn *QuorumNodeControl) GetNodeManagerConfig(key string) *types.NodeManagerConfig {
 	for _, n := range qn.config.NodeManagers {
 		if n.TesseraKey == key {
@@ -277,21 +298,6 @@ func (qn *QuorumNodeControl) GetNodeManagerConfig(key string) *types.NodeManager
 	return nil
 }
 
-func (qn *QuorumNodeControl) IsNodeUp() bool {
-	gs := qn.gethp.IsUp()
-	ts := qn.tesserap.IsUp()
-	log.Info("IsNodeUp", "geth", gs, "tessera", ts)
-	if gs && ts {
-		qn.SetNodeStatus(Up)
-	} else {
-		qn.SetNodeStatus(Down)
-	}
-	return gs && ts
-}
-
-func (qn *QuorumNodeControl) IsRaft() bool {
-	return strings.ToLower(qn.config.Consensus) == "raft"
-}
 func (qn *QuorumNodeControl) StopNode() bool {
 	defer qn.startStopMux.Unlock()
 	qn.startStopMux.Lock()
@@ -326,7 +332,7 @@ func (qn *QuorumNodeControl) StopNode() bool {
 	qn.SetNodeStatus(ShutdownInitiated)
 
 	if err := qn.consensus.ValidateShutdown(); err == nil {
-		log.Info("raft consensus check passed, node can be shutdown")
+		log.Info("consensus check passed, node can be shutdown")
 	} else {
 		log.Info("consensus check failed, node cannot be shutdown", "err", err)
 		qn.SetNodeStatus(Up)
@@ -367,10 +373,6 @@ func (qn *QuorumNodeControl) StartNode() bool {
 		qn.SetNodeStatus(Up)
 	}
 	return gs && ts
-}
-
-func (qn *QuorumNodeControl) GetNodeStatus() NodeStatus {
-	return qn.nodeStatus
 }
 
 func (qn *QuorumNodeControl) validateOtherQnms() ([]NodeStatusInfo, error) {
@@ -436,8 +438,4 @@ func (qn *QuorumNodeControl) validateOtherQnms() ([]NodeStatusInfo, error) {
 	}
 
 	return statusArr, nil
-}
-
-func (qn *QuorumNodeControl) IsIstanbul() bool {
-	return strings.ToLower(qn.config.Consensus) == "istanbul"
 }

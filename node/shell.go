@@ -76,7 +76,6 @@ func (sp *ShellProcessControl) Stop() error {
 			log.Error("failed to stop " + sp.cfg.Name)
 			return fmt.Errorf("%s failed to stop", sp.cfg.Name)
 		}
-		sp.setStatus(false)
 		log.Info("stopped", "process", sp.cfg.Name, "status", sp.status)
 	} else {
 		log.Error("stop "+sp.cfg.Name+" failed", "err", err)
