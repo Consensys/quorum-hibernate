@@ -1,15 +1,13 @@
 package node
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ConsenSysQuorum/node-manager/qnm"
 
 	cons "github.com/ConsenSysQuorum/node-manager/consensus"
 	"github.com/ConsenSysQuorum/node-manager/core"
@@ -19,45 +17,14 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
-type NodeManagerPrivateTxPrepResult struct {
-	Result PrivateTxPrepStatus `json:"result"`
-	Error  error               `json:"error"`
-}
-
-type NodeManagerNodeStatusResult struct {
-	Result NodeStatusInfo `json:"result"`
-	Error  error          `json:"error"`
-}
-
-type PrivateTxPrepStatus struct {
-	Status bool `json:"status"`
-}
-
-type NodeStatus uint8
-
-const (
-	ShutdownInitiated NodeStatus = iota
-	ShutdownInprogress
-	StartupInitiated
-	StartupInprogress
-	Up
-	Down
-)
-
-type NodeStatusInfo struct {
-	Status            NodeStatus
-	InactiveTimeLimit int
-	InactiveTime      int
-	TimeToShutdown    int
-}
-
 type QuorumNodeControl struct {
 	config             *types.NodeConfig
 	im                 *InactivityMonitor
+	nm                 *qnm.NodeManager
 	gethp              proc.Process
 	tesserap           proc.Process
 	consensus          cons.Consensus
-	nodeStatus         NodeStatus
+	nodeStatus         types.NodeStatus
 	client             *http.Client
 	inactivityResetCh  chan bool
 	stopNodeCh         chan bool
@@ -70,12 +37,14 @@ type QuorumNodeControl struct {
 }
 
 func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
-	quorumNode := &QuorumNodeControl{cfg,
+	quorumNode := &QuorumNodeControl{
+		cfg,
+		nil,
+		qnm.NewNodeManager(cfg),
 		nil,
 		nil,
 		nil,
-		nil,
-		Up,
+		types.Up,
 		core.NewHttpClient(),
 		make(chan bool, 1),
 		make(chan bool, 1),
@@ -100,9 +69,9 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 	}
 
 	if quorumNode.gethp.Status() && quorumNode.tesserap.Status() {
-		quorumNode.SetNodeStatus(Up)
+		quorumNode.SetNodeStatus(types.Up)
 	} else {
-		quorumNode.SetNodeStatus(Down)
+		quorumNode.SetNodeStatus(types.Down)
 	}
 
 	if quorumNode.IsRaft() {
@@ -121,7 +90,7 @@ func (qn *QuorumNodeControl) GetNodeConfig() *types.NodeConfig {
 	return qn.config
 }
 
-func (qn *QuorumNodeControl) GetNodeStatus() NodeStatus {
+func (qn *QuorumNodeControl) GetNodeStatus() types.NodeStatus {
 	return qn.nodeStatus
 }
 
@@ -129,7 +98,7 @@ func (qn *QuorumNodeControl) GetProxyConfig() []*types.ProxyConfig {
 	return qn.config.Proxies
 }
 
-func (qn *QuorumNodeControl) SetNodeStatus(ns NodeStatus) {
+func (qn *QuorumNodeControl) SetNodeStatus(ns types.NodeStatus) {
 	defer qn.statusMux.Unlock()
 	qn.statusMux.Lock()
 	qn.nodeStatus = ns
@@ -140,20 +109,20 @@ func (qn *QuorumNodeControl) IsNodeUp() bool {
 	ts := qn.tesserap.IsUp()
 	log.Info("IsNodeUp", "geth", gs, "tessera", ts)
 	if gs && ts {
-		qn.SetNodeStatus(Up)
+		qn.SetNodeStatus(types.Up)
 	} else {
-		qn.SetNodeStatus(Down)
+		qn.SetNodeStatus(types.Down)
 	}
 	return gs && ts
 }
 
 func (qn *QuorumNodeControl) IsNodeBusy() error {
 	switch qn.nodeStatus {
-	case ShutdownInprogress, ShutdownInitiated:
+	case types.ShutdownInprogress, types.ShutdownInitiated:
 		return errors.New("node is being shutdown, try after sometime")
-	case StartupInprogress, StartupInitiated:
+	case types.StartupInprogress, types.StartupInitiated:
 		return errors.New("node is being started, try after sometime")
-	case Up, Down:
+	case types.Up, types.Down:
 		return nil
 	}
 	return nil
@@ -241,82 +210,21 @@ func (qn *QuorumNodeControl) PrepareNode() bool {
 	}
 }
 
-// TODO request node managers in parallel
-func (qn *QuorumNodeControl) RequestNodeManagerForPrivateTxPrep(tesseraKeys []string) (bool, error) {
-	var blockNumberJsonStr = []byte(fmt.Sprintf(`{"jsonrpc":"2.0", "method":"node.PrepareForPrivateTx", "params":["%s"], "id":77}`, qn.config.Name))
-	var statusArr []bool
-	for _, tessKey := range tesseraKeys {
-		nmCfg := qn.GetNodeManagerConfig(tessKey)
-		if nmCfg != nil {
-			req, err := http.NewRequest("POST", nmCfg.RpcUrl, bytes.NewBuffer(blockNumberJsonStr))
-			if err != nil {
-				return false, fmt.Errorf("node manager private tx prep reply - creating request failed err=%v", err)
-			}
-			req.Header.Set("Content-Type", "application/json")
-			log.Info("node manager private tx prep sending req", "to", nmCfg.RpcUrl)
-			resp, err := qn.client.Do(req)
-			if err != nil {
-				return false, fmt.Errorf("node manager private tx prep do req failed err=%v", err)
-			}
-
-			log.Debug("node manager private tx prep response Status", "status", resp.Status)
-			if resp.StatusCode == http.StatusOK {
-				body, _ := ioutil.ReadAll(resp.Body)
-				log.Debug("node manager private tx prep response Body:", string(body))
-				respResult := NodeManagerPrivateTxPrepResult{}
-				jerr := json.Unmarshal(body, &respResult)
-				if jerr == nil {
-					log.Info("node manager private tx prep - response OK", "from", nmCfg.RpcUrl, "result", respResult)
-					statusArr = append(statusArr, respResult.Result.Status)
-				} else {
-					log.Info("response result json decode failed", "err", jerr)
-					statusArr = append(statusArr, false)
-				}
-			} else {
-				statusArr = append(statusArr, false)
-			}
-			resp.Body.Close()
-		} else {
-			log.Warn("tessera key not found, probably node not using qnm", "key", tessKey)
-		}
-	}
-
-	finalStatus := true
-	for _, s := range statusArr {
-		if !s {
-			finalStatus = false
-			break
-		}
-	}
-	log.Info("node manager private tx prep completed", "final status", finalStatus, "statusArr", statusArr)
-	return finalStatus, nil
-}
-
-func (qn *QuorumNodeControl) GetNodeManagerConfig(key string) *types.NodeManagerConfig {
-	for _, n := range qn.config.NodeManagers {
-		if n.TesseraKey == key {
-			log.Info("tesseraKey matched", "node", n)
-			return n
-		}
-	}
-	return nil
-}
-
 func (qn *QuorumNodeControl) StopNode() bool {
 	defer qn.startStopMux.Unlock()
 	qn.startStopMux.Lock()
 
-	if qn.nodeStatus == Down {
+	if qn.nodeStatus == types.Down {
 		log.Info("node is already down")
 		return true
 	}
-	var qnms []NodeStatusInfo
+	var qnms []qnm.NodeStatusInfo
 	var err error
 
 	retryCount := 1
 
 	for retryCount <= core.Qnm2QnmValidationRetryLimit {
-		qnms, err = qn.validateOtherQnms()
+		qnms, err = qn.nm.ValidateOtherQnms()
 		if err == nil {
 			log.Info("qnm2qnm validation passed")
 			break
@@ -333,17 +241,17 @@ func (qn *QuorumNodeControl) StopNode() bool {
 		return false
 	}
 
-	qn.SetNodeStatus(ShutdownInitiated)
+	qn.SetNodeStatus(types.ShutdownInitiated)
 
 	if err := qn.consensus.ValidateShutdown(); err == nil {
 		log.Info("consensus check passed, node can be shutdown")
 	} else {
 		log.Info("consensus check failed, node cannot be shutdown", "err", err)
-		qn.SetNodeStatus(Up)
+		qn.SetNodeStatus(types.Up)
 		return false
 	}
 
-	qn.SetNodeStatus(ShutdownInprogress)
+	qn.SetNodeStatus(types.ShutdownInprogress)
 
 	// TODO parallelize / loop
 	gs := true
@@ -355,7 +263,7 @@ func (qn *QuorumNodeControl) StopNode() bool {
 		ts = false
 	}
 	if gs && ts {
-		qn.SetNodeStatus(Down)
+		qn.SetNodeStatus(types.Down)
 	}
 	return gs && ts
 }
@@ -363,8 +271,8 @@ func (qn *QuorumNodeControl) StopNode() bool {
 func (qn *QuorumNodeControl) StartNode() bool {
 	defer qn.startStopMux.Unlock()
 	qn.startStopMux.Lock()
-	qn.SetNodeStatus(StartupInitiated)
-	qn.SetNodeStatus(StartupInprogress)
+	qn.SetNodeStatus(types.StartupInitiated)
+	qn.SetNodeStatus(types.StartupInprogress)
 	gs := true
 	ts := true
 	if qn.tesserap.Start() != nil {
@@ -374,72 +282,11 @@ func (qn *QuorumNodeControl) StartNode() bool {
 		ts = false
 	}
 	if gs && ts {
-		qn.SetNodeStatus(Up)
+		qn.SetNodeStatus(types.Up)
 	}
 	return gs && ts
 }
 
-func (qn *QuorumNodeControl) validateOtherQnms() ([]NodeStatusInfo, error) {
-	var nodeStatusReq = []byte(fmt.Sprintf(`{"jsonrpc":"2.0", "method":"node.NodeStatus", "params":["%s"], "id":77}`, qn.config.Name))
-	var statusArr []NodeStatusInfo
-	nodeManagerCount := 0
-	for _, nm := range qn.config.NodeManagers {
-
-		//skip self
-		if nm.EnodeId == qn.config.EnodeId {
-			continue
-		}
-
-		nodeManagerCount++
-
-		req, err := http.NewRequest("POST", nm.RpcUrl, bytes.NewBuffer(nodeStatusReq))
-		if err != nil {
-			return nil, fmt.Errorf("node manager - creating NodeStatus request failed for node manager=%s err=%v", nm.Name, err)
-		}
-		req.Header.Set("Content-Type", "application/json")
-		log.Info("node manager prep sending req", "to", nm.RpcUrl)
-		resp, err := qn.client.Do(req)
-		if err != nil {
-			return nil, fmt.Errorf("node manager NodeStatus do req failed err=%v", err)
-		}
-
-		log.Info("node manager NodeStatus response Status", "status", resp.Status)
-		if resp.StatusCode == http.StatusOK {
-			body, _ := ioutil.ReadAll(resp.Body)
-			log.Debug("node manager NodeStatus response Body:", string(body))
-			respResult := NodeManagerNodeStatusResult{}
-			jerr := json.Unmarshal(body, &respResult)
-			if jerr == nil {
-				log.Info("node manager NodeStatus - response OK", "from", nm.RpcUrl, "result", respResult)
-				if respResult.Error != nil {
-					log.Error("node manager NodeStatus - error in response", "err", respResult.Error)
-					return nil, respResult.Error
-				}
-				statusArr = append(statusArr, respResult.Result)
-			} else {
-				log.Error("node manager NodeStatus response result json decode failed", "err", jerr)
-			}
-		} else {
-			log.Error("node manager NodeStatus response failed", "status", resp.Status)
-		}
-		resp.Body.Close()
-
-	}
-
-	if len(statusArr) != nodeManagerCount {
-		return statusArr, errors.New("some node managers did not respond")
-	}
-
-	shutdownInProgress := false
-	for _, n := range statusArr {
-		if n.Status == ShutdownInitiated || n.Status == ShutdownInprogress {
-			shutdownInProgress = true
-			break
-		}
-	}
-	if shutdownInProgress {
-		return statusArr, errors.New("some qnm(s) have shutdown initiated/inprogress")
-	}
-
-	return statusArr, nil
+func (qn *QuorumNodeControl) PrepareNodeManagerForPrivateTx(privateFor []string) (bool, error) {
+	return qn.nm.ValidateForPrivateTx(privateFor)
 }

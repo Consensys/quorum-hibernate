@@ -35,6 +35,8 @@ type IstanbulConsensus struct {
 	client *http.Client
 }
 
+const validatorDownSealDiff = 3
+
 func NewIstanbulConsensus(qn *types.NodeConfig) Consensus {
 	return &IstanbulConsensus{cfg: qn, client: core.NewHttpClient()}
 }
@@ -92,9 +94,6 @@ func (r *IstanbulConsensus) getIstanbulIsValidator(qrmRpcUrl string) (bool, erro
 }
 
 func (r *IstanbulConsensus) ValidateShutdown() error {
-
-	const validatorDownSealDiff = 3
-
 	isValidator, err := r.getIstanbulIsValidator(r.cfg.GethRpcUrl)
 	if err != nil {
 		log.Error("istanbul isValidator check failed", "err", err)

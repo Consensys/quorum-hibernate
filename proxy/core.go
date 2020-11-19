@@ -2,11 +2,12 @@ package proxy
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
-	"io"
-	"net/http"
 )
 
 // Proxy represents a proxy server that can be started / stopped
@@ -37,7 +38,7 @@ func HandlePrivateTx(body []byte, ps *ProxyServer) error {
 		} else {
 			if tx.Method == "eth_sendTransaction" {
 				log.Info("private transaction request")
-				if status, err := ps.qrmNode.RequestNodeManagerForPrivateTxPrep(tx.Params[0].PrivateFor); err != nil {
+				if status, err := ps.qrmNode.PrepareNodeManagerForPrivateTx(tx.Params[0].PrivateFor); err != nil {
 					log.Error("preparePrivateTx failed", "err", err)
 					return fmt.Errorf("preparePrivateTx failed err=%v", err)
 				} else if !status {

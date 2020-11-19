@@ -1,7 +1,6 @@
 package core
 
 import (
-	"errors"
 	"time"
 )
 
@@ -11,5 +10,3 @@ const (
 	TLSHandshakeTimeout            = 10 * time.Second
 	Qnm2QnmValidationRetryLimit    = 3
 )
-
-var ErrNodeDown = errors.New("node is not up")
