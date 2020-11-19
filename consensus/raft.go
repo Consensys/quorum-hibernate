@@ -1,4 +1,4 @@
-package node
+package consensus
 
 import (
 	"bytes"
@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/ConsenSysQuorum/node-manager/core/types"
 
 	"github.com/ConsenSysQuorum/node-manager/core"
 
@@ -28,15 +30,15 @@ type RaftClusterResp struct {
 }
 
 type RaftConsensus struct {
-	qn     *QuorumNodeControl
+	cfg    *types.NodeConfig
 	client *http.Client
 }
 
-func NewRaftConsensus(qn *QuorumNodeControl) Consensus {
-	return &RaftConsensus{qn: qn, client: core.NewHttpClient()}
+func NewRaftConsensus(qn *types.NodeConfig) Consensus {
+	return &RaftConsensus{cfg: qn, client: core.NewHttpClient()}
 }
 
-func (r *RaftConsensus) GetRaftClusterInfo(qrmRpcUrl string) ([]RaftClusterEntry, error) {
+func (r *RaftConsensus) getRaftClusterInfo(qrmRpcUrl string) ([]RaftClusterEntry, error) {
 	raftClusterJsonStr := []byte(`{"jsonrpc":"2.0", "method":"raft_cluster", "params":[], "id":67}`)
 	req, err := http.NewRequest("POST", qrmRpcUrl, bytes.NewBuffer(raftClusterJsonStr))
 	if err != nil {
@@ -63,7 +65,7 @@ func (r *RaftConsensus) GetRaftClusterInfo(qrmRpcUrl string) ([]RaftClusterEntry
 }
 
 func (r *RaftConsensus) ValidateShutdown() error {
-	cluster, err := r.GetRaftClusterInfo(r.qn.config.GethRpcUrl)
+	cluster, err := r.getRaftClusterInfo(r.cfg.GethRpcUrl)
 	if err != nil {
 		log.Error("raft cluster failed", "err", err)
 		return err
@@ -75,7 +77,7 @@ func (r *RaftConsensus) ValidateShutdown() error {
 		if n.NodeActive {
 			activeNodes++
 		}
-		if n.NodeId == r.qn.config.EnodeId {
+		if n.NodeId == r.cfg.EnodeId {
 			role = n.Role
 		}
 	}

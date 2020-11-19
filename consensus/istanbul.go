@@ -1,4 +1,4 @@
-package node
+package consensus
 
 import (
 	"bytes"
@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/ConsenSysQuorum/node-manager/core/types"
 
 	"github.com/ConsenSysQuorum/node-manager/core"
 
@@ -29,15 +31,15 @@ type IstanbulIsValidatorResp struct {
 }
 
 type IstanbulConsensus struct {
-	qn     *QuorumNodeControl
+	cfg    *types.NodeConfig
 	client *http.Client
 }
 
-func NewIstanbulConsensus(qn *QuorumNodeControl) Consensus {
-	return &IstanbulConsensus{qn: qn, client: core.NewHttpClient()}
+func NewIstanbulConsensus(qn *types.NodeConfig) Consensus {
+	return &IstanbulConsensus{cfg: qn, client: core.NewHttpClient()}
 }
 
-func (r *IstanbulConsensus) GetIstanbulSealerActivity(qrmRpcUrl string) (*IstanbulSealActivity, error) {
+func (r *IstanbulConsensus) getIstanbulSealerActivity(qrmRpcUrl string) (*IstanbulSealActivity, error) {
 	istanbulStatusReq := []byte(`{"jsonrpc":"2.0", "method":"istanbul_status", "params":[], "id":67}`)
 	req, err := http.NewRequest("POST", qrmRpcUrl, bytes.NewBuffer(istanbulStatusReq))
 	if err != nil {
@@ -63,7 +65,7 @@ func (r *IstanbulConsensus) GetIstanbulSealerActivity(qrmRpcUrl string) (*Istanb
 	return &respResult.Result, respResult.Error
 }
 
-func (r *IstanbulConsensus) GetIstanbulIsValidator(qrmRpcUrl string) (bool, error) {
+func (r *IstanbulConsensus) getIstanbulIsValidator(qrmRpcUrl string) (bool, error) {
 	istanbulIsValidatorReq := []byte(`{"jsonrpc":"2.0", "method":"istanbul_isValidator", "params":[], "id":67}`)
 	req, err := http.NewRequest("POST", qrmRpcUrl, bytes.NewBuffer(istanbulIsValidatorReq))
 	if err != nil {
@@ -93,7 +95,7 @@ func (r *IstanbulConsensus) ValidateShutdown() error {
 
 	const validatorDownSealDiff = 3
 
-	isValidator, err := r.GetIstanbulIsValidator(r.qn.config.GethRpcUrl)
+	isValidator, err := r.getIstanbulIsValidator(r.cfg.GethRpcUrl)
 	if err != nil {
 		log.Error("istanbul isValidator check failed", "err", err)
 		return err
@@ -104,7 +106,7 @@ func (r *IstanbulConsensus) ValidateShutdown() error {
 		return nil
 	}
 
-	activity, err := r.GetIstanbulSealerActivity(r.qn.config.GethRpcUrl)
+	activity, err := r.getIstanbulSealerActivity(r.cfg.GethRpcUrl)
 	if err != nil {
 		log.Error("istanbul status check failed", "err", err)
 		return err

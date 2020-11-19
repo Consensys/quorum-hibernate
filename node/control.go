@@ -11,7 +11,9 @@ import (
 	"sync"
 	"time"
 
+	cons "github.com/ConsenSysQuorum/node-manager/consensus"
 	"github.com/ConsenSysQuorum/node-manager/core"
+	proc "github.com/ConsenSysQuorum/node-manager/process"
 
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
@@ -52,9 +54,9 @@ type NodeStatusInfo struct {
 type QuorumNodeControl struct {
 	config             *types.NodeConfig
 	im                 *InactivityMonitor
-	gethp              Process
-	tesserap           Process
-	consensus          Consensus
+	gethp              proc.Process
+	tesserap           proc.Process
+	consensus          cons.Consensus
 	nodeStatus         NodeStatus
 	client             *http.Client
 	inactivityResetCh  chan bool
@@ -66,8 +68,6 @@ type QuorumNodeControl struct {
 	startStopMux       sync.Mutex
 	statusMux          sync.Mutex
 }
-
-var ErrNodeDown = errors.New("node is not up")
 
 func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 	quorumNode := &QuorumNodeControl{cfg,
@@ -88,15 +88,15 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 	}
 
 	if cfg.GethProcess.IsShell() {
-		quorumNode.gethp = NewShellProcess(cfg.GethProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
+		quorumNode.gethp = proc.NewShellProcess(cfg.GethProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
 	} else if cfg.GethProcess.IsDocker() {
-		quorumNode.gethp = NewDockerProcess(cfg.GethProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
+		quorumNode.gethp = proc.NewDockerProcess(cfg.GethProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
 	}
 
 	if cfg.TesseraProcess.IsShell() {
-		quorumNode.tesserap = NewShellProcess(cfg.TesseraProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
+		quorumNode.tesserap = proc.NewShellProcess(cfg.TesseraProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
 	} else if cfg.TesseraProcess.IsDocker() {
-		quorumNode.tesserap = NewDockerProcess(cfg.TesseraProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
+		quorumNode.tesserap = proc.NewDockerProcess(cfg.TesseraProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
 	}
 
 	if quorumNode.gethp.Status() && quorumNode.tesserap.Status() {
@@ -106,15 +106,19 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 	}
 
 	if quorumNode.IsRaft() {
-		quorumNode.consensus = NewRaftConsensus(quorumNode)
+		quorumNode.consensus = cons.NewRaftConsensus(quorumNode.config)
 	} else if quorumNode.IsIstanbul() {
-		quorumNode.consensus = NewIstanbulConsensus(quorumNode)
+		quorumNode.consensus = cons.NewIstanbulConsensus(quorumNode.config)
 	}
 	return quorumNode
 }
 
 func (qn *QuorumNodeControl) GetRPCConfig() *types.RPCServerConfig {
 	return qn.config.Server
+}
+
+func (qn *QuorumNodeControl) GetNodeConfig() *types.NodeConfig {
+	return qn.config
 }
 
 func (qn *QuorumNodeControl) GetNodeStatus() NodeStatus {

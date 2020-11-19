@@ -3,7 +3,6 @@ package proxy
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -277,21 +276,4 @@ func (w *WebsocketProxy) closeConnWithError(dst *websocket.Conn, err error) {
 		}
 	}
 	dst.WriteMessage(websocket.CloseMessage, m)
-}
-
-func copyHeader(dst, src http.Header) {
-	for k, vv := range src {
-		for _, v := range vv {
-			dst.Add(k, v)
-		}
-	}
-}
-
-func copyResponse(rw http.ResponseWriter, resp *http.Response) error {
-	copyHeader(rw.Header(), resp.Header)
-	rw.WriteHeader(resp.StatusCode)
-	defer resp.Body.Close()
-
-	_, err := io.Copy(rw, resp.Body)
-	return err
 }

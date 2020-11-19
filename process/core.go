@@ -1,4 +1,4 @@
-package node
+package process
 
 import (
 	"bytes"
@@ -61,7 +61,7 @@ func IsGethUp(gethRpcUrl string) (bool, error) {
 		log.Debug("geth is up, replied to eth_blockNumber call", "reply", string(body))
 		return true, nil
 	}
-	return false, ErrNodeDown
+	return false, core.ErrNodeDown
 }
 
 func IsTesseraUp(tesseraUpcheckUrl string) (bool, error) {
@@ -86,5 +86,5 @@ func IsTesseraUp(tesseraUpcheckUrl string) (bool, error) {
 		log.Debug("tessera is up, replied to upcheck call", "reply", string(body))
 		return true, nil
 	}
-	return false, ErrNodeDown
+	return false, core.ErrNodeDown
 }

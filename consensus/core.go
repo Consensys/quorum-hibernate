@@ -1,4 +1,4 @@
-package node
+package consensus
 
 type Consensus interface {
 	ValidateShutdown() error
