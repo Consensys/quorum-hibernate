@@ -328,7 +328,8 @@ func (qn *QuorumNodeControl) StopNode() bool {
 	if err := qn.consensus.ValidateShutdown(); err == nil {
 		log.Info("raft consensus check passed, node can be shutdown")
 	} else {
-		log.Info("raft consensus check failed, node cannot be shutdown", "err", err)
+		log.Info("consensus check failed, node cannot be shutdown", "err", err)
+		qn.SetNodeStatus(Up)
 		return false
 	}
 

@@ -12,11 +12,8 @@ type InactivityMonitor struct {
 	stopCh            chan bool
 }
 
-var nodeMonitor *InactivityMonitor
-
 func NewNodeInactivityMonitor(qn *QuorumNodeControl) *InactivityMonitor {
-	nodeMonitor = &InactivityMonitor{qn, 0, make(chan bool)}
-	return nodeMonitor
+	return &InactivityMonitor{qn, 0, make(chan bool)}
 }
 
 func (nm *InactivityMonitor) StartInactivityTimer() {
@@ -32,28 +29,32 @@ func (nm *InactivityMonitor) StartInactivityTimer() {
 					if err := nm.qrmNode.IsNodeBusy(); err != nil {
 						log.Info("node is busy", "msg", err.Error())
 						// reset inactivity as node is busy, to prevent shutdown right after node start up
-						nm.inactiveTimeCount = 0
+						nm.ResetInactivity()
 					} else {
 						nm.qrmNode.RequestStopNode()
 						log.Info("requested node shutdown, waiting for shutdown complete")
 						nm.qrmNode.WaitStopNode()
 						log.Info("shutown completed resuming inactivity time tracker")
-						nm.inactiveTimeCount = 0
+						nm.ResetInactivity()
 					}
 				} else {
-					log.Debug("inactivity ticking", "inactive seconds", nodeMonitor.inactiveTimeCount)
+					log.Debug("inactivity ticking", "inactive seconds", nm.inactiveTimeCount)
 					nm.inactiveTimeCount++
 				}
 			case <-nm.qrmNode.inactivityResetCh:
-				wasInactive := nm.inactiveTimeCount
-				nodeMonitor.inactiveTimeCount = 0
-				log.Info("inactivity reset, was inactive", "seconds", wasInactive)
+				nm.ResetInactivity()
 			case <-nm.stopCh:
 				log.Info("stopped inactivity monitor")
 				return
 			}
 		}
 	}()
+}
+
+func (nm *InactivityMonitor) ResetInactivity() {
+	wasInactive := nm.inactiveTimeCount
+	nm.inactiveTimeCount = 0
+	log.Info("inactivity reset", "was inactive for (seconds)", wasInactive)
 }
 
 func (nm *InactivityMonitor) Stop() {

@@ -91,6 +91,8 @@ func (r *IstanbulConsensus) GetIstanbulIsValidator(qrmRpcUrl string) (bool, erro
 
 func (r *IstanbulConsensus) ValidateShutdown() error {
 
+	const validatorDownSealDiff = 3
+
 	isValidator, err := r.GetIstanbulIsValidator(r.qn.config.GethRpcUrl)
 	if err != nil {
 		log.Error("istanbul isValidator check failed", "err", err)
@@ -109,33 +111,28 @@ func (r *IstanbulConsensus) ValidateShutdown() error {
 	}
 
 	totalValidators := len(activity.SealerActivity)
-	maxBlocksSealed := 0
+	maxSealBlocks := activity.NumBlocks / totalValidators
+	zeroBlockSealCnt := 0
 	for _, numBlocks := range activity.SealerActivity {
-		if numBlocks > maxBlocksSealed {
-			maxBlocksSealed = numBlocks
+		if numBlocks == 0 {
+			zeroBlockSealCnt++
 		}
 	}
 
-	log.Info("istanbul consensus check", "totalValidators", totalValidators, "maxBlockSealed", maxBlocksSealed, "activity", activity.SealerActivity)
+	log.Info("istanbul consensus check", "totalValidators", totalValidators, "maxSealBlocks", maxSealBlocks, "activity", activity.SealerActivity)
 
-	if maxBlocksSealed == 0 {
+	if zeroBlockSealCnt == totalValidators {
 		return errors.New("istanbul consensus check - looks like all validators are down")
 	}
 
-	var percMap = make(map[string]float32)
+	var percMap = make(map[string]int)
 	var numNodesDown = 0
 	for id, numBlocks := range activity.SealerActivity {
-		sealDiff := maxBlocksSealed - numBlocks
-		var sealDiffPerc float32
-		if sealDiff == 0 {
-			sealDiffPerc = 100
-		} else {
-			sealDiffPerc = (float32(sealDiff) / float32(maxBlocksSealed)) * float32(100)
-			if sealDiffPerc >= float32(50) {
-				numNodesDown++
-			}
+		sealDiff := maxSealBlocks - numBlocks
+		if sealDiff >= validatorDownSealDiff {
+			numNodesDown++
 		}
-		percMap[id] = sealDiffPerc
+		percMap[id] = sealDiff
 	}
 
 	numOfNodesThatCanBeDown := (totalValidators - 1) / 3
