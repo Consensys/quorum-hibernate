@@ -3,7 +3,6 @@ package node
 import (
 	"errors"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
@@ -74,9 +73,9 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 		quorumNode.SetNodeStatus(types.Down)
 	}
 
-	if quorumNode.IsRaft() {
+	if quorumNode.config.IsRaft() {
 		quorumNode.consensus = cons.NewRaftConsensus(quorumNode.config)
-	} else if quorumNode.IsIstanbul() {
+	} else if quorumNode.config.IsIstanbul() {
 		quorumNode.consensus = cons.NewIstanbulConsensus(quorumNode.config)
 	}
 	return quorumNode
@@ -126,14 +125,6 @@ func (qn *QuorumNodeControl) IsNodeBusy() error {
 		return nil
 	}
 	return nil
-}
-
-func (qn *QuorumNodeControl) IsRaft() bool {
-	return strings.ToLower(qn.config.Consensus) == "raft"
-}
-
-func (qn *QuorumNodeControl) IsIstanbul() bool {
-	return strings.ToLower(qn.config.Consensus) == "istanbul"
 }
 
 func (qn *QuorumNodeControl) Start() {
