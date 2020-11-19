@@ -2,6 +2,7 @@ package node
 
 import (
 	"errors"
+	"github.com/ConsenSysQuorum/node-manager/qnm"
 	"net/http"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
@@ -46,11 +47,11 @@ func (n *NodeRPCAPIs) PrepareForPrivateTx(req *http.Request, from *string, reply
 	return nil
 }
 
-func (n *NodeRPCAPIs) NodeStatus(req *http.Request, from *string, reply *NodeStatusInfo) error {
+func (n *NodeRPCAPIs) NodeStatus(req *http.Request, from *string, reply *qnm.NodeStatusInfo) error {
 	status := n.qn.GetNodeStatus()
 	inactiveTimeLimit := n.qn.config.GethInactivityTime
 	curInactiveTimeCount := n.qn.im.GetInactivityTimeCount()
-	*reply = NodeStatusInfo{Status: status, InactiveTimeLimit: inactiveTimeLimit, InactiveTime: curInactiveTimeCount, TimeToShutdown: inactiveTimeLimit - curInactiveTimeCount}
+	*reply = qnm.NodeStatusInfo{Status: status, InactiveTimeLimit: inactiveTimeLimit, InactiveTime: curInactiveTimeCount, TimeToShutdown: inactiveTimeLimit - curInactiveTimeCount}
 	log.Info("rpc call NodeStatus", "from", *from, "status", status)
 	return nil
 }
