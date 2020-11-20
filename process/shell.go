@@ -27,7 +27,7 @@ func NewShellProcess(p *types.ProcessConfig, grpc string, turl string, s bool) P
 
 func (sp *ShellProcessControl) setStatus(s bool) {
 	sp.status = s
-	log.Debug("setStatus process "+sp.cfg.Name, "status", sp.status)
+	log.Debug("setStatus - process "+sp.cfg.Name, "status", sp.status)
 }
 
 func (sp *ShellProcessControl) Status() bool {
@@ -42,7 +42,7 @@ func (sp *ShellProcessControl) IsUp() bool {
 		s, err = IsGethUp(sp.gethRpcUrl)
 		if err != nil {
 			sp.setStatus(false)
-			log.Error("geth is down", "err", err)
+			log.Error("IsUp - geth is down", "err", err)
 		} else {
 			sp.setStatus(s)
 		}
@@ -50,7 +50,7 @@ func (sp *ShellProcessControl) IsUp() bool {
 		s, err = IsTesseraUp(sp.tesseraUpcheckUrl)
 		if err != nil {
 			sp.setStatus(false)
-			log.Error("tessera is down", "err", err)
+			log.Error("IsUp - tessera is down", "err", err)
 		} else {
 			sp.setStatus(s)
 		}
@@ -60,56 +60,55 @@ func (sp *ShellProcessControl) IsUp() bool {
 }
 
 func (sp *ShellProcessControl) Stop() error {
-	defer log.Info("defer stopped", "process", sp.cfg.Name, "status", sp.status)
 	defer sp.muxLock.Unlock()
 	sp.muxLock.Lock()
 	if !sp.status {
-		log.Info("process is already down", "name", sp.cfg.Name)
+		log.Debug("Stop - process is already down", "name", sp.cfg.Name)
 		return nil
 	}
-	if err := ExecuteShellCommand("stop "+sp.cfg.Name, sp.cfg.StopCommand); err == nil {
+	if err := ExecuteShellCommand("Stop - "+sp.cfg.Name, sp.cfg.StopCommand); err == nil {
 		if sp.WaitToBeDown() {
 			sp.setStatus(false)
-			log.Info("stopped", "process", sp.cfg.Name, "status", sp.status)
+			log.Debug("Stop - stopped", "process", sp.cfg.Name, "status", sp.status)
 		} else {
 			sp.setStatus(true)
-			log.Error("failed to stop " + sp.cfg.Name)
-			return fmt.Errorf("%s failed to stop", sp.cfg.Name)
+			log.Error("Stop - failed to stop " + sp.cfg.Name)
+			return fmt.Errorf("Stop - %s failed to stop", sp.cfg.Name)
 		}
-		log.Info("stopped", "process", sp.cfg.Name, "status", sp.status)
+		log.Debug("Stop - stopped", "process", sp.cfg.Name, "status", sp.status)
 	} else {
-		log.Error("stop "+sp.cfg.Name+" failed", "err", err)
+		log.Error("Stop - "+sp.cfg.Name+" failed", "err", err)
 		return err
 	}
 	return nil
 }
 
 func (sp *ShellProcessControl) Start() error {
-	defer log.Info("defer started", "process", sp.cfg.Name, "status", sp.status)
 	defer sp.muxLock.Unlock()
 	sp.muxLock.Lock()
 	if sp.status {
-		log.Info("process is already up", "name", sp.cfg.Name)
+		log.Info("Start - process is already up", "name", sp.cfg.Name)
 		return nil
 	}
 	if err := ExecuteShellCommand("start tessera node", sp.cfg.StartCommand); err == nil {
 		//wait for process to come up
 		if sp.WaitToComeUp() {
 			sp.setStatus(true)
-			log.Info("started", "process", sp.cfg.Name, "status", sp.status)
+			log.Debug("Start - started", "process", sp.cfg.Name, "status", sp.status)
 		} else {
 			sp.setStatus(false)
-			log.Error("failed to start " + sp.cfg.Name)
+			log.Error("Start - failed to start " + sp.cfg.Name)
 			return fmt.Errorf("%s failed to start", sp.cfg.Name)
 		}
 
 	} else {
-		log.Error("failed to start " + sp.cfg.Name)
+		log.Error("Start - failed to start " + sp.cfg.Name)
 		return err
 	}
 	return nil
 }
 
+// TODO create helper method that can be called from  docker as well
 func (sp *ShellProcessControl) WaitToComeUp() bool {
 	retryCount := 30
 	c := 1
@@ -118,12 +117,13 @@ func (sp *ShellProcessControl) WaitToComeUp() bool {
 			return true
 		}
 		time.Sleep(time.Second)
-		log.Info("wait for up "+sp.cfg.Name, "c", c)
+		log.Debug("WaitToComeUp - wait for up "+sp.cfg.Name, "c", c)
 		c++
 	}
 	return false
 }
 
+// TODO create helper that can be called from  docker as well
 func (sp *ShellProcessControl) WaitToBeDown() bool {
 	retryCount := 30
 	c := 1
@@ -132,7 +132,7 @@ func (sp *ShellProcessControl) WaitToBeDown() bool {
 			return true
 		}
 		time.Sleep(time.Second)
-		log.Info("wait for down "+sp.cfg.Name, "c", c)
+		log.Info("WaitToBeDown - wait for down "+sp.cfg.Name, "c", c)
 		c++
 	}
 	return false

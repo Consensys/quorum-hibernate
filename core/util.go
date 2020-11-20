@@ -26,7 +26,7 @@ func GetPrivateTx(body []byte) (types.EthTransaction, error) {
 	if err != nil {
 		return types.EthTransaction{}, err
 	} else {
-		log.Debug("tx details", "Tx", tx)
+		log.Debug("GetPrivateTx - tx details", "Tx", tx)
 	}
 	return tx, nil
 }
@@ -54,29 +54,29 @@ func GetRandomRetryWaitTime() int {
 
 func MakeRpcCall(qrmRpcUrl string, rpcReq []byte, resData interface{}) error {
 	client := NewHttpClient()
-	log.Info("making rpc call", "req", string(rpcReq))
+	log.Debug("MakeRpcCall - making rpc call", "req", string(rpcReq))
 	req, err := http.NewRequest("POST", qrmRpcUrl, bytes.NewBuffer(rpcReq))
 	if err != nil {
-		return fmt.Errorf("creating request failed err=%v", err)
+		return fmt.Errorf("MakeRpcCall - creating request failed err=%v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("do req failed err=%v", err)
+		return fmt.Errorf("MakeRpcCall - do req failed err=%v", err)
 	}
 	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		log.Debug("response Body:", string(body))
+		log.Debug("MakeRpcCall - response Body:", string(body))
 		err := json.Unmarshal(body, resData)
 		if err == nil {
-			log.Debug("response OK", "from", qrmRpcUrl, "result", resData)
+			log.Debug("MakeRpcCall - response OK", "from", qrmRpcUrl, "result", resData)
 		} else {
-			log.Error("response json decode failed", "err", err)
+			log.Error("MakeRpcCall - response json decode failed", "err", err)
 			return err
 		}
 	} else {
-		log.Error("response status failed, not OK", "status", resp.Status)
-		return fmt.Errorf("response status failed, not OK, status=%s", resp.Status)
+		log.Error("MakeRpcCall - response status failed, not OK", "status", resp.Status)
+		return fmt.Errorf("MakeRpcCall - response status failed, not OK, status=%s", resp.Status)
 	}
 	return nil
 }

@@ -2,8 +2,9 @@ package node
 
 import (
 	"errors"
-	"github.com/ConsenSysQuorum/node-manager/qnm"
 	"net/http"
+
+	"github.com/ConsenSysQuorum/node-manager/qnm"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
@@ -25,12 +26,12 @@ func NewNodeRPCAPIs(qn *QuorumNodeControl) *NodeRPCAPIs {
 }
 
 func (n *NodeRPCAPIs) IsNodeUp(req *http.Request, from *string, reply *NodeUpReply) error {
-	log.Info("rpc call isNodeUp", "from", *from)
+	log.Debug("IsNodeUp - rpc call isNodeUp", "from", *from)
 	ok := false
 	if !n.qn.IsNodeUp() {
-		log.Info("is node up failed")
+		log.Debug("IsNodeUp - is node up failed")
 		ok = false
-		return errors.New("is node up failed")
+		return errors.New("IsNodeUp - is node up failed")
 	}
 	*reply = NodeUpReply{
 		ok,
@@ -39,11 +40,11 @@ func (n *NodeRPCAPIs) IsNodeUp(req *http.Request, from *string, reply *NodeUpRep
 }
 
 func (n *NodeRPCAPIs) PrepareForPrivateTx(req *http.Request, from *string, reply *PrivateTxPrepReply) error {
-	log.Info("rpc call PrepareForPrivateTx - request received to prepare node", "from", *from)
+	log.Debug("PrepareForPrivateTx - rpc call - request received to prepare node", "from", *from)
 	n.qn.ResetInactiveTime()
 	status := n.qn.PrepareNode()
 	*reply = PrivateTxPrepReply{Status: status}
-	log.Info("rpc call PrepareForPrivateTx - request processed to prepare node", "from", *from, "status", status)
+	log.Info("PrepareForPrivateTx - rpc call - request processed to prepare node", "from", *from, "status", status)
 	return nil
 }
 
@@ -52,6 +53,6 @@ func (n *NodeRPCAPIs) NodeStatus(req *http.Request, from *string, reply *qnm.Nod
 	inactiveTimeLimit := n.qn.config.BasicConfig.InactivityTime
 	curInactiveTimeCount := n.qn.im.GetInactivityTimeCount()
 	*reply = qnm.NodeStatusInfo{Status: status, InactiveTimeLimit: inactiveTimeLimit, InactiveTime: curInactiveTimeCount, TimeToShutdown: inactiveTimeLimit - curInactiveTimeCount}
-	log.Info("rpc call NodeStatus", "from", *from, "status", status)
+	log.Info("NodeStatus - rpc call", "from", *from, "status", status)
 	return nil
 }

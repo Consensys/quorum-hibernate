@@ -28,7 +28,7 @@ var httpClnt = core.NewHttpClient()
 
 // TODO when geth is started by QNM it starts and runs ok. but when QNM is shutdown, geth gets shutdown
 func ExecuteShellCommand(desc string, cmdArr []string) error {
-	log.Info("executing command", "desc", desc, "command", cmdArr)
+	log.Debug("ExecuteShellCommand", "desc", desc, "command", cmdArr)
 	var cmd *exec.Cmd
 	if len(cmdArr) == 1 {
 		cmd = exec.Command(cmdArr[0])
@@ -38,7 +38,7 @@ func ExecuteShellCommand(desc string, cmdArr []string) error {
 	}
 	err := cmd.Run()
 	if err != nil {
-		log.Error("cmd failed", "desc", desc, "err", err)
+		log.Error("ExecuteShellCommand - cmd failed", "desc", desc, "err", err)
 		return err
 	}
 	return nil
@@ -57,22 +57,22 @@ func IsTesseraUp(tesseraUpcheckUrl string) (bool, error) {
 
 	req, err := http.NewRequest("GET", tesseraUpcheckUrl, nil)
 	if err != nil {
-		log.Error("tessera up check new get req failed", "err", err)
+		log.Error("IsTesseraUp - get req failed", "err", err)
 		return false, err
 	}
 
 	resp, err := httpClnt.Do(req)
 	if err != nil {
-		log.Warn("geth up check client do req failed", "err", err)
+		log.Warn("IsTesseraUp - client do req failed", "err", err)
 		return false, err
 	}
 	defer resp.Body.Close()
 
-	log.Debug("tessera up check response Status", "status", resp.Status)
+	log.Debug("IsTesseraUp check response Status", "status", resp.Status)
 	body, _ := ioutil.ReadAll(resp.Body)
-	log.Debug("tessera up check response Body:", string(body))
+	log.Debug("IsTesseraUp - up check response Body:", string(body))
 	if resp.StatusCode == http.StatusOK && string(body) == "I'm up!" {
-		log.Debug("tessera is up, replied to upcheck call", "reply", string(body))
+		log.Debug("IsTesseraUp - tessera is up, replied to upcheck call", "reply", string(body))
 		return true, nil
 	}
 	return false, core.ErrNodeDown

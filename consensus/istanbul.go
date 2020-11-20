@@ -63,18 +63,18 @@ func (r *IstanbulConsensus) getIstanbulIsValidator(qrmRpcUrl string) (bool, erro
 func (r *IstanbulConsensus) ValidateShutdown() error {
 	isValidator, err := r.getIstanbulIsValidator(r.cfg.BasicConfig.GethRpcUrl)
 	if err != nil {
-		log.Error("istanbul isValidator check failed", "err", err)
+		log.Error("ValidateShutdown - istanbul isValidator check failed", "err", err)
 		return err
 	}
 
 	if !isValidator {
-		log.Info("istanbul non-validator node, ok to shutdown")
+		log.Info("ValidateShutdown - istanbul non-validator node, ok to shutdown")
 		return nil
 	}
 
 	activity, err := r.getIstanbulSealerActivity(r.cfg.BasicConfig.GethRpcUrl)
 	if err != nil {
-		log.Error("istanbul status check failed", "err", err)
+		log.Error("ValidateShutdown - istanbul status check failed", "err", err)
 		return err
 	}
 
@@ -87,7 +87,7 @@ func (r *IstanbulConsensus) ValidateShutdown() error {
 		}
 	}
 
-	log.Info("istanbul consensus check", "totalValidators", totalValidators, "maxSealBlocks", maxSealBlocks, "activity", activity.SealerActivity)
+	log.Info("ValidateShutdown - istanbul consensus check", "totalValidators", totalValidators, "maxSealBlocks", maxSealBlocks, "activity", activity.SealerActivity)
 
 	if zeroBlockSealCnt == totalValidators {
 		return errors.New("istanbul consensus check - looks like all validators are down")
@@ -105,7 +105,7 @@ func (r *IstanbulConsensus) ValidateShutdown() error {
 
 	numOfNodesThatCanBeDown := (totalValidators - 1) / 3
 
-	log.Info("istanbul consensus check", "numOfNodesThatCanBeDown", numOfNodesThatCanBeDown, "numNodesDown", numNodesDown, "percMap", percMap)
+	log.Info("ValidateShutdown - istanbul consensus check", "numOfNodesThatCanBeDown", numOfNodesThatCanBeDown, "numNodesDown", numNodesDown, "percMap", percMap)
 
 	if numNodesDown >= numOfNodesThatCanBeDown {
 		errMsg := fmt.Sprintf("istanbul consensus check - the number of nodes currently down has reached threshold, numOfNodesThatCanBeDown:%d numNodesDown:%d", numOfNodesThatCanBeDown, numNodesDown)

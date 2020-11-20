@@ -72,27 +72,27 @@ func NewWSProxy(ps *ProxyServer, target *url.URL) *WebsocketProxy {
 	return &WebsocketProxy{ps: ps, Backend: backend}
 }
 
-// ServeHTTP implements the http.Handler that proxies WebSocket connections.
+// ServeWebsocket implements the http.Handler that proxies WebSocket connections.
 func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	defer log.Info("exit serveHTTP websocket", "req", req.RequestURI, "remoteAddr", req.RemoteAddr)
+	defer log.Info("ServeHTTP-WS - exit serveHTTP websocket", "req", req.RequestURI, "remoteAddr", req.RemoteAddr)
 	if w.Backend == nil {
-		log.Error("websocketproxy: backend function is not defined")
-		http.Error(rw, "backend missing", http.StatusInternalServerError)
+		log.Error("ServeHTTP-WS - websocketproxy: backend function is not defined")
+		http.Error(rw, "ServeHTTP-WS - backend missing", http.StatusInternalServerError)
 		return
 	}
 
 	backendURL := w.Backend(req)
 	if backendURL == nil {
-		log.Error("websocketproxy: backend URL is nil")
-		http.Error(rw, "backend url is nil", http.StatusInternalServerError)
+		log.Error("ServeHTTP-WS - backend URL is nil")
+		http.Error(rw, "ServeHTTP-WS - backend url is nil", http.StatusInternalServerError)
 		return
 	}
 
 	if w.ps.qrmNode.PrepareNode() {
-		log.Info("node prepared to accept request")
+		log.Info("ServeHTTP-WS - node prepared to accept request")
 	} else {
-		err := errors.New("node prepare failed")
-		log.Error("websocket: failed", "err", err)
+		err := errors.New("ServeHTTP-WS - node prepare failed")
+		log.Error("ServeHTTP-WS - failed", "err", err)
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -106,20 +106,20 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	// the final destinations.
 	requestHeader := http.Header{}
 	if origin := req.Header.Get("Origin"); origin != "" {
-		log.Info("req set origin", "origin", origin)
+		log.Debug("ServeHTTP-WS - req set origin", "origin", origin)
 		requestHeader.Add("Origin", origin)
 	}
 	for _, prot := range req.Header[http.CanonicalHeaderKey("Sec-WebSocket-Protocol")] {
-		log.Info("request header", "prot", prot, "key", "Sec-WebSocket-Protocol")
+		log.Debug("ServeHTTP-WS - request header", "prot", prot, "key", "Sec-WebSocket-Protocol")
 		requestHeader.Add("Sec-WebSocket-Protocol", prot)
 	}
 	for _, cookie := range req.Header[http.CanonicalHeaderKey("Cookie")] {
-		log.Info("request header", "cookie", cookie, "key", "Cookie")
+		log.Debug("ServeHTTP-WS - request header", "cookie", cookie, "key", "Cookie")
 		requestHeader.Add("Cookie", cookie)
 	}
 
 	if req.Host != "" {
-		log.Info("req set host", "host", req.Host)
+		log.Debug("ServeHTTP-WS - req set host", "host", req.Host)
 		requestHeader.Set("Host", req.Host)
 	}
 
@@ -130,10 +130,10 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		// X-Forwarded-For information as a comma+space
 		// separated list and fold multiple headers into one.
 		if prior, ok := req.Header["X-Forwarded-For"]; ok {
-			log.Info("get X-Forwarded-For prior", "prior", prior)
+			log.Debug("ServeHTTP-WS - get X-Forwarded-For prior", "prior", prior)
 			clientIP = strings.Join(prior, ", ") + ", " + clientIP
 		}
-		log.Info("get X-Forwarded-For clientip", "clientip", clientIP)
+		log.Debug("ServeWebsocket get X-Forwarded-For clientip", "clientip", clientIP)
 		requestHeader.Set("X-Forwarded-For", clientIP)
 	}
 
@@ -142,7 +142,7 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	// be helpful for applications on the backend.
 	requestHeader.Set("X-Forwarded-Proto", "http")
 	if req.TLS != nil {
-		log.Info("set X-Forwarded-Proto https")
+		log.Info("ServeHTTP-WS - set X-Forwarded-Proto https")
 		requestHeader.Set("X-Forwarded-Proto", "https")
 	}
 
@@ -156,23 +156,23 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	// together with the Forwarded headers we prepared above.
 	connBackend, resp, err := dialer.Dial(backendURL.String(), requestHeader)
 	if err != nil {
-		log.Error("websocketproxy: couldn't dial to remote backend url", "err", err)
+		log.Error("ServeHTTP-WS - couldn't dial to remote backend url", "err", err)
 		if resp != nil {
 			// If the WebSocket handshake fails, ErrBadHandshake is returned
 			// along with a non-nil *http.Response so that callers can handle
 			// redirects, authentication, etcetera.
 			if err := copyResponse(rw, resp); err != nil {
-				log.Error("websocketproxy: couldn't write response after failed remote backend handshake:", "err", err)
+				log.Error("ServeHTTP-WS - couldn't write response after failed remote backend handshake:", "err", err)
 			}
 		} else {
 			http.Error(rw, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 		}
 		return
 	}
-	log.Info("WS handler connected to backend", "name", w.ps.proxyCfg.Name, "dest", w.ps.proxyCfg.UpstreamAddr)
+	log.Info("ServeHTTP-WS - WS handler connected to backend", "name", w.ps.proxyCfg.Name, "dest", w.ps.proxyCfg.UpstreamAddr)
 	defer func() {
 		connBackend.Close()
-		log.Info("WS handler disconnected from backend", "name", w.ps.proxyCfg.Name, "dest", w.ps.proxyCfg.UpstreamAddr)
+		log.Info("ServeHTTP-WS - WS handler disconnected from backend", "name", w.ps.proxyCfg.Name, "dest", w.ps.proxyCfg.UpstreamAddr)
 	}()
 
 	upgrader := w.Upgrader
@@ -183,19 +183,19 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	// Only pass those headers to the upgrader.
 	upgradeHeader := http.Header{}
 	if hdr := resp.Header.Get("Sec-Websocket-Protocol"); hdr != "" {
-		log.Info("set in upgraded header Sec-Websocket-Protocol", "hdr", hdr)
+		log.Debug("ServeHTTP-WS - set in upgraded header Sec-Websocket-Protocol", "hdr", hdr)
 		upgradeHeader.Set("Sec-Websocket-Protocol", hdr)
 	}
 	if hdr := resp.Header.Get("Set-Cookie"); hdr != "" {
 		upgradeHeader.Set("Set-Cookie", hdr)
-		log.Info("set in upgraded header Set-Cookie", "hdr", hdr)
+		log.Debug("ServeHTTP-WS - set in upgraded header Set-Cookie", "hdr", hdr)
 	}
 
 	// Now upgrade the existing incoming request to a WebSocket connection.
 	// Also pass the header that we gathered from the Dial handshake.
 	connSrc, err := upgrader.Upgrade(rw, req, upgradeHeader)
 	if err != nil {
-		log.Error("websocketproxy: couldn't upgrade", "err", err)
+		log.Error("ServeHTTP-WS - couldn't upgrade", "err", err)
 		return
 	}
 	defer connSrc.Close()
@@ -219,7 +219,7 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc chan error, isReqFromSource bool) {
-	defer log.Info("exit replicateWebsocketConn", "src", isReqFromSource)
+	defer log.Info("replicateWebsocketConn - exit", "src", isReqFromSource)
 	for {
 		msgType, msg, err := src.ReadMessage()
 		if err != nil {
@@ -229,9 +229,9 @@ func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc c
 		}
 
 		if isReqFromSource {
-			log.Info("received request from source", "msgType", msgType, "msg", string(msg))
+			log.Info("replicateWebsocketConn - received request from source", "msgType", msgType, "msg", string(msg))
 		} else {
-			log.Info("sending response to destination", "msgType", msgType, "msg", string(msg))
+			log.Info("replicateWebsocketConn - sending response to destination", "msgType", msgType, "msg", string(msg))
 		}
 
 		if isReqFromSource {
@@ -243,9 +243,9 @@ func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc c
 			}
 
 			if w.ps.qrmNode.PrepareNode() {
-				log.Info("node prepared to accept request")
+				log.Info("replicateWebsocketConn - prepared to accept request")
 			} else {
-				err = errors.New("node prepare failed")
+				err = errors.New("replicateWebsocketConn - prepare failed")
 				w.closeConnWithError(dst, err)
 				errc <- err
 				break

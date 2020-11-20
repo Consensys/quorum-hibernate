@@ -5,7 +5,7 @@ name = "node1"
 #geth RPC URL
 gethRpcUrl = "http://localhost:22003"
 tesseraKey="1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg="
-consensus="istanbul"
+consensus="raft"
 nodeManagerConfigFile="./test/shell/nm1.toml"
 
 #geth inactivity timeout seconds

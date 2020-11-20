@@ -50,7 +50,7 @@ func NewProxyServer(qn *node.QuorumNodeControl, pc *types.ProxyConfig, errc chan
 		WriteTimeout: time.Duration(ps.proxyCfg.WriteTimeout) * time.Second,
 		ReadTimeout:  time.Duration(ps.proxyCfg.ReadTimeout) * time.Second,
 	}
-	log.Info("created proxy server for config", "cfg", *pc)
+	log.Info("ProxyServer - created proxy server for config", "cfg", *pc)
 	return ps, nil
 }
 
@@ -58,7 +58,7 @@ func initHttpHandler(ps *ProxyServer, url *url.URL) error {
 	ps.rp = httputil.NewSingleHostReverseProxy(url)
 	ps.rp.ModifyResponse = func(res *http.Response) error {
 		respStatus := res.Status
-		log.Info("response status", "status", respStatus, "code", res.StatusCode)
+		log.Info("initHttpHandler - response status", "status", respStatus, "code", res.StatusCode)
 		return nil
 	}
 	for _, p := range ps.proxyCfg.ProxyPaths {
@@ -66,7 +66,7 @@ func initHttpHandler(ps *ProxyServer, url *url.URL) error {
 			return err
 		} else {
 			ps.mux.Handle(p, h)
-			log.Info("registering http handler", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstrAddr", ps.proxyCfg.UpstreamAddr, "name", ps.proxyCfg.Name, "type", ps.proxyCfg.Type, "path", p)
+			log.Info("initHttpHandler - registering http handler", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstrAddr", ps.proxyCfg.UpstreamAddr, "name", ps.proxyCfg.Name, "type", ps.proxyCfg.Type, "path", p)
 		}
 	}
 	return nil
@@ -79,7 +79,7 @@ func initWSHandler(ps *ProxyServer) error {
 	}
 	for _, p := range ps.proxyCfg.ProxyPaths {
 		ps.mux.Handle(p, ps.wp)
-		log.Info("registering WS handler", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstrAddr", ps.proxyCfg.UpstreamAddr, "name", ps.proxyCfg.Name, "type", ps.proxyCfg.Type, "path", p)
+		log.Info("initWSHandler - registering WS handler", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstrAddr", ps.proxyCfg.UpstreamAddr, "name", ps.proxyCfg.Name, "type", ps.proxyCfg.Type, "path", p)
 	}
 	return nil
 }
@@ -88,10 +88,10 @@ func (ps ProxyServer) Start() {
 	ps.shutdownWg.Add(1)
 	go func() {
 		defer ps.shutdownWg.Done()
-		log.Info("ListenAndServe started", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstream", ps.proxyCfg.UpstreamAddr)
+		log.Info("Start - ListenAndServe started", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstream", ps.proxyCfg.UpstreamAddr)
 		err := ps.srv.ListenAndServe()
 		if err != nil {
-			log.Error("ListenAndServe failed", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstream", ps.proxyCfg.UpstreamAddr, "err", err)
+			log.Error("Start - ListenAndServe failed", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstream", ps.proxyCfg.UpstreamAddr, "err", err)
 			ps.errCh <- err
 		}
 	}()
@@ -102,9 +102,9 @@ func (ps ProxyServer) Stop() {
 	defer cancel()
 	if ps.srv != nil {
 		if err := ps.srv.Shutdown(ctx); err != nil {
-			log.Error("failed to shutdown", "name", ps.proxyCfg.Name, "err", err)
+			log.Error("Stop - failed to shutdown", "name", ps.proxyCfg.Name, "err", err)
 		}
 		ps.shutdownWg.Wait()
-		log.Info("server shutdown completed", "name", ps.proxyCfg.Name)
+		log.Info("Stop - server shutdown completed", "name", ps.proxyCfg.Name)
 	}
 }

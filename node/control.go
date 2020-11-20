@@ -106,7 +106,7 @@ func (qn *QuorumNodeControl) SetNodeStatus(ns types.NodeStatus) {
 func (qn *QuorumNodeControl) IsNodeUp() bool {
 	gs := qn.gethp.IsUp()
 	ts := qn.tesserap.IsUp()
-	log.Info("IsNodeUp", "geth", gs, "tessera", ts)
+	log.Debug("IsNodeUp", "geth", gs, "tessera", ts)
 	if gs && ts {
 		qn.SetNodeStatus(types.Up)
 	} else {
@@ -129,7 +129,7 @@ func (qn *QuorumNodeControl) IsNodeBusy() error {
 
 func (qn *QuorumNodeControl) Start() {
 	qn.StartStopNodeMonitor()
-	qn.im = NewNodeInactivityMonitor(qn)
+	qn.im = NewInactivityMonitor(qn)
 	qn.im.StartInactivityTimer()
 }
 
@@ -144,27 +144,27 @@ func (nm *QuorumNodeControl) ResetInactiveTime() {
 
 func (qn *QuorumNodeControl) StartStopNodeMonitor() {
 	go func() {
-		log.Info("node start/stop monitor started")
+		log.Info("StartStopNodeMonitor - node start/stop monitor started")
 		for {
 			select {
 			case <-qn.stopNodeCh:
-				log.Info("request received to stop node")
+				log.Debug("StartStopNodeMonitor - request received to stop node")
 				if !qn.StopNode() {
-					log.Error("stopping failed")
+					log.Error("StartStopNodeMonitor - stopping failed")
 					qn.shutdownCompleteCh <- false
 				} else {
 					qn.shutdownCompleteCh <- true
 				}
 			case <-qn.startNodeCh:
-				log.Info("request received to start node")
+				log.Debug("StartStopNodeMonitor - request received to start node")
 				if !qn.StartNode() {
-					log.Error("starting failed")
+					log.Error("StartStopNodeMonitor - starting failed")
 					qn.startCompleteCh <- false
 				} else {
 					qn.startCompleteCh <- true
 				}
 			case <-qn.stopCh:
-				log.Info("stopped node start/stop monitor service")
+				log.Info("StartStopNodeMonitor - stopped node start/stop monitor service")
 				return
 			}
 		}
@@ -193,7 +193,7 @@ func (qn *QuorumNodeControl) WaitStopNode() bool {
 func (qn *QuorumNodeControl) PrepareNode() bool {
 	if !qn.IsNodeUp() {
 		status := qn.StartNode()
-		log.Info("node start completed", "status", status)
+		log.Debug("PrepareNode - node start completed", "status", status)
 		return status
 	} else {
 		log.Info("node is UP")
@@ -206,7 +206,7 @@ func (qn *QuorumNodeControl) StopNode() bool {
 	qn.startStopMux.Lock()
 
 	if qn.nodeStatus == types.Down {
-		log.Info("node is already down")
+		log.Info("StopNode - node is already down")
 		return true
 	}
 	var qnms []qnm.NodeStatusInfo
@@ -217,27 +217,27 @@ func (qn *QuorumNodeControl) StopNode() bool {
 	for retryCount <= core.Qnm2QnmValidationRetryLimit {
 		qnms, err = qn.nm.ValidateOtherQnms()
 		if err == nil {
-			log.Info("qnm2qnm validation passed")
+			log.Info("StopNode - qnm2qnm validation passed")
 			break
 		}
-		log.Error("qnm2qnm validation failed", "retryLimit", core.Qnm2QnmValidationRetryLimit, "retryCount", retryCount, "err", err, "qnms", qnms)
+		log.Error("StopNode - qnm2qnm validation failed", "retryLimit", core.Qnm2QnmValidationRetryLimit, "retryCount", retryCount, "err", err, "qnms", qnms)
 		retryCount++
 		w := core.GetRandomRetryWaitTime()
-		log.Info("waiting for next qnm2qnm validation try", "wait time in seconds", w)
+		log.Info("StopNode - waiting for next qnm2qnm validation try", "wait time in seconds", w)
 		time.Sleep(time.Duration(w) * time.Millisecond)
 	}
 
 	if retryCount > core.Qnm2QnmValidationRetryLimit {
-		log.Error("node cannot be shutdown, qnm2qnm validation failed after retrying")
+		log.Error("StopNode - node cannot be shutdown, qnm2qnm validation failed after retrying")
 		return false
 	}
 
 	qn.SetNodeStatus(types.ShutdownInitiated)
 
 	if err := qn.consensus.ValidateShutdown(); err == nil {
-		log.Info("consensus check passed, node can be shutdown")
+		log.Info("StopNode - consensus check passed, node can be shutdown")
 	} else {
-		log.Info("consensus check failed, node cannot be shutdown", "err", err)
+		log.Info("StopNode - consensus check failed, node cannot be shutdown", "err", err)
 		qn.SetNodeStatus(types.Up)
 		return false
 	}

@@ -6,7 +6,7 @@ name = "node1"
 gethRpcUrl = "http://localhost:22001"
 tesseraUpcheckUrl = "http://localhost:9002/upcheck"
 tesseraKey="QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc="
-consensus="istanbul"
+consensus="raft"
 nodeManagerConfigFile="./test/shell/nm1.toml"
 
 #geth inactivity timeout seconds

@@ -69,22 +69,22 @@ func (r *RaftConsensus) getRaftClusterInfo(qrmRpcUrl string) ([]RaftClusterEntry
 func (r *RaftConsensus) ValidateShutdown() error {
 	role, err := r.getRole(r.cfg.BasicConfig.GethRpcUrl)
 	if err != nil {
-		log.Error("raft role failed", "err", err)
+		log.Error("ValidateShutdown - raft role failed", "err", err)
 		return err
 	}
 
 	if role == MINTER {
-		return errors.New("minter node, cannot be shutdown")
+		return errors.New("ValidateShutdown - minter node, cannot be shutdown")
 	}
 
 	if role == LEARNER {
-		log.Info("raft consensus check - role:learner, ok to shutdown")
+		log.Info("ValidateShutdown - raft consensus check - role:learner, ok to shutdown")
 		return nil
 	}
 
 	cluster, err := r.getRaftClusterInfo(r.cfg.BasicConfig.GethRpcUrl)
 	if err != nil {
-		log.Error("raft cluster failed", "err", err)
+		log.Error("ValidateShutdown - raft cluster failed", "err", err)
 		return err
 	}
 
@@ -96,10 +96,10 @@ func (r *RaftConsensus) ValidateShutdown() error {
 		}
 	}
 	minActiveNodes := (totalNodes / 2) + 1
-	log.Info("raft consensus check", "role", role, "minActiveNodes", minActiveNodes, "totalNodes", totalNodes, "ActiveNodes", activeNodes)
+	log.Info("ValidateShutdown - raft consensus check", "role", role, "minActiveNodes", minActiveNodes, "totalNodes", totalNodes, "ActiveNodes", activeNodes)
 
 	if activeNodes <= minActiveNodes {
-		return fmt.Errorf("raft quorum failed, activeNodes=%d minimmumActiveNodesRequired=%d cannot be shutdown", activeNodes, minActiveNodes)
+		return fmt.Errorf("ValidateShutdown - raft quorum failed, activeNodes=%d minimmumActiveNodesRequired=%d cannot be shutdown", activeNodes, minActiveNodes)
 	}
 	return nil
 }

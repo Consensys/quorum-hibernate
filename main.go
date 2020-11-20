@@ -32,13 +32,13 @@ func main() {
 	flag.StringVar(&configFile, "config", "config.toml", "config file")
 	flag.Parse()
 	logrus.SetLevel(logrus.Level(verbosity + 2))
-	log.Info("config file", "path", configFile)
+	log.Debug("main - config file", "path", configFile)
 	nodeConfig, err := readNodeConfigFromFile(configFile)
 	if err != nil {
-		log.Error("loading config file failed", "err", err)
+		log.Error("main - loading config file failed", "err", err)
 		return
 	}
-	log.Info("node config", "cfg", nodeConfig)
+	log.Debug("main - node config", "cfg", nodeConfig)
 	rpcBackendErrCh := make(chan error)
 	proxyBackendErrCh := make(chan error)
 	if !Start(nodeConfig, err, proxyBackendErrCh, rpcBackendErrCh) {
@@ -50,7 +50,7 @@ func main() {
 func Start(nodeConfig types.NodeConfig, err error, proxyBackendErrCh chan error, rpcBackendErrCh chan error) bool {
 	qnmApp.qrmNode = node.NewQuorumNodeControl(&nodeConfig)
 	if qnmApp.proxyServers, err = proxy.MakeProxyServices(qnmApp.qrmNode, proxyBackendErrCh); err != nil {
-		log.Error("creating proxies failed", "err", err)
+		log.Error("Start - creating proxies failed", "err", err)
 		return false
 	}
 	qnmApp.rpcService = rpc.NewRPCService(qnmApp.qrmNode, qnmApp.qrmNode.GetRPCConfig(), rpcBackendErrCh)
@@ -65,7 +65,7 @@ func Start(nodeConfig types.NodeConfig, err error, proxyBackendErrCh chan error,
 
 	// start rpc server
 	if err := qnmApp.rpcService.Start(); err != nil {
-		log.Info("rpc server failed", "err", err)
+		log.Info("Start - rpc server failed", "err", err)
 		return false
 	}
 	return true
@@ -78,15 +78,15 @@ func waitForShutdown(rpcBackendErrCh chan error, proxyBackendErrCh chan error) {
 	for {
 		select {
 		case err := <-sigc:
-			log.Error("Received interrupt signal, shutting down...", "err", err)
+			log.Error("waitForShutdown - Received interrupt signal, shutting down...", "err", err)
 			Shutdown()
 			return
 		case err := <-rpcBackendErrCh:
-			log.Error("RPC backend failed, shutting down...", "err", err)
+			log.Error("waitForShutdown - RPC backend failed, shutting down...", "err", err)
 			Shutdown()
 			return
 		case err := <-proxyBackendErrCh:
-			log.Error("Proxy backend failed, shutting down...", "err", err)
+			log.Error("waitForShutdown - Proxy backend failed, shutting down...", "err", err)
 			Shutdown()
 			return
 		}
@@ -97,15 +97,15 @@ func readNodeConfigFromFile(configFile string) (types.NodeConfig, error) {
 	var nodeConfig types.NodeConfig
 	var err error
 	if nodeConfig, err = types.ReadNodeConfig(configFile); err != nil {
-		log.Error("loading node config file failed", "configfile", configFile, "err", err)
+		log.Error("lreadNodeConfigFromFile - oading node config file failed", "configfile", configFile, "err", err)
 		return types.NodeConfig{}, err
 	}
-	log.Info("node config file read successfully")
+	log.Info("readNodeConfigFromFile - node config file read successfully")
 	if nodeConfig.NodeManagers, err = types.ReadNodeManagerConfig(nodeConfig.BasicConfig.NodeManagerConfigFile); err != nil {
-		log.Error("loading node manager config failed", "err", err)
+		log.Error("readNodeConfigFromFile - loading node manager config failed", "err", err)
 		return types.NodeConfig{}, err
 	}
-	log.Info("node manager config file read successfully")
+	log.Info("readNodeConfigFromFile - node manager config file read successfully")
 	return nodeConfig, nil
 }
 

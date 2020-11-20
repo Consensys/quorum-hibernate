@@ -1,31 +1,3 @@
-# Quorum Node Manager
-
-Quorum Node Manger is a tool that monitors inactivity in `geth` and `tessera` and stops them when they are inactive.
-
-## Usage 
-
-### Pre-requisites
-
-### Up & Running
-
-#### Using Binary
-
-##### Build
-
-```bash
-go build [-o node-manager]
-```
-
-##### Run
-
-- Running with a custom configuration path
-```bash
-./node-manager -config <path to toml config file>
-```
-
-sample node config file
-
-```$xslt
 [basicConfig]
 #node manager name
 name = "node1"
@@ -67,16 +39,3 @@ name="tessera"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"]
-
-```
-
-sample node manager config file
-
-```$xslt
-nodeManagers = [
-    { name = "node1", tesseraKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", rpcUrl = "http://localhost:8081" },
-    { name = "node2", tesseraKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", rpcUrl = "http://localhost:8082" },
-    { name = "node3", tesseraKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8083" },
-    { name = "node4", tesseraKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8084" }
-]
-```

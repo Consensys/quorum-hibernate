@@ -14,8 +14,8 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
-			log.Error("reading body failed", "name", ps.proxyCfg.Name, "path", req.RequestURI, "err", err)
-			http.Error(res, "reading request body failed", http.StatusInternalServerError)
+			log.Error("httpHandler - reading body failed", "name", ps.proxyCfg.Name, "path", req.RequestURI, "err", err)
+			http.Error(res, "httpHandler - reading request body failed", http.StatusInternalServerError)
 			return
 		}
 
@@ -31,7 +31,7 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 			ps.qrmNode.ResetInactiveTime()
 		}
 
-		log.Info("request", "path", req.RequestURI)
+		log.Info("httpHandler - request", "path", req.RequestURI)
 
 		if err := ps.qrmNode.IsNodeBusy(); err != nil {
 			http.Error(res, err.Error(), http.StatusInternalServerError)
@@ -40,9 +40,9 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 
 		if req.RequestURI != "/partyinfo" {
 			if ps.qrmNode.PrepareNode() {
-				log.Info("node prepared to accept request")
+				log.Debug("httpHandler - prepared to accept request")
 			} else {
-				http.Error(res, "node prepare failed", http.StatusInternalServerError)
+				http.Error(res, "httpHandler - node prepare failed", http.StatusInternalServerError)
 				return
 			}
 		}
@@ -53,7 +53,7 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 		}
 
 		// Forward request to original request
-		log.Info("forwarding request to proxy")
+		log.Debug("httpHandler - forwarding request to proxy")
 		ps.rp.ServeHTTP(res, req)
 	}, nil
 }
