@@ -94,7 +94,7 @@ func (r *IstanbulConsensus) getIstanbulIsValidator(qrmRpcUrl string) (bool, erro
 }
 
 func (r *IstanbulConsensus) ValidateShutdown() error {
-	isValidator, err := r.getIstanbulIsValidator(r.cfg.GethRpcUrl)
+	isValidator, err := r.getIstanbulIsValidator(r.cfg.BasicConfig.GethRpcUrl)
 	if err != nil {
 		log.Error("istanbul isValidator check failed", "err", err)
 		return err
@@ -105,7 +105,7 @@ func (r *IstanbulConsensus) ValidateShutdown() error {
 		return nil
 	}
 
-	activity, err := r.getIstanbulSealerActivity(r.cfg.GethRpcUrl)
+	activity, err := r.getIstanbulSealerActivity(r.cfg.BasicConfig.GethRpcUrl)
 	if err != nil {
 		log.Error("istanbul status check failed", "err", err)
 		return err

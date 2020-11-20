@@ -1,15 +1,15 @@
+[basicConfig]
 #node manager name
 name = "node1"
-
 #geth RPC URL
 gethRpcUrl = "http://localhost:22000"
 tesseraUpcheckUrl = "http://localhost:9001/upcheck"
-enodeId="ac6b1096ca56b9f6d004b779ae3728bf83f8e22453404cc3cef16a3d9b96608bc67c4b30db88e0a5a6c6390213f7acbe1153ff6d23ce57380104288ae19373ef"
+tesseraKey="oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
 consensus="istanbul"
 nodeManagerConfigFile="./test/shell/nm1.toml"
 
-#geth inactivity timeout seconds
-gethInactivityTime = 1000
+#geth/tessera inactivity timeout seconds
+inactivityTime = 1000
 
 #geth's http/ws services that need to be exposed as proxy services
 proxies = [
@@ -20,21 +20,21 @@ proxies = [
  ]
 
 #rpc server details of node manager
-[server]
+[basicConfig.server]
 # The interface + port the application should bind to
 rpcAddr = "localhost:8081"
 rpcCorsList = ["*"]
 rpcvHosts = ["*"]
 
 #geth's process control config
-[gethProcess]
+[basicConfig.gethProcess]
 name="geth"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"]
 
 #tessera's process control config
-[tesseraProcess]
+[basicConfig.tesseraProcess]
 name="tessera"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"]

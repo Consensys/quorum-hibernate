@@ -28,9 +28,9 @@ func (nm *NodeManager) getNodeManagerConfigByTesseraKey(key string) *types.NodeM
 }
 
 func (nm *NodeManager) getLatestNodeManagerConfig() []*types.NodeManagerConfig {
-	newCfg, err := types.ReadNodeManagerConfig(nm.cfg.NodeManagerConfigFile)
+	newCfg, err := types.ReadNodeManagerConfig(nm.cfg.BasicConfig.NodeManagerConfigFile)
 	if err != nil {
-		log.Error("error updating node manager config. will use old config", "path", nm.cfg.NodeManagerConfigFile, "err", err)
+		log.Error("error updating node manager config. will use old config", "path", nm.cfg.BasicConfig.NodeManagerConfigFile, "err", err)
 		return nm.cfg.NodeManagers
 	}
 	log.Info("loaded new config", "cfg", newCfg)
@@ -45,7 +45,7 @@ func (nm *NodeManager) getLatestNodeManagerConfig() []*types.NodeManagerConfig {
 
 // TODO parallelize request
 func (nm *NodeManager) ValidateForPrivateTx(tesseraKeys []string) (bool, error) {
-	var blockNumberJsonStr = []byte(fmt.Sprintf(`{"jsonrpc":"2.0", "method":"node.PrepareForPrivateTx", "params":["%s"], "id":77}`, nm.cfg.Name))
+	var blockNumberJsonStr = []byte(fmt.Sprintf(`{"jsonrpc":"2.0", "method":"node.PrepareForPrivateTx", "params":["%s"], "id":77}`, nm.cfg.BasicConfig.Name))
 	var statusArr []bool
 	for _, tessKey := range tesseraKeys {
 		nmCfg := nm.getNodeManagerConfigByTesseraKey(tessKey)
@@ -95,13 +95,13 @@ func (nm *NodeManager) ValidateForPrivateTx(tesseraKeys []string) (bool, error) 
 }
 
 func (nm *NodeManager) ValidateOtherQnms() ([]NodeStatusInfo, error) {
-	var nodeStatusReq = []byte(fmt.Sprintf(`{"jsonrpc":"2.0", "method":"node.NodeStatus", "params":["%s"], "id":77}`, nm.cfg.Name))
+	var nodeStatusReq = []byte(fmt.Sprintf(`{"jsonrpc":"2.0", "method":"node.NodeStatus", "params":["%s"], "id":77}`, nm.cfg.BasicConfig.Name))
 	var statusArr []NodeStatusInfo
 	nodeManagerCount := 0
 	for _, n := range nm.getLatestNodeManagerConfig() {
 
 		//skip self
-		if n.EnodeId == nm.cfg.EnodeId {
+		if n.TesseraKey == nm.cfg.BasicConfig.TesseraKey {
 			continue
 		}
 

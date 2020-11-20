@@ -65,7 +65,6 @@ func (c ProxyConfig) IsValid() error {
 type NodeManagerConfig struct {
 	Name       string `toml:"name"`
 	TesseraKey string `toml:"tesseraKey"`
-	EnodeId    string `toml:"enodeId"`
 	RpcUrl     string `toml:"rpcUrl"`
 }
 
@@ -75,9 +74,6 @@ func (c NodeManagerConfig) IsValid() error {
 	}
 	if c.TesseraKey == "" {
 		return errors.New("node manager tesseraKey is empty.")
-	}
-	if c.EnodeId == "" {
-		return errors.New("node manager enodeId is empty.")
 	}
 	if c.RpcUrl == "" {
 		return errors.New("node manager rpcUrl is empty.")
@@ -133,19 +129,23 @@ func (c RPCServerConfig) IsValid() error {
 	return nil
 }
 
+type BasicConfig struct {
+	Name                  string           `toml:"name"`
+	GethRpcUrl            string           `toml:"gethRpcUrl"`
+	TesseraUpcheckUrl     string           `toml:"tesseraUpcheckUrl"`
+	TesseraKey            string           `toml:"tesseraKey"`
+	Consensus             string           `toml:"consensus"`
+	NodeManagerConfigFile string           `toml:"nodeManagerConfigFile"`
+	InactivityTime        int              `toml:"inactivityTime"`
+	Server                *RPCServerConfig `toml:"server"`
+	GethProcess           *ProcessConfig   `toml:"gethProcess"`
+	TesseraProcess        *ProcessConfig   `toml:"tesseraProcess"`
+	Proxies               []*ProxyConfig   `toml:"proxies"`
+}
+
 type NodeConfig struct {
-	Name                  string               `toml:"name"`
-	GethRpcUrl            string               `toml:"gethRpcUrl"`
-	TesseraUpcheckUrl     string               `toml:"tesseraUpcheckUrl"`
-	EnodeId               string               `toml:"enodeId"`
-	Consensus             string               `toml:"consensus"`
-	NodeManagerConfigFile string               `toml:"nodeManagerConfigFile"`
-	GethInactivityTime    int                  `toml:"gethInactivityTime"`
-	Server                *RPCServerConfig     `toml:"server"`
-	GethProcess           *ProcessConfig       `toml:"gethProcess"`
-	TesseraProcess        *ProcessConfig       `toml:"tesseraProcess"`
-	Proxies               []*ProxyConfig       `toml:"proxies"`
-	NodeManagers          []*NodeManagerConfig `toml:"nodeManagers"`
+	BasicConfig  *BasicConfig         `toml:"basicConfig"`
+	NodeManagers []*NodeManagerConfig `toml:"nodeManagers"`
 }
 
 type NodeManagerListConfig struct {
@@ -163,7 +163,7 @@ func ReadNodeConfig(configFile string) (NodeConfig, error) {
 		return NodeConfig{}, err
 	}
 	// validate config rules
-	if err = input.IsValid(); err != nil {
+	if err = input.BasicConfig.IsValid(); err != nil {
 		return NodeConfig{}, err
 	}
 	return input, nil
@@ -189,33 +189,45 @@ func ReadNodeManagerConfig(configFile string) ([]*NodeManagerConfig, error) {
 	return input.NodeManagers, nil
 }
 
-func (c NodeConfig) IsRaft() bool {
+func (c NodeConfig) IsValid() error {
+	if c.BasicConfig == nil {
+		return errors.New("basic config is nil")
+	}
+	if err := c.BasicConfig.IsValid(); err != nil {
+		return err
+	}
+	for _, n := range c.NodeManagers {
+		if err := n.IsValid(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c BasicConfig) IsRaft() bool {
 	return strings.ToLower(c.Consensus) == "raft"
 }
 
-func (c NodeConfig) IsIstanbul() bool {
+func (c BasicConfig) IsIstanbul() bool {
 	return strings.ToLower(c.Consensus) == "istanbul"
 }
 
-func (c NodeConfig) IsClique() bool {
+func (c BasicConfig) IsClique() bool {
 	return strings.ToLower(c.Consensus) == "clique"
 }
 
-func (c NodeConfig) IsValid() error {
+func (c BasicConfig) IsValid() error {
 	if c.Name == "" {
 		return errors.New("Name is empty")
-	}
-
-	if c.Consensus == "" {
-		return errors.New("consensus is empty")
 	}
 
 	if c.NodeManagerConfigFile == "" {
 		return errors.New("NodeManagerConfigFile is empty")
 	}
 
-	if !c.IsRaft() && !c.IsClique() && !c.IsIstanbul() {
-		return errors.New("invalid consensus name. supports only raft or istanbul or clique")
+	err := c.IsConsensusValid()
+	if err != nil {
+		return err
 	}
 
 	if c.GethProcess == nil {
@@ -234,12 +246,12 @@ func (c NodeConfig) IsValid() error {
 		return errors.New("tessera upcheck url is empty")
 	}
 
-	if c.EnodeId == "" {
+	if c.TesseraKey == "" {
 		return errors.New("enodeId is empty")
 	}
 
-	if c.GethInactivityTime < 60 {
-		return errors.New("GethInactivityTime should be greater than or equal to 60seconds")
+	if c.InactivityTime < 60 {
+		return errors.New("InactivityTime should be greater than or equal to 60seconds")
 	}
 
 	if c.Server == nil {
@@ -262,18 +274,23 @@ func (c NodeConfig) IsValid() error {
 		return errors.New("proxies config is empty")
 	}
 
-	for _, n := range c.NodeManagers {
-		if err := n.IsValid(); err != nil {
-			return err
-		}
-	}
-
 	for _, n := range c.Proxies {
 		if err := n.IsValid(); err != nil {
 			return err
 		}
 	}
 
+	return nil
+}
+
+func (c BasicConfig) IsConsensusValid() error {
+	if c.Consensus == "" {
+		return errors.New("consensus is empty")
+	}
+
+	if !c.IsRaft() && !c.IsClique() && !c.IsIstanbul() {
+		return errors.New("invalid consensus name. supports only raft or istanbul or clique")
+	}
 	return nil
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
+// TODO needs to be expanded to cover private tx for all apis like contract extension
 func IsPrivateTransaction(bodyStr string) bool {
 	return strings.Contains(bodyStr, "eth_sendTransaction") && strings.Contains(bodyStr, "privateFor")
 }

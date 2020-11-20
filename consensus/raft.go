@@ -65,7 +65,7 @@ func (r *RaftConsensus) getRaftClusterInfo(qrmRpcUrl string) ([]RaftClusterEntry
 }
 
 func (r *RaftConsensus) ValidateShutdown() error {
-	cluster, err := r.getRaftClusterInfo(r.cfg.GethRpcUrl)
+	cluster, err := r.getRaftClusterInfo(r.cfg.BasicConfig.GethRpcUrl)
 	if err != nil {
 		log.Error("raft cluster failed", "err", err)
 		return err
@@ -77,7 +77,7 @@ func (r *RaftConsensus) ValidateShutdown() error {
 		if n.NodeActive {
 			activeNodes++
 		}
-		if n.NodeId == r.cfg.EnodeId {
+		if n.NodeId == r.cfg.BasicConfig.TesseraKey {
 			role = n.Role
 		}
 	}

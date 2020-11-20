@@ -26,6 +26,7 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 			logRequestPayload(req, ps.proxyCfg.Name, ps.proxyCfg.UpstreamAddr, string(body))
 		}
 
+		// TODO move request URIs to be excluded to config
 		if req.RequestURI != "/partyinfo" && req.RequestURI != "/upcheck" {
 			ps.qrmNode.ResetInactiveTime()
 		}

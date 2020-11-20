@@ -55,16 +55,16 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 		sync.Mutex{},
 	}
 
-	if cfg.GethProcess.IsShell() {
-		quorumNode.gethp = proc.NewShellProcess(cfg.GethProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
-	} else if cfg.GethProcess.IsDocker() {
-		quorumNode.gethp = proc.NewDockerProcess(cfg.GethProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
+	if cfg.BasicConfig.GethProcess.IsShell() {
+		quorumNode.gethp = proc.NewShellProcess(cfg.BasicConfig.GethProcess, cfg.BasicConfig.GethRpcUrl, cfg.BasicConfig.TesseraUpcheckUrl, true)
+	} else if cfg.BasicConfig.GethProcess.IsDocker() {
+		quorumNode.gethp = proc.NewDockerProcess(cfg.BasicConfig.GethProcess, cfg.BasicConfig.GethRpcUrl, cfg.BasicConfig.TesseraUpcheckUrl, true)
 	}
 
-	if cfg.TesseraProcess.IsShell() {
-		quorumNode.tesserap = proc.NewShellProcess(cfg.TesseraProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
-	} else if cfg.TesseraProcess.IsDocker() {
-		quorumNode.tesserap = proc.NewDockerProcess(cfg.TesseraProcess, cfg.GethRpcUrl, cfg.TesseraUpcheckUrl, true)
+	if cfg.BasicConfig.TesseraProcess.IsShell() {
+		quorumNode.tesserap = proc.NewShellProcess(cfg.BasicConfig.TesseraProcess, cfg.BasicConfig.GethRpcUrl, cfg.BasicConfig.TesseraUpcheckUrl, true)
+	} else if cfg.BasicConfig.TesseraProcess.IsDocker() {
+		quorumNode.tesserap = proc.NewDockerProcess(cfg.BasicConfig.TesseraProcess, cfg.BasicConfig.GethRpcUrl, cfg.BasicConfig.TesseraUpcheckUrl, true)
 	}
 
 	if quorumNode.gethp.Status() && quorumNode.tesserap.Status() {
@@ -73,16 +73,16 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 		quorumNode.SetNodeStatus(types.Down)
 	}
 
-	if quorumNode.config.IsRaft() {
+	if quorumNode.config.BasicConfig.IsRaft() {
 		quorumNode.consensus = cons.NewRaftConsensus(quorumNode.config)
-	} else if quorumNode.config.IsIstanbul() {
+	} else if quorumNode.config.BasicConfig.IsIstanbul() {
 		quorumNode.consensus = cons.NewIstanbulConsensus(quorumNode.config)
 	}
 	return quorumNode
 }
 
 func (qn *QuorumNodeControl) GetRPCConfig() *types.RPCServerConfig {
-	return qn.config.Server
+	return qn.config.BasicConfig.Server
 }
 
 func (qn *QuorumNodeControl) GetNodeConfig() *types.NodeConfig {
@@ -94,7 +94,7 @@ func (qn *QuorumNodeControl) GetNodeStatus() types.NodeStatus {
 }
 
 func (qn *QuorumNodeControl) GetProxyConfig() []*types.ProxyConfig {
-	return qn.config.Proxies
+	return qn.config.BasicConfig.Proxies
 }
 
 func (qn *QuorumNodeControl) SetNodeStatus(ns types.NodeStatus) {
