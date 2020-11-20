@@ -23,30 +23,32 @@ type QNMApp struct {
 var qnmApp = QNMApp{}
 
 func main() {
-
 	var verbosity int
-	var nodeConfig types.NodeConfig
-	var err error
-
 	flag.IntVar(&verbosity, "verbosity", log.InfoLevel, "logging verbosity")
 	// Read config file path
 	var configFile string
 	flag.StringVar(&configFile, "config", "config.toml", "config file")
 	flag.Parse()
 	log.Info("config file", "path", configFile)
-
-	if nodeConfig, err = types.ReadConfig(configFile); err != nil {
-		log.Error("loading config file failed", "configfile", configFile, "err", err)
+	nodeConfig, err := readNodeConfigFromFile(configFile)
+	if err != nil {
+		log.Error("loading config file failed", "err", err)
 		return
 	}
-	log.Info("config file read")
-
+	log.Info("node config", "cfg", nodeConfig)
 	rpcBackendErrCh := make(chan error)
 	proxyBackendErrCh := make(chan error)
+	if !Start(nodeConfig, err, proxyBackendErrCh, rpcBackendErrCh) {
+		return
+	}
+	waitForShutdown(rpcBackendErrCh, proxyBackendErrCh)
+}
+
+func Start(nodeConfig types.NodeConfig, err error, proxyBackendErrCh chan error, rpcBackendErrCh chan error) bool {
 	qnmApp.qrmNode = node.NewQuorumNodeControl(&nodeConfig)
 	if qnmApp.proxyServers, err = proxy.MakeProxyServices(qnmApp.qrmNode, proxyBackendErrCh); err != nil {
 		log.Error("creating proxies failed", "err", err)
-		return
+		return false
 	}
 	qnmApp.rpcService = rpc.NewRPCService(qnmApp.qrmNode, qnmApp.qrmNode.GetRPCConfig(), rpcBackendErrCh)
 
@@ -61,9 +63,12 @@ func main() {
 	// start rpc server
 	if err := qnmApp.rpcService.Start(); err != nil {
 		log.Info("rpc server failed", "err", err)
-		return
+		return false
 	}
+	return true
+}
 
+func waitForShutdown(rpcBackendErrCh chan error, proxyBackendErrCh chan error) {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(sigc)
@@ -83,7 +88,22 @@ func main() {
 			return
 		}
 	}
+}
 
+func readNodeConfigFromFile(configFile string) (types.NodeConfig, error) {
+	var nodeConfig types.NodeConfig
+	var err error
+	if nodeConfig, err = types.ReadNodeConfig(configFile); err != nil {
+		log.Error("loading node config file failed", "configfile", configFile, "err", err)
+		return types.NodeConfig{}, err
+	}
+	log.Info("node config file read successfully")
+	if nodeConfig.NodeManagers, err = types.ReadNodeManagerConfig(nodeConfig.NodeManagerConfigFile); err != nil {
+		log.Error("loading node manager config failed", "err", err)
+		return types.NodeConfig{}, err
+	}
+	log.Info("node manager config file read successfully")
+	return nodeConfig, nil
 }
 
 func Shutdown() {

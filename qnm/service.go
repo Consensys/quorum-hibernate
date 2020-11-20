@@ -17,8 +17,8 @@ func NewNodeManager(cfg *types.NodeConfig) *NodeManager {
 	return &NodeManager{cfg: cfg, client: core.NewHttpClient()}
 }
 
-func (nm *NodeManager) getNodeManagerConfig(key string) *types.NodeManagerConfig {
-	for _, n := range nm.cfg.NodeManagers {
+func (nm *NodeManager) getNodeManagerConfigByTesseraKey(key string) *types.NodeManagerConfig {
+	for _, n := range nm.getLatestNodeManagerConfig() {
 		if n.TesseraKey == key {
 			log.Info("tesseraKey matched", "node", n)
 			return n
@@ -27,12 +27,28 @@ func (nm *NodeManager) getNodeManagerConfig(key string) *types.NodeManagerConfig
 	return nil
 }
 
+func (nm *NodeManager) getLatestNodeManagerConfig() []*types.NodeManagerConfig {
+	newCfg, err := types.ReadNodeManagerConfig(nm.cfg.NodeManagerConfigFile)
+	if err != nil {
+		log.Error("error updating node manager config. will use old config", "path", nm.cfg.NodeManagerConfigFile, "err", err)
+		return nm.cfg.NodeManagers
+	}
+	log.Info("loaded new config", "cfg", newCfg)
+	if len(newCfg) == 0 {
+		log.Warn("node manager list is empty after reload")
+	} else {
+		log.Info("updated node manager config", "new cfg", newCfg)
+	}
+	nm.cfg.NodeManagers = newCfg
+	return nm.cfg.NodeManagers
+}
+
 // TODO parallelize request
 func (nm *NodeManager) ValidateForPrivateTx(tesseraKeys []string) (bool, error) {
 	var blockNumberJsonStr = []byte(fmt.Sprintf(`{"jsonrpc":"2.0", "method":"node.PrepareForPrivateTx", "params":["%s"], "id":77}`, nm.cfg.Name))
 	var statusArr []bool
 	for _, tessKey := range tesseraKeys {
-		nmCfg := nm.getNodeManagerConfig(tessKey)
+		nmCfg := nm.getNodeManagerConfigByTesseraKey(tessKey)
 		if nmCfg != nil {
 			req, err := http.NewRequest("POST", nmCfg.RpcUrl, bytes.NewBuffer(blockNumberJsonStr))
 			if err != nil {
@@ -82,7 +98,7 @@ func (nm *NodeManager) ValidateOtherQnms() ([]NodeStatusInfo, error) {
 	var nodeStatusReq = []byte(fmt.Sprintf(`{"jsonrpc":"2.0", "method":"node.NodeStatus", "params":["%s"], "id":77}`, nm.cfg.Name))
 	var statusArr []NodeStatusInfo
 	nodeManagerCount := 0
-	for _, n := range nm.cfg.NodeManagers {
+	for _, n := range nm.getLatestNodeManagerConfig() {
 
 		//skip self
 		if n.EnodeId == nm.cfg.EnodeId {

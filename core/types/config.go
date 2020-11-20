@@ -2,10 +2,11 @@ package types
 
 import (
 	"errors"
-	"github.com/ConsenSysQuorum/node-manager/log"
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/ConsenSysQuorum/node-manager/log"
 
 	"github.com/naoina/toml"
 )
@@ -133,20 +134,25 @@ func (c RPCServerConfig) IsValid() error {
 }
 
 type NodeConfig struct {
-	Name               string               `toml:"name"`
-	GethRpcUrl         string               `toml:"gethRpcUrl"`
-	TesseraUpcheckUrl  string               `toml:"tesseraUpcheckUrl"`
-	EnodeId            string               `toml:"enodeId"`
-	Consensus          string               `toml:"consensus"`
-	GethInactivityTime int                  `toml:"gethInactivityTime"`
-	Server             *RPCServerConfig     `toml:"server"`
-	GethProcess        *ProcessConfig       `toml:"gethProcess"`
-	TesseraProcess     *ProcessConfig       `toml:"tesseraProcess"`
-	Proxies            []*ProxyConfig       `toml:"proxies"`
-	NodeManagers       []*NodeManagerConfig `toml:"nodeManagers"`
+	Name                  string               `toml:"name"`
+	GethRpcUrl            string               `toml:"gethRpcUrl"`
+	TesseraUpcheckUrl     string               `toml:"tesseraUpcheckUrl"`
+	EnodeId               string               `toml:"enodeId"`
+	Consensus             string               `toml:"consensus"`
+	NodeManagerConfigFile string               `toml:"nodeManagerConfigFile"`
+	GethInactivityTime    int                  `toml:"gethInactivityTime"`
+	Server                *RPCServerConfig     `toml:"server"`
+	GethProcess           *ProcessConfig       `toml:"gethProcess"`
+	TesseraProcess        *ProcessConfig       `toml:"tesseraProcess"`
+	Proxies               []*ProxyConfig       `toml:"proxies"`
+	NodeManagers          []*NodeManagerConfig `toml:"nodeManagers"`
 }
 
-func ReadConfig(configFile string) (NodeConfig, error) {
+type NodeManagerListConfig struct {
+	NodeManagers []*NodeManagerConfig `toml:"nodeManagers"`
+}
+
+func ReadNodeConfig(configFile string) (NodeConfig, error) {
 	f, err := os.Open(configFile)
 	if err != nil {
 		return NodeConfig{}, err
@@ -160,8 +166,27 @@ func ReadConfig(configFile string) (NodeConfig, error) {
 	if err = input.IsValid(); err != nil {
 		return NodeConfig{}, err
 	}
-
 	return input, nil
+}
+
+func ReadNodeManagerConfig(configFile string) ([]*NodeManagerConfig, error) {
+	f, err := os.Open(configFile)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var input NodeManagerListConfig
+	if err = toml.NewDecoder(f).Decode(&input); err != nil {
+		return nil, err
+	}
+	// validate config rules
+	for _, n := range input.NodeManagers {
+		if err = n.IsValid(); err != nil {
+			return nil, err
+		}
+	}
+
+	return input.NodeManagers, nil
 }
 
 func (c NodeConfig) IsRaft() bool {
@@ -185,12 +210,12 @@ func (c NodeConfig) IsValid() error {
 		return errors.New("consensus is empty")
 	}
 
-	if !c.IsRaft() && !c.IsClique() && !c.IsIstanbul() {
-		return errors.New("invalid consensus name. supports only raft or istanbul or clique")
+	if c.NodeManagerConfigFile == "" {
+		return errors.New("NodeManagerConfigFile is empty")
 	}
 
-	if len(c.Proxies) == 0 {
-		return errors.New("proxies config is empty")
+	if !c.IsRaft() && !c.IsClique() && !c.IsIstanbul() {
+		return errors.New("invalid consensus name. supports only raft or istanbul or clique")
 	}
 
 	if c.GethProcess == nil {
@@ -233,6 +258,10 @@ func (c NodeConfig) IsValid() error {
 		return err
 	}
 
+	if len(c.Proxies) == 0 {
+		return errors.New("proxies config is empty")
+	}
+
 	for _, n := range c.NodeManagers {
 		if err := n.IsValid(); err != nil {
 			return err
@@ -250,6 +279,6 @@ func (c NodeConfig) IsValid() error {
 
 func isValidUrl(addr string) bool {
 	u, err := url.Parse(addr)
-	log.Debug("parse", "url", u, "err", err)
+	log.Debug("isValidUrl", "url", u, "err", err)
 	return err == nil
 }
