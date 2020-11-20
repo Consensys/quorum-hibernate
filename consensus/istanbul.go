@@ -1,11 +1,8 @@
 package consensus
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/ConsenSysQuorum/node-manager/core/types"
@@ -35,64 +32,34 @@ type IstanbulConsensus struct {
 	client *http.Client
 }
 
-const validatorDownSealDiff = 3
+const (
+	validatorDownSealDiff = 3
+
+	IstanbulStatusReq      = `{"jsonrpc":"2.0", "method":"istanbul_status", "params":[], "id":67}`
+	IstanbulIsValidatorReq = `{"jsonrpc":"2.0", "method":"istanbul_isValidator", "params":[], "id":67}`
+)
 
 func NewIstanbulConsensus(qn *types.NodeConfig) Consensus {
 	return &IstanbulConsensus{cfg: qn, client: core.NewHttpClient()}
 }
 
 func (r *IstanbulConsensus) getIstanbulSealerActivity(qrmRpcUrl string) (*IstanbulSealActivity, error) {
-	istanbulStatusReq := []byte(`{"jsonrpc":"2.0", "method":"istanbul_status", "params":[], "id":67}`)
-	req, err := http.NewRequest("POST", qrmRpcUrl, bytes.NewBuffer(istanbulStatusReq))
-	if err != nil {
-		return nil, fmt.Errorf("istanbul status - creating request failed err=%v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := r.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("istanbul status do req failed err=%v", err)
-	}
 	var respResult IstanbulSealActivityResp
-	if resp.StatusCode == http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Debug("istanbul status response Body:", string(body))
-		jerr := json.Unmarshal(body, &respResult)
-		if jerr == nil {
-			log.Debug("istanbul status - response OK", "from", qrmRpcUrl, "result", respResult)
-		} else {
-			log.Error("istanbul status response result json decode failed", "err", jerr)
-			return nil, err
-		}
+	if err := core.MakeRpcCall(qrmRpcUrl, []byte(IstanbulStatusReq), &respResult); err != nil {
+		return nil, err
 	}
 	return &respResult.Result, respResult.Error
 }
 
 func (r *IstanbulConsensus) getIstanbulIsValidator(qrmRpcUrl string) (bool, error) {
-	istanbulIsValidatorReq := []byte(`{"jsonrpc":"2.0", "method":"istanbul_isValidator", "params":[], "id":67}`)
-	req, err := http.NewRequest("POST", qrmRpcUrl, bytes.NewBuffer(istanbulIsValidatorReq))
-	if err != nil {
-		return false, fmt.Errorf("istanbul isValidator - creating request failed err=%v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := r.client.Do(req)
-	if err != nil {
-		return false, fmt.Errorf("istanbul isValidator do req failed err=%v", err)
-	}
 	var respResult IstanbulIsValidatorResp
-	if resp.StatusCode == http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Debug("istanbul isValidator response Body:", string(body))
-		jerr := json.Unmarshal(body, &respResult)
-		if jerr == nil {
-			log.Debug("istanbul isValidator - response OK", "from", qrmRpcUrl, "result", respResult)
-		} else {
-			log.Error("istanbul isValidator response result json decode failed", "err", jerr)
-			return false, err
-		}
+	if err := core.MakeRpcCall(qrmRpcUrl, []byte(IstanbulIsValidatorReq), &respResult); err != nil {
+		return false, err
 	}
 	return respResult.Result, respResult.Error
 }
 
+// TODO - if the number of validators are more than 64 this will not work as expected as signers return data for last 64 blocks only
 func (r *IstanbulConsensus) ValidateShutdown() error {
 	isValidator, err := r.getIstanbulIsValidator(r.cfg.BasicConfig.GethRpcUrl)
 	if err != nil {

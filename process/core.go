@@ -1,7 +1,6 @@
 package process
 
 import (
-	"bytes"
 	"io/ioutil"
 	"net/http"
 	"os/exec"
@@ -17,6 +16,13 @@ type Process interface {
 	IsUp() bool
 	Status() bool
 }
+
+type BlockNumberResp struct {
+	Result string `json:"result"`
+	Error  error  `json:"error"`
+}
+
+const BlockNumberReq = `{"jsonrpc":"2.0", "method":"eth_blockNumber", "params":[], "id":67}`
 
 var httpClnt = core.NewHttpClient()
 
@@ -40,28 +46,11 @@ func ExecuteShellCommand(desc string, cmdArr []string) error {
 
 // TODO - what is the right way to check if geth is up?
 func IsGethUp(gethRpcUrl string) (bool, error) {
-	var blockNumberJsonStr = []byte(`{"jsonrpc":"2.0", "method":"eth_blockNumber", "params":[], "id":67}`)
-	req, err := http.NewRequest("POST", gethRpcUrl, bytes.NewBuffer(blockNumberJsonStr))
-	if err != nil {
-		log.Error("geth up check new req failed", "err", err)
-		return false, err
+	var resp BlockNumberResp
+	if err := core.MakeRpcCall(gethRpcUrl, []byte(BlockNumberReq), &resp); err != nil {
+		return false, core.ErrNodeDown
 	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := httpClnt.Do(req)
-	if err != nil {
-		log.Warn("geth up check client do req failed", "err", err)
-		return false, err
-	}
-	defer resp.Body.Close()
-
-	log.Debug("geth up check response Status", "status", resp.Status)
-	body, _ := ioutil.ReadAll(resp.Body)
-	log.Debug("geth up check response Body:", string(body))
-	if resp.StatusCode == http.StatusOK {
-		log.Debug("geth is up, replied to eth_blockNumber call", "reply", string(body))
-		return true, nil
-	}
-	return false, core.ErrNodeDown
+	return true, nil
 }
 
 func IsTesseraUp(tesseraUpcheckUrl string) (bool, error) {

@@ -6,6 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/ConsenSysQuorum/node-manager/rpc"
 
 	"github.com/ConsenSysQuorum/node-manager/core/types"
@@ -29,6 +31,7 @@ func main() {
 	var configFile string
 	flag.StringVar(&configFile, "config", "config.toml", "config file")
 	flag.Parse()
+	logrus.SetLevel(logrus.Level(verbosity + 2))
 	log.Info("config file", "path", configFile)
 	nodeConfig, err := readNodeConfigFromFile(configFile)
 	if err != nil {

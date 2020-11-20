@@ -1,16 +1,16 @@
 package qnm
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-
 	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
+)
+
+const (
+	NodeStatusMethod   = `{"jsonrpc":"2.0", "method":"node.NodeStatus", "params":["%s"], "id":77}`
+	PreparePvtTxMethod = `{"jsonrpc":"2.0", "method":"node.PrepareForPrivateTx", "params":["%s"], "id":77}`
 )
 
 func NewNodeManager(cfg *types.NodeConfig) *NodeManager {
@@ -20,7 +20,7 @@ func NewNodeManager(cfg *types.NodeConfig) *NodeManager {
 func (nm *NodeManager) getNodeManagerConfigByTesseraKey(key string) *types.NodeManagerConfig {
 	for _, n := range nm.getLatestNodeManagerConfig() {
 		if n.TesseraKey == key {
-			log.Info("tesseraKey matched", "node", n)
+			log.Info("getNodeManagerConfigByTesseraKey - tesseraKey matched", "node", n)
 			return n
 		}
 	}
@@ -30,56 +30,38 @@ func (nm *NodeManager) getNodeManagerConfigByTesseraKey(key string) *types.NodeM
 func (nm *NodeManager) getLatestNodeManagerConfig() []*types.NodeManagerConfig {
 	newCfg, err := types.ReadNodeManagerConfig(nm.cfg.BasicConfig.NodeManagerConfigFile)
 	if err != nil {
-		log.Error("error updating node manager config. will use old config", "path", nm.cfg.BasicConfig.NodeManagerConfigFile, "err", err)
+		log.Error("getLatestNodeManagerConfig - error updating node manager config. will use old config", "path", nm.cfg.BasicConfig.NodeManagerConfigFile, "err", err)
 		return nm.cfg.NodeManagers
 	}
-	log.Info("loaded new config", "cfg", newCfg)
+	log.Debug("getLatestNodeManagerConfig - loaded new config", "cfg", newCfg)
 	if len(newCfg) == 0 {
-		log.Warn("node manager list is empty after reload")
-	} else {
-		log.Info("updated node manager config", "new cfg", newCfg)
+		log.Warn("getLatestNodeManagerConfig - node manager list is empty after reload")
 	}
+	log.Debug("getLatestNodeManagerConfig - node manager config", "new cfg", newCfg)
 	nm.cfg.NodeManagers = newCfg
 	return nm.cfg.NodeManagers
 }
 
+// TODO if a qnm is down/not reachable should I mark it as down and proceed?
 // TODO parallelize request
 func (nm *NodeManager) ValidateForPrivateTx(tesseraKeys []string) (bool, error) {
-	var blockNumberJsonStr = []byte(fmt.Sprintf(`{"jsonrpc":"2.0", "method":"node.PrepareForPrivateTx", "params":["%s"], "id":77}`, nm.cfg.BasicConfig.Name))
+	var preparePvtTxReq = []byte(fmt.Sprintf(PreparePvtTxMethod, nm.cfg.BasicConfig.Name))
 	var statusArr []bool
 	for _, tessKey := range tesseraKeys {
 		nmCfg := nm.getNodeManagerConfigByTesseraKey(tessKey)
 		if nmCfg != nil {
-			req, err := http.NewRequest("POST", nmCfg.RpcUrl, bytes.NewBuffer(blockNumberJsonStr))
-			if err != nil {
-				return false, fmt.Errorf("node manager private tx prep reply - creating request failed err=%v", err)
-			}
-			req.Header.Set("Content-Type", "application/json")
-			log.Info("node manager private tx prep sending req", "to", nmCfg.RpcUrl)
-			resp, err := nm.client.Do(req)
-			if err != nil {
-				return false, fmt.Errorf("node manager private tx prep do req failed err=%v", err)
-			}
-
-			log.Debug("node manager private tx prep response Status", "status", resp.Status)
-			if resp.StatusCode == http.StatusOK {
-				body, _ := ioutil.ReadAll(resp.Body)
-				log.Debug("node manager private tx prep response Body:", string(body))
-				respResult := NodeManagerPrivateTxPrepResult{}
-				jerr := json.Unmarshal(body, &respResult)
-				if jerr == nil {
-					log.Info("node manager private tx prep - response OK", "from", nmCfg.RpcUrl, "result", respResult)
-					statusArr = append(statusArr, respResult.Result.Status)
-				} else {
-					log.Info("response result json decode failed", "err", jerr)
-					statusArr = append(statusArr, false)
-				}
-			} else {
+			respResult := NodeManagerPrivateTxPrepResult{}
+			if err := core.MakeRpcCall(nmCfg.RpcUrl, preparePvtTxReq, &respResult); err != nil {
+				log.Error("ValidateForPrivateTx failed", "err", err)
 				statusArr = append(statusArr, false)
+			} else if respResult.Error != nil {
+				log.Error("ValidateForPrivateTx result failed", "err", respResult.Error)
+				statusArr = append(statusArr, false)
+			} else {
+				statusArr = append(statusArr, respResult.Result.Status)
 			}
-			resp.Body.Close()
 		} else {
-			log.Warn("tessera key not found, probably node not using qnm", "key", tessKey)
+			log.Warn("ValidateForPrivateTx - tessera key not found, probably node not using qnm", "key", tessKey)
 		}
 	}
 
@@ -90,55 +72,32 @@ func (nm *NodeManager) ValidateForPrivateTx(tesseraKeys []string) (bool, error) 
 			break
 		}
 	}
-	log.Info("node manager private tx prep completed", "final status", finalStatus, "statusArr", statusArr)
+	log.Info("ValidateForPrivateTx completed", "final status", finalStatus, "statusArr", statusArr)
 	return finalStatus, nil
 }
 
+// TODO if a qnm is down/not reachable should I mark it as down and proceed?
+// TODO parallelize req
 func (nm *NodeManager) ValidateOtherQnms() ([]NodeStatusInfo, error) {
-	var nodeStatusReq = []byte(fmt.Sprintf(`{"jsonrpc":"2.0", "method":"node.NodeStatus", "params":["%s"], "id":77}`, nm.cfg.BasicConfig.Name))
+	var nodeStatusReq = []byte(fmt.Sprintf(NodeStatusMethod, nm.cfg.BasicConfig.Name))
 	var statusArr []NodeStatusInfo
 	nodeManagerCount := 0
 	for _, n := range nm.getLatestNodeManagerConfig() {
-
 		//skip self
 		if n.TesseraKey == nm.cfg.BasicConfig.TesseraKey {
 			continue
 		}
-
 		nodeManagerCount++
-
-		req, err := http.NewRequest("POST", n.RpcUrl, bytes.NewBuffer(nodeStatusReq))
-		if err != nil {
-			return nil, fmt.Errorf("node manager - creating NodeStatus request failed for node manager=%s err=%v", n.Name, err)
+		var respResult = NodeManagerNodeStatusResult{}
+		if err := core.MakeRpcCall(n.RpcUrl, nodeStatusReq, &respResult); err != nil {
+			log.Error("ValidateOtherQnms NodeStatus - failed", "err", err)
+			return nil, err
 		}
-		req.Header.Set("Content-Type", "application/json")
-		log.Info("node manager prep sending req", "to", n.RpcUrl)
-		resp, err := nm.client.Do(req)
-		if err != nil {
-			return nil, fmt.Errorf("node manager NodeStatus do req failed err=%v", err)
+		if respResult.Error != nil {
+			log.Error("ValidateOtherQnms NodeStatus - error in response", "err", respResult.Error)
+			return nil, respResult.Error
 		}
-
-		log.Info("node manager NodeStatus response Status", "status", resp.Status)
-		if resp.StatusCode == http.StatusOK {
-			body, _ := ioutil.ReadAll(resp.Body)
-			log.Debug("node manager NodeStatus response Body:", string(body))
-			respResult := NodeManagerNodeStatusResult{}
-			jerr := json.Unmarshal(body, &respResult)
-			if jerr == nil {
-				log.Info("node manager NodeStatus - response OK", "from", n.RpcUrl, "result", respResult)
-				if respResult.Error != nil {
-					log.Error("node manager NodeStatus - error in response", "err", respResult.Error)
-					return nil, respResult.Error
-				}
-				statusArr = append(statusArr, respResult.Result)
-			} else {
-				log.Error("node manager NodeStatus response result json decode failed", "err", jerr)
-			}
-		} else {
-			log.Error("node manager NodeStatus response failed", "status", resp.Status)
-		}
-		resp.Body.Close()
-
+		statusArr = append(statusArr, respResult.Result)
 	}
 
 	if len(statusArr) != nodeManagerCount {
@@ -153,7 +112,7 @@ func (nm *NodeManager) ValidateOtherQnms() ([]NodeStatusInfo, error) {
 		}
 	}
 	if shutdownInProgress {
-		return statusArr, errors.New("some qnm(s) have shutdown initiated/inprogress")
+		return statusArr, errors.New("ValidateOtherQnms - some qnm(s) have shutdown initiated/inprogress")
 	}
 
 	return statusArr, nil

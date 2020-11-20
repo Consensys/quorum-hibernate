@@ -1,7 +1,10 @@
 package core
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/http"
@@ -47,4 +50,33 @@ func GetRandomRetryWaitTime() int {
 	min := 100
 	max := 1000
 	return rand.Intn(max-min+1) + min
+}
+
+func MakeRpcCall(qrmRpcUrl string, rpcReq []byte, resData interface{}) error {
+	client := NewHttpClient()
+	log.Info("making rpc call", "req", string(rpcReq))
+	req, err := http.NewRequest("POST", qrmRpcUrl, bytes.NewBuffer(rpcReq))
+	if err != nil {
+		return fmt.Errorf("creating request failed err=%v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("do req failed err=%v", err)
+	}
+	if resp.StatusCode == http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		log.Debug("response Body:", string(body))
+		err := json.Unmarshal(body, resData)
+		if err == nil {
+			log.Debug("response OK", "from", qrmRpcUrl, "result", resData)
+		} else {
+			log.Error("response json decode failed", "err", err)
+			return err
+		}
+	} else {
+		log.Error("response status failed, not OK", "status", resp.Status)
+		return fmt.Errorf("response status failed, not OK, status=%s", resp.Status)
+	}
+	return nil
 }
