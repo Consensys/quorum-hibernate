@@ -12,13 +12,13 @@ import (
 )
 
 type ProxyConfig struct {
-	Name         string   `toml:"name"`
-	Type         string   `toml:"type"` // http or ws
-	ProxyAddr    string   `toml:"proxyAddr"`
-	UpstreamAddr string   `toml:"upstreamAddr"`
-	ProxyPaths   []string `toml:"proxyPaths"`
-	ReadTimeout  int      `toml:"readTimeout"`
-	WriteTimeout int      `toml:"writeTimeout"`
+	Name         string   `toml:"name"`         // Name of qnm process
+	Type         string   `toml:"type"`         // proxy scheme - http or ws
+	ProxyAddr    string   `toml:"proxyAddr"`    // proxy address
+	UpstreamAddr string   `toml:"upstreamAddr"` // upstream address of the proxy address
+	ProxyPaths   []string `toml:"proxyPaths"`   // httpRequestURI paths of the upstream address
+	ReadTimeout  int      `toml:"readTimeout"`  // readTimeout of the proxy server
+	WriteTimeout int      `toml:"writeTimeout"` // writeTimeout of the proxy server
 }
 
 func (c ProxyConfig) IsHttp() bool {
@@ -29,6 +29,7 @@ func (c ProxyConfig) IsWS() bool {
 	return strings.ToLower(c.Type) == "ws"
 }
 
+// IsValid returns nil if the ProxyConfig is valid else returns error
 func (c ProxyConfig) IsValid() error {
 	if c.Name == "" {
 		return errors.New("proxy config name is empty.")
@@ -63,11 +64,12 @@ func (c ProxyConfig) IsValid() error {
 }
 
 type NodeManagerConfig struct {
-	Name       string `toml:"name"`
-	TesseraKey string `toml:"tesseraKey"`
-	RpcUrl     string `toml:"rpcUrl"`
+	Name       string `toml:"name"`       // Name of the other qnm
+	TesseraKey string `toml:"tesseraKey"` // TesseraKey managed by the other qnm
+	RpcUrl     string `toml:"rpcUrl"`     // RPC url of the other qnm
 }
 
+// IsValid returns nil if the NodeManagerConfig is valid else returns error
 func (c NodeManagerConfig) IsValid() error {
 	if c.Name == "" {
 		return errors.New("node manager name is empty.")
@@ -85,11 +87,11 @@ func (c NodeManagerConfig) IsValid() error {
 }
 
 type ProcessConfig struct {
-	Name         string   `toml:"name"`
-	ControlType  string   `toml:"controlType"` // SHELL or Docker
-	ContainerId  string   `toml:"containerId"`
-	StopCommand  []string `toml:"stopCommand"`
-	StartCommand []string `toml:"startCommand"`
+	Name         string   `toml:"name"`         // name of process. ex: geth / tessera
+	ControlType  string   `toml:"controlType"`  // control type supported. shell or docker
+	ContainerId  string   `toml:"containerId"`  // docker container id. required if controlType is docker
+	StopCommand  []string `toml:"stopCommand"`  // stop command. required if controlType is shell
+	StartCommand []string `toml:"startCommand"` // start command. required if controlType is shell
 }
 
 func (c ProcessConfig) IsShell() bool {
@@ -130,26 +132,26 @@ func (c RPCServerConfig) IsValid() error {
 }
 
 type BasicConfig struct {
-	Name                  string           `toml:"name"`
-	GethRpcUrl            string           `toml:"gethRpcUrl"`
-	TesseraUpcheckUrl     string           `toml:"tesseraUpcheckUrl"`
-	TesseraKey            string           `toml:"tesseraKey"`
-	Consensus             string           `toml:"consensus"`
-	NodeManagerConfigFile string           `toml:"nodeManagerConfigFile"`
-	InactivityTime        int              `toml:"inactivityTime"`
-	Server                *RPCServerConfig `toml:"server"`
-	GethProcess           *ProcessConfig   `toml:"gethProcess"`
-	TesseraProcess        *ProcessConfig   `toml:"tesseraProcess"`
-	Proxies               []*ProxyConfig   `toml:"proxies"`
+	Name                  string           `toml:"name"`                  // name of this qnm
+	GethRpcUrl            string           `toml:"gethRpcUrl"`            // RPC url of geth managed by this qnm
+	TesseraUpcheckUrl     string           `toml:"tesseraUpcheckUrl"`     // Upcheck url of tessera managed by this qnm
+	TesseraKey            string           `toml:"tesseraKey"`            // Tessera key of tessera managed by this qnm
+	Consensus             string           `toml:"consensus"`             // consensus used by geth. ex: raft / istanbul / clique
+	NodeManagerConfigFile string           `toml:"nodeManagerConfigFile"` // node manager config file path
+	InactivityTime        int              `toml:"inactivityTime"`        // inactivity time for geth and tessera
+	Server                *RPCServerConfig `toml:"server"`                // RPC server config of this qnm
+	GethProcess           *ProcessConfig   `toml:"gethProcess"`           // geth process managed by this qnm
+	TesseraProcess        *ProcessConfig   `toml:"tesseraProcess"`        // tessera process managed by this qnm
+	Proxies               []*ProxyConfig   `toml:"proxies"`               // proxies managed by this qnm
 }
 
 type NodeConfig struct {
-	BasicConfig  *BasicConfig         `toml:"basicConfig"`
-	NodeManagers []*NodeManagerConfig `toml:"nodeManagers"`
+	BasicConfig  *BasicConfig         `toml:"basicConfig"`  // basic config of this qnm
+	NodeManagers []*NodeManagerConfig `toml:"nodeManagers"` // node manager config of other qnms
 }
 
 type NodeManagerListConfig struct {
-	NodeManagers []*NodeManagerConfig `toml:"nodeManagers"`
+	NodeManagers []*NodeManagerConfig `toml:"nodeManagers"` // node manger config list of other qnms
 }
 
 func ReadNodeConfig(configFile string) (NodeConfig, error) {

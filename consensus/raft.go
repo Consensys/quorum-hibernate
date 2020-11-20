@@ -12,6 +12,7 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
+// RaftClusterEntry represents entries from the output of rpc method raft_cluster
 type RaftClusterEntry struct {
 	Hostname   string `json:"hostName"`
 	NodeActive bool   `json:"nodeActive"`
@@ -66,6 +67,7 @@ func (r *RaftConsensus) getRaftClusterInfo(qrmRpcUrl string) ([]RaftClusterEntry
 	return respResult.Result, respResult.Error
 }
 
+// ValidateShutdown implements Consensus.ValidateShutdown
 func (r *RaftConsensus) ValidateShutdown() error {
 	role, err := r.getRole(r.cfg.BasicConfig.GethRpcUrl)
 	if err != nil {

@@ -12,6 +12,7 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
+// IstanbulSealActivity represents output of RPC istanbul_status
 type IstanbulSealActivity struct {
 	NumBlocks      int            `json:"numBlocks"`
 	SealerActivity map[string]int `json:"sealerActivity"`
@@ -35,6 +36,7 @@ type IstanbulConsensus struct {
 const (
 	validatorDownSealDiff = 3
 
+	// Istanbul RPC APIs
 	IstanbulStatusReq      = `{"jsonrpc":"2.0", "method":"istanbul_status", "params":[], "id":67}`
 	IstanbulIsValidatorReq = `{"jsonrpc":"2.0", "method":"istanbul_isValidator", "params":[], "id":67}`
 )
@@ -60,6 +62,7 @@ func (r *IstanbulConsensus) getIstanbulIsValidator(qrmRpcUrl string) (bool, erro
 }
 
 // TODO - if the number of validators are more than 64 this will not work as expected as signers return data for last 64 blocks only
+// ValidateShutdown implements Consensus.ValidateShutdown
 func (r *IstanbulConsensus) ValidateShutdown() error {
 	isValidator, err := r.getIstanbulIsValidator(r.cfg.BasicConfig.GethRpcUrl)
 	if err != nil {
