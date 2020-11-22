@@ -96,7 +96,7 @@ func readNodeConfigFromFile(configFile string) (types.NodeConfig, error) {
 	var nodeConfig types.NodeConfig
 	var err error
 	if nodeConfig, err = types.ReadNodeConfig(configFile); err != nil {
-		log.Error("lreadNodeConfigFromFile - oading node config file failed", "configfile", configFile, "err", err)
+		log.Error("readNodeConfigFromFile - loading node config file failed", "configfile", configFile, "err", err)
 		return types.NodeConfig{}, err
 	}
 	log.Info("readNodeConfigFromFile - node config file read successfully")

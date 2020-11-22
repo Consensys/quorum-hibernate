@@ -18,6 +18,7 @@ type ShellProcessControl struct {
 	muxLock         sync.Mutex
 }
 
+// TODO(cjh) grpc already has another meaning - avoiding using here
 func NewShellProcess(p *types.ProcessConfig, grpc string, turl string, s bool) Process {
 	sp := &ShellProcessControl{p, grpc, turl, s, sync.Mutex{}}
 	sp.IsUp()
