@@ -1,5 +1,6 @@
 package types
 
+// TransData represents Transaction data. It is used to track details of private transaction
 type TransData struct {
 	Data       string   `json:"data"`
 	From       string   `json:"from"`

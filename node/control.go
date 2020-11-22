@@ -2,7 +2,6 @@ package node
 
 import (
 	"errors"
-	"net/http"
 	"sync"
 	"time"
 
@@ -16,23 +15,25 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
+// QuorumNodeControl represents a quorum node controller.
+// it takes care of managing combined status of geth and tessera.
+// it takes care of starting & stopping of geth and tessera.
 type QuorumNodeControl struct {
-	config             *types.NodeConfig
-	im                 *InactivityMonitor
-	nm                 *qnm.NodeManager
-	gethp              proc.Process
-	tesserap           proc.Process
-	consensus          cons.Consensus
-	nodeStatus         types.NodeStatus
-	client             *http.Client
-	inactivityResetCh  chan bool
-	stopNodeCh         chan bool
-	shutdownCompleteCh chan bool
-	startNodeCh        chan bool
-	startCompleteCh    chan bool
-	stopCh             chan bool
-	startStopMux       sync.Mutex
-	statusMux          sync.Mutex
+	config             *types.NodeConfig  // config of this node
+	im                 *InactivityMonitor // inactivity monitor
+	nm                 *qnm.NodeManager   // node manager to communicate with other qnm
+	gethp              proc.Process       // geth process controller
+	tesserap           proc.Process       // tessera process controller
+	consensus          cons.Consensus     // consenus validator
+	nodeStatus         types.NodeStatus   // status of this node
+	inactivityResetCh  chan bool          // channel to reset inactivity
+	stopNodeCh         chan bool          // channel to request stop node
+	shutdownCompleteCh chan bool          // channel to notify stop node action status
+	startNodeCh        chan bool          // channel to request start node
+	startCompleteCh    chan bool          // channel to notify start node action status
+	stopCh             chan bool          // channel to stop start/stop node monitor
+	startStopMux       sync.Mutex         // lock for starting and stopping node
+	statusMux          sync.Mutex         // lock for setting the status
 }
 
 func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
@@ -44,7 +45,6 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 		nil,
 		nil,
 		types.Up,
-		core.NewHttpClient(),
 		make(chan bool, 1),
 		make(chan bool, 1),
 		make(chan bool, 1),
@@ -209,6 +209,10 @@ func (qn *QuorumNodeControl) StopNode() bool {
 		log.Info("StopNode - node is already down")
 		return true
 	}
+	if err := qn.IsNodeBusy(); err != nil {
+		log.Error("StopNode - cannot be shutdown", "err", err)
+		return false
+	}
 	var qnms []qnm.NodeStatusInfo
 	var err error
 
@@ -256,6 +260,8 @@ func (qn *QuorumNodeControl) StopNode() bool {
 	if gs && ts {
 		qn.SetNodeStatus(types.Down)
 	}
+	// if stopping of geth or tessera fails Status will remain as ShutdownInprogress and qnm will not process any requests from clients
+	// it will need some manual intervention to set it to the correct status
 	return gs && ts
 }
 
@@ -275,6 +281,8 @@ func (qn *QuorumNodeControl) StartNode() bool {
 	if gs && ts {
 		qn.SetNodeStatus(types.Up)
 	}
+	// if start up of geth or tessera fails Status will remain as StartupInprogress and qnm will not process any requests from clients
+	// it will need some manual intervention to set it to the correct status
 	return gs && ts
 }
 

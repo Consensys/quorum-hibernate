@@ -47,7 +47,7 @@ func ExecuteShellCommand(desc string, cmdArr []string) error {
 // TODO - what is the right way to check if geth is up?
 func IsGethUp(gethRpcUrl string) (bool, error) {
 	var resp BlockNumberResp
-	if err := core.MakeRpcCall(gethRpcUrl, []byte(BlockNumberReq), &resp); err != nil {
+	if err := core.CallRPC(gethRpcUrl, []byte(BlockNumberReq), &resp); err != nil {
 		return false, core.ErrNodeDown
 	}
 	return true, nil

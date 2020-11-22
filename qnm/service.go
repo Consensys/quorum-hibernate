@@ -51,7 +51,7 @@ func (nm *NodeManager) ValidateForPrivateTx(tesseraKeys []string) (bool, error) 
 		nmCfg := nm.getNodeManagerConfigByTesseraKey(tessKey)
 		if nmCfg != nil {
 			respResult := NodeManagerPrivateTxPrepResult{}
-			if err := core.MakeRpcCall(nmCfg.RpcUrl, preparePvtTxReq, &respResult); err != nil {
+			if err := core.CallRPC(nmCfg.RpcUrl, preparePvtTxReq, &respResult); err != nil {
 				log.Error("ValidateForPrivateTx failed", "err", err)
 				statusArr = append(statusArr, false)
 			} else if respResult.Error != nil {
@@ -89,7 +89,7 @@ func (nm *NodeManager) ValidateOtherQnms() ([]NodeStatusInfo, error) {
 		}
 		nodeManagerCount++
 		var respResult = NodeManagerNodeStatusResult{}
-		if err := core.MakeRpcCall(n.RpcUrl, nodeStatusReq, &respResult); err != nil {
+		if err := core.CallRPC(n.RpcUrl, nodeStatusReq, &respResult); err != nil {
 			log.Error("ValidateOtherQnms NodeStatus - failed", "err", err)
 			return nil, err
 		}

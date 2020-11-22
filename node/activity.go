@@ -20,6 +20,8 @@ func (nm *InactivityMonitor) StartInactivityTimer() {
 	go nm.trackInactivity()
 }
 
+// trackInactivity tracks node's inactivity time in seconds.
+// when inactive time exceeds limit(as per config) it requests the node to be shutdown
 func (nm *InactivityMonitor) trackInactivity() {
 	timer := time.NewTicker(time.Second)
 	defer timer.Stop()
@@ -42,6 +44,7 @@ func (nm *InactivityMonitor) trackInactivity() {
 	}
 }
 
+// processInactivity requests the node to be stopped if the node  is not busy.
 func (nm *InactivityMonitor) processInactivity() {
 	log.Info("processInactivity - going to try stop node as it has been inactive", "inactivetime", nm.qrmNode.config.BasicConfig.InactivityTime)
 	if err := nm.qrmNode.IsNodeBusy(); err != nil {
