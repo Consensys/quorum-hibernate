@@ -198,7 +198,9 @@ func (c NodeConfig) IsConsensusValid() error {
 	)
 	log.Debug("IsConsensusValid - validating consensus info")
 
-	// TODO after merge add specific check for Besu
+	if c.BasicConfig.IsBesuClient() {
+		return nil
+	}
 
 	var resp map[string]interface{}
 	if err := core.CallRPC(c.BasicConfig.GethRpcUrl, []byte(adminInfoReq), &resp); err == nil {
