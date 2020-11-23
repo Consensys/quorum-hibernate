@@ -216,8 +216,18 @@ func (qn *QuorumNodeControl) StopNode() bool {
 	var qnms []qnm.NodeStatusInfo
 	var err error
 
-	retryCount := 1
+	// 1st check if hibernating node will break the consensus model
+	if err := qn.consensus.ValidateShutdown(); err == nil {
+		log.Info("StopNode - consensus check passed, node can be shutdown")
+	} else {
+		log.Info("StopNode - consensus check failed, node cannot be shutdown", "err", err)
+		qn.SetNodeStatus(types.Up)
+		return false
+	}
 
+	// consensus is ok. check with network to prevent multiple nodes
+	// going down at the same time
+	retryCount := 1
 	for retryCount <= core.Qnm2QnmValidationRetryLimit {
 		qnms, err = qn.nm.ValidateOtherQnms()
 		if err == nil {
@@ -237,14 +247,6 @@ func (qn *QuorumNodeControl) StopNode() bool {
 	}
 
 	qn.SetNodeStatus(types.ShutdownInitiated)
-
-	if err := qn.consensus.ValidateShutdown(); err == nil {
-		log.Info("StopNode - consensus check passed, node can be shutdown")
-	} else {
-		log.Info("StopNode - consensus check failed, node cannot be shutdown", "err", err)
-		qn.SetNodeStatus(types.Up)
-		return false
-	}
 
 	qn.SetNodeStatus(types.ShutdownInprogress)
 
