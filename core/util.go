@@ -9,28 +9,10 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
-
-// TODO needs to be expanded to cover private tx for all apis like contract extension
-func IsPrivateTransaction(bodyStr string) bool {
-	return strings.Contains(bodyStr, "eth_sendTransaction") && strings.Contains(bodyStr, "privateFor")
-}
-
-func GetPrivateTx(body []byte) (types.EthTransaction, error) {
-	tx := types.EthTransaction{}
-	err := json.Unmarshal(body, &tx)
-	if err != nil {
-		return types.EthTransaction{}, err
-	} else {
-		log.Debug("GetPrivateTx - tx details", "Tx", tx)
-	}
-	return tx, nil
-}
 
 // NewHttpClient returns a new customized http client
 func NewHttpClient() *http.Client {
