@@ -164,6 +164,12 @@ func ReadNodeConfig(configFile string) (NodeConfig, error) {
 	if err = toml.NewDecoder(f).Decode(&input); err != nil {
 		return NodeConfig{}, err
 	}
+
+	// check if the config is valid
+	if input.BasicConfig == nil {
+		return NodeConfig{}, errors.New("invalid configuration passed")
+	}
+
 	// validate config rules
 	if err = input.BasicConfig.IsValid(); err != nil {
 		return NodeConfig{}, err
