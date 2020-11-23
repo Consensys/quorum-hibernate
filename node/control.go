@@ -2,10 +2,10 @@ package node
 
 import (
 	"errors"
-	"github.com/ConsenSysQuorum/node-manager/privatetx"
 	"sync"
 	"time"
 
+	"github.com/ConsenSysQuorum/node-manager/privatetx"
 	"github.com/ConsenSysQuorum/node-manager/qnm"
 
 	cons "github.com/ConsenSysQuorum/node-manager/consensus"
@@ -231,6 +231,9 @@ func (qn *QuorumNodeControl) StopNode() bool {
 	retryCount := 1
 
 	for retryCount <= core.Qnm2QnmValidationRetryLimit {
+		w := core.GetRandomRetryWaitTime()
+		log.Info("StopNode - waiting for qnm2qnm validation try", "wait time in seconds", w)
+		time.Sleep(time.Duration(w) * time.Millisecond)
 		qnms, err = qn.nm.ValidateOtherQnms()
 		if err == nil {
 			log.Info("StopNode - qnm2qnm validation passed")
@@ -238,9 +241,6 @@ func (qn *QuorumNodeControl) StopNode() bool {
 		}
 		log.Error("StopNode - qnm2qnm validation failed", "retryLimit", core.Qnm2QnmValidationRetryLimit, "retryCount", retryCount, "err", err, "qnms", qnms)
 		retryCount++
-		w := core.GetRandomRetryWaitTime()
-		log.Info("StopNode - waiting for next qnm2qnm validation try", "wait time in seconds", w)
-		time.Sleep(time.Duration(w) * time.Millisecond)
 	}
 
 	if retryCount > core.Qnm2QnmValidationRetryLimit {
