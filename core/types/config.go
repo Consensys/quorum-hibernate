@@ -2,12 +2,13 @@ package types
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"strings"
 
+	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/log"
-
 	"github.com/naoina/toml"
 )
 
@@ -102,9 +103,20 @@ func (c ProcessConfig) IsDocker() bool {
 	return strings.ToLower(c.ControlType) == "docker"
 }
 
+func (c ProcessConfig) IsGeth() bool {
+	return strings.ToLower(c.Name) == "geth"
+}
+
+func (c ProcessConfig) IsTessera() bool {
+	return strings.ToLower(c.Name) == "tessera"
+}
+
 func (c ProcessConfig) IsValid() error {
 	if !c.IsDocker() && !c.IsShell() {
 		return errors.New("unsupported controlType. processConfig supports only shell or docker")
+	}
+	if !c.IsGeth() && !c.IsTessera() {
+		return errors.New("process name must be geth or tessera.")
 	}
 	if c.IsDocker() && c.ContainerId == "" {
 		return errors.New("containerId is empty for docker controlType.")
@@ -137,6 +149,7 @@ type BasicConfig struct {
 	TesseraUpcheckUrl     string           `toml:"tesseraUpcheckUrl"`     // Upcheck url of tessera managed by this qnm
 	TesseraKey            string           `toml:"tesseraKey"`            // Tessera key of tessera managed by this qnm
 	Consensus             string           `toml:"consensus"`             // consensus used by geth. ex: raft / istanbul / clique
+	ClientType            string           `toml:"clientType"`            // client used by this qnm. it should be quorum or besu
 	NodeManagerConfigFile string           `toml:"nodeManagerConfigFile"` // node manager config file path
 	InactivityTime        int              `toml:"inactivityTime"`        // inactivity time for geth and tessera
 	Server                *RPCServerConfig `toml:"server"`                // RPC server config of this qnm
@@ -174,7 +187,54 @@ func ReadNodeConfig(configFile string) (NodeConfig, error) {
 	if err = input.BasicConfig.IsValid(); err != nil {
 		return NodeConfig{}, err
 	}
+
+	if err := input.IsConsensusValid(); err != nil {
+		log.Error("consensus mismatch", "err", err)
+		return NodeConfig{}, err
+	}
 	return input, nil
+}
+
+func (c NodeConfig) IsConsensusValid() error {
+	const (
+		adminInfoReq = `{"jsonrpc":"2.0", "method":"admin_nodeInfo", "params":[], "id":67}`
+		protocolKey  = "protocols"
+		ethKey       = "eth"
+		consensusKey = "consensus"
+	)
+	log.Debug("IsConsensusValid - validating consensus info")
+
+	if c.BasicConfig.IsBesuClient() {
+		return nil
+	}
+
+	var resp map[string]interface{}
+	if err := core.CallRPC(c.BasicConfig.GethRpcUrl, []byte(adminInfoReq), &resp); err == nil {
+		resMap := resp["result"].(map[string]interface{})
+		log.Info("IsConsensusValid - response", "map", resMap)
+
+		if resMap[protocolKey] == nil {
+			return errors.New("IsConsensusValid - no consensus info found")
+		}
+		protocols, ok := resMap[protocolKey].(map[string]interface{})
+		if !ok {
+			return errors.New("IsConsensusValid - invalid consensus info found")
+		}
+		eth := protocols[ethKey].(map[string]interface{})
+		if _, ok := eth[consensusKey]; !ok {
+			return fmt.Errorf("IsConsensusValid - consensus key missing in node info api output")
+		} else {
+			expected := eth[consensusKey].(string)
+			log.Debug("IsConsensusValid - consensus name", "name", expected)
+			if expected == c.BasicConfig.Consensus {
+				return nil
+			}
+			return fmt.Errorf("IsConsensusValid - consensus mismatch. expected:%s, have:%s", expected, c.BasicConfig.Consensus)
+		}
+	} else {
+		log.Info("IsConsensusValid: could not validate consensus as node probably is down", "err", err)
+	}
+	return nil
 }
 
 func ReadNodeManagerConfig(configFile string) ([]*NodeManagerConfig, error) {
@@ -224,6 +284,14 @@ func (c BasicConfig) IsClique() bool {
 	return strings.ToLower(c.Consensus) == "clique"
 }
 
+func (c BasicConfig) IsQuorumClient() bool {
+	return strings.ToLower(c.ClientType) == "quorum"
+}
+
+func (c BasicConfig) IsBesuClient() bool {
+	return strings.ToLower(c.ClientType) == "besu"
+}
+
 func (c BasicConfig) IsValid() error {
 	if c.Name == "" {
 		return errors.New("Name is empty")
@@ -233,7 +301,12 @@ func (c BasicConfig) IsValid() error {
 		return errors.New("NodeManagerConfigFile is empty")
 	}
 
-	err := c.IsConsensusValid()
+	err := c.isConsensusValid()
+	if err != nil {
+		return err
+	}
+
+	err = c.IsClientTypeValid()
 	if err != nil {
 		return err
 	}
@@ -291,13 +364,23 @@ func (c BasicConfig) IsValid() error {
 	return nil
 }
 
-func (c BasicConfig) IsConsensusValid() error {
+func (c BasicConfig) isConsensusValid() error {
 	if c.Consensus == "" {
 		return errors.New("consensus is empty")
 	}
 
 	if !c.IsRaft() && !c.IsClique() && !c.IsIstanbul() {
 		return errors.New("invalid consensus name. supports only raft or istanbul or clique")
+	}
+	return nil
+}
+
+func (c BasicConfig) IsClientTypeValid() error {
+	if c.ClientType == "" {
+		return errors.New("client type is empty")
+	}
+	if !c.IsQuorumClient() && !c.IsBesuClient() {
+		return errors.New("invalid client type. supports only quorum or besu")
 	}
 	return nil
 }

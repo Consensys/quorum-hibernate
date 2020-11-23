@@ -2,6 +2,7 @@ package node
 
 import (
 	"errors"
+	"github.com/ConsenSysQuorum/node-manager/privatetx"
 	"sync"
 	"time"
 
@@ -19,21 +20,22 @@ import (
 // it takes care of managing combined status of geth and tessera.
 // it takes care of starting & stopping of geth and tessera.
 type QuorumNodeControl struct {
-	config             *types.NodeConfig  // config of this node
-	im                 *InactivityMonitor // inactivity monitor
-	nm                 *qnm.NodeManager   // node manager to communicate with other qnm
-	gethp              proc.Process       // geth process controller
-	tesserap           proc.Process       // tessera process controller
-	consensus          cons.Consensus     // consenus validator
-	nodeStatus         types.NodeStatus   // status of this node
-	inactivityResetCh  chan bool          // channel to reset inactivity
-	stopNodeCh         chan bool          // channel to request stop node
-	shutdownCompleteCh chan bool          // channel to notify stop node action status
-	startNodeCh        chan bool          // channel to request start node
-	startCompleteCh    chan bool          // channel to notify start node action status
-	stopCh             chan bool          // channel to stop start/stop node monitor
-	startStopMux       sync.Mutex         // lock for starting and stopping node
-	statusMux          sync.Mutex         // lock for setting the status
+	config             *types.NodeConfig   // config of this node
+	im                 *InactivityMonitor  // inactivity monitor
+	nm                 *qnm.NodeManager    // node manager to communicate with other qnm
+	gethp              proc.Process        // geth process controller
+	tesserap           proc.Process        // tessera process controller
+	consensus          cons.Consensus      // consenus validator
+	txh                privatetx.TxHandler // Transaction handler
+	nodeStatus         types.NodeStatus    // status of this node
+	inactivityResetCh  chan bool           // channel to reset inactivity
+	stopNodeCh         chan bool           // channel to request stop node
+	shutdownCompleteCh chan bool           // channel to notify stop node action status
+	startNodeCh        chan bool           // channel to request start node
+	startCompleteCh    chan bool           // channel to notify start node action status
+	stopCh             chan bool           // channel to stop start/stop node monitor
+	startStopMux       sync.Mutex          // lock for starting and stopping node
+	statusMux          sync.Mutex          // lock for setting the status
 }
 
 func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
@@ -41,6 +43,7 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 		cfg,
 		nil,
 		qnm.NewNodeManager(cfg),
+		nil,
 		nil,
 		nil,
 		nil,
@@ -78,6 +81,11 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 	} else if quorumNode.config.BasicConfig.IsIstanbul() {
 		quorumNode.consensus = cons.NewIstanbulConsensus(quorumNode.config)
 	}
+
+	if quorumNode.config.BasicConfig.IsQuorumClient() {
+		quorumNode.txh = privatetx.NewQuorumTxHandler(quorumNode.config)
+	} // TODO add tx handler for Besu
+
 	return quorumNode
 }
 
@@ -95,6 +103,10 @@ func (qn *QuorumNodeControl) GetNodeStatus() types.NodeStatus {
 
 func (qn *QuorumNodeControl) GetProxyConfig() []*types.ProxyConfig {
 	return qn.config.BasicConfig.Proxies
+}
+
+func (qn *QuorumNodeControl) GetTxHandler() privatetx.TxHandler {
+	return qn.txh
 }
 
 func (qn *QuorumNodeControl) SetNodeStatus(ns types.NodeStatus) {

@@ -11,11 +11,11 @@ import (
 func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 
 	return func(res http.ResponseWriter, req *http.Request) {
-
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
-			log.Error("httpHandler - reading body failed", "name", ps.proxyCfg.Name, "path", req.RequestURI, "err", err)
-			http.Error(res, "httpHandler - reading request body failed", http.StatusInternalServerError)
+			const errMsg = "httpHandler - reading request body failed"
+			log.Error(errMsg, "name", ps.proxyCfg.Name, "path", req.RequestURI, "err", err)
+			http.Error(res, errMsg, http.StatusInternalServerError)
 			return
 		}
 
@@ -42,12 +42,15 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 			if ps.qrmNode.PrepareNode() {
 				log.Debug("httpHandler - prepared to accept request")
 			} else {
-				http.Error(res, "httpHandler - node prepare failed", http.StatusInternalServerError)
+				const errMsg = "httpHandler - node prepare failed"
+				log.Error(errMsg)
+				http.Error(res, errMsg, http.StatusInternalServerError)
 				return
 			}
 		}
 
 		if err := HandlePrivateTx(body, ps); err != nil {
+			log.Error("httpHandler - handling pvt tx failed", "err", err)
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
