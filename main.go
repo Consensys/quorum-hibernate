@@ -6,16 +6,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ConsenSysQuorum/node-manager/core"
-
-	"github.com/sirupsen/logrus"
-
-	"github.com/ConsenSysQuorum/node-manager/rpc"
-
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
 	"github.com/ConsenSysQuorum/node-manager/proxy"
+	"github.com/ConsenSysQuorum/node-manager/rpc"
+	"github.com/sirupsen/logrus"
 )
 
 type QNMApp struct {
@@ -38,10 +34,6 @@ func main() {
 	nodeConfig, err := readNodeConfigFromFile(configFile)
 	if err != nil {
 		log.Error("main - loading config file failed", "err", err)
-		return
-	}
-	if err := core.IsConsensusValid(nodeConfig.BasicConfig.GethRpcUrl, nodeConfig.BasicConfig.Consensus); err != nil {
-		log.Error("consensus mismatch", "err", err)
 		return
 	}
 
