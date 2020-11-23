@@ -16,9 +16,12 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
-// QuorumNodeControl represents a quorum node controller.
-// it takes care of managing combined status of geth and tessera.
-// it takes care of starting & stopping of geth and tessera.
+// QuorumNodeControl represents a node controller.
+// It tracks quorum/tessera processes' inactivity and it allows inactivity to be reset when
+// there is some activity.
+// It accepts request to stop geth/tessera when there is inactivity.
+// It starts geth/tessera processes when there is a activity.
+// It takes care of managing combined status of geth and tessera.
 type QuorumNodeControl struct {
 	config             *types.NodeConfig   // config of this node
 	im                 *InactivityMonitor  // inactivity monitor
@@ -115,6 +118,8 @@ func (qn *QuorumNodeControl) SetNodeStatus(ns types.NodeStatus) {
 	qn.nodeStatus = ns
 }
 
+// IsNodeUp performs up check for geth and tessera and returns the combined status
+// if both geth and tessera are up, the node status is up(true) else down(false)
 func (qn *QuorumNodeControl) IsNodeUp() bool {
 	gs := qn.gethp.IsUp()
 	ts := qn.tesserap.IsUp()
@@ -127,6 +132,7 @@ func (qn *QuorumNodeControl) IsNodeUp() bool {
 	return gs && ts
 }
 
+// IsNodeBusy returns error if the node is busy with shutdown/startup
 func (qn *QuorumNodeControl) IsNodeBusy() error {
 	switch qn.nodeStatus {
 	case types.ShutdownInprogress, types.ShutdownInitiated:
@@ -139,21 +145,25 @@ func (qn *QuorumNodeControl) IsNodeBusy() error {
 	return nil
 }
 
+// Start starts geth/tessera start/stop monitor and inactivity tracker
 func (qn *QuorumNodeControl) Start() {
 	qn.StartStopNodeMonitor()
 	qn.im = NewInactivityMonitor(qn)
 	qn.im.StartInactivityTimer()
 }
 
+// Stop stops geth/tessera start/stop monitor and inactivity tracker
 func (qn *QuorumNodeControl) Stop() {
 	qn.im.Stop()
 	qn.stopCh <- true
 }
 
+// ResetInactiveTime resets inactivity time of the tracker
 func (nm *QuorumNodeControl) ResetInactiveTime() {
 	nm.inactivityResetCh <- true
 }
 
+//StartStopNodeMonitor listens for requests to start/stop geth/tessera
 func (qn *QuorumNodeControl) StartStopNodeMonitor() {
 	go func() {
 		log.Info("StartStopNodeMonitor - node start/stop monitor started")

@@ -6,6 +6,9 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
+// InactivityMonitor tracks inactivity of the node
+// once inactivity reaches the threshold it requests node controller to stop geth/tessera
+// it allows inactivity to be reset via QuorumNodeControl
 type InactivityMonitor struct {
 	qrmNode           *QuorumNodeControl
 	inactiveTimeCount int
