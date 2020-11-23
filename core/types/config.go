@@ -102,6 +102,14 @@ func (c ProcessConfig) IsDocker() bool {
 	return strings.ToLower(c.ControlType) == "docker"
 }
 
+func (c ProcessConfig) IsGeth() bool {
+	return strings.ToLower(c.Name) == "geth"
+}
+
+func (c ProcessConfig) IsTessera() bool {
+	return strings.ToLower(c.Name) == "tessera"
+}
+
 func (c ProcessConfig) IsValid() error {
 	if !c.IsDocker() && !c.IsShell() {
 		return errors.New("unsupported controlType. processConfig supports only shell or docker")
@@ -111,6 +119,9 @@ func (c ProcessConfig) IsValid() error {
 	}
 	if c.IsShell() && (len(c.StartCommand) == 0 || len(c.StopCommand) == 0) {
 		return errors.New("startCommand or stopCommand is empty for shell controlType.")
+	}
+	if !c.IsGeth() && !c.IsTessera() {
+		return errors.New("process name must be geth or tessera.")
 	}
 	return nil
 }
@@ -137,6 +148,7 @@ type BasicConfig struct {
 	TesseraUpcheckUrl     string           `toml:"tesseraUpcheckUrl"`     // Upcheck url of tessera managed by this qnm
 	TesseraKey            string           `toml:"tesseraKey"`            // Tessera key of tessera managed by this qnm
 	Consensus             string           `toml:"consensus"`             // consensus used by geth. ex: raft / istanbul / clique
+	ClientType            string           `toml:"clientType"`            // client used by this qnm. it should be quorum or besu
 	NodeManagerConfigFile string           `toml:"nodeManagerConfigFile"` // node manager config file path
 	InactivityTime        int              `toml:"inactivityTime"`        // inactivity time for geth and tessera
 	Server                *RPCServerConfig `toml:"server"`                // RPC server config of this qnm
@@ -218,6 +230,14 @@ func (c BasicConfig) IsClique() bool {
 	return strings.ToLower(c.Consensus) == "clique"
 }
 
+func (c BasicConfig) IsQuorumClient() bool {
+	return strings.ToLower(c.ClientType) == "quorum"
+}
+
+func (c BasicConfig) IsBesuClient() bool {
+	return strings.ToLower(c.ClientType) == "besu"
+}
+
 func (c BasicConfig) IsValid() error {
 	if c.Name == "" {
 		return errors.New("Name is empty")
@@ -228,6 +248,11 @@ func (c BasicConfig) IsValid() error {
 	}
 
 	err := c.IsConsensusValid()
+	if err != nil {
+		return err
+	}
+
+	err = c.IsClientTypeValid()
 	if err != nil {
 		return err
 	}
@@ -292,6 +317,16 @@ func (c BasicConfig) IsConsensusValid() error {
 
 	if !c.IsRaft() && !c.IsClique() && !c.IsIstanbul() {
 		return errors.New("invalid consensus name. supports only raft or istanbul or clique")
+	}
+	return nil
+}
+
+func (c BasicConfig) IsClientTypeValid() error {
+	if c.ClientType == "" {
+		return errors.New("client type is empty")
+	}
+	if !c.IsQuorumClient() && !c.IsBesuClient() {
+		return errors.New("invalid client type. supports only quorum or besu")
 	}
 	return nil
 }
