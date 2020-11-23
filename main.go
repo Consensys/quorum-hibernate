@@ -6,6 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/ConsenSysQuorum/node-manager/core"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/ConsenSysQuorum/node-manager/rpc"
@@ -38,6 +40,11 @@ func main() {
 		log.Error("main - loading config file failed", "err", err)
 		return
 	}
+	if err := core.IsConsensusValid(nodeConfig.BasicConfig.GethRpcUrl, nodeConfig.BasicConfig.Consensus); err != nil {
+		log.Error("consensus mismatch", "err", err)
+		return
+	}
+
 	log.Debug("main - node config", "cfg", nodeConfig)
 	rpcBackendErrCh := make(chan error)
 	proxyBackendErrCh := make(chan error)
