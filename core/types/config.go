@@ -2,12 +2,13 @@ package types
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"strings"
 
+	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/log"
-
 	"github.com/naoina/toml"
 )
 
@@ -180,7 +181,54 @@ func ReadNodeConfig(configFile string) (NodeConfig, error) {
 	if err = input.BasicConfig.IsValid(); err != nil {
 		return NodeConfig{}, err
 	}
+
+	if err := input.IsConsensusValid(); err != nil {
+		log.Error("consensus mismatch", "err", err)
+		return NodeConfig{}, err
+	}
 	return input, nil
+}
+
+func (c NodeConfig) IsConsensusValid() error {
+	const (
+		adminInfoReq = `{"jsonrpc":"2.0", "method":"admin_nodeInfo", "params":[], "id":67}`
+		protocolKey  = "protocols"
+		ethKey       = "eth"
+		consensusKey = "consensus"
+	)
+	log.Debug("IsConsensusValid - validating consensus info")
+
+	if c.BasicConfig.IsBesuClient() {
+		return nil
+	}
+
+	var resp map[string]interface{}
+	if err := core.CallRPC(c.BasicConfig.GethRpcUrl, []byte(adminInfoReq), &resp); err == nil {
+		resMap := resp["result"].(map[string]interface{})
+		log.Info("IsConsensusValid - response", "map", resMap)
+
+		if resMap[protocolKey] == nil {
+			return errors.New("IsConsensusValid - no consensus info found")
+		}
+		protocols, ok := resMap[protocolKey].(map[string]interface{})
+		if !ok {
+			return errors.New("IsConsensusValid - invalid consensus info found")
+		}
+		eth := protocols[ethKey].(map[string]interface{})
+		if _, ok := eth[consensusKey]; !ok {
+			return fmt.Errorf("IsConsensusValid - consensus key missing in node info api output")
+		} else {
+			expected := eth[consensusKey].(string)
+			log.Debug("IsConsensusValid - consensus name", "name", expected)
+			if expected == c.BasicConfig.Consensus {
+				return nil
+			}
+			return fmt.Errorf("IsConsensusValid - consensus mismatch. expected:%s, have:%s", expected, c.BasicConfig.Consensus)
+		}
+	} else {
+		log.Info("IsConsensusValid: could not validate consensus as node probably is down", "err", err)
+	}
+	return nil
 }
 
 func ReadNodeManagerConfig(configFile string) ([]*NodeManagerConfig, error) {
@@ -247,7 +295,7 @@ func (c BasicConfig) IsValid() error {
 		return errors.New("NodeManagerConfigFile is empty")
 	}
 
-	err := c.IsConsensusValid()
+	err := c.isConsensusValid()
 	if err != nil {
 		return err
 	}
@@ -310,7 +358,7 @@ func (c BasicConfig) IsValid() error {
 	return nil
 }
 
-func (c BasicConfig) IsConsensusValid() error {
+func (c BasicConfig) isConsensusValid() error {
 	if c.Consensus == "" {
 		return errors.New("consensus is empty")
 	}

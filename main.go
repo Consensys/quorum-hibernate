@@ -6,14 +6,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/sirupsen/logrus"
-
-	"github.com/ConsenSysQuorum/node-manager/rpc"
-
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
 	"github.com/ConsenSysQuorum/node-manager/proxy"
+	"github.com/ConsenSysQuorum/node-manager/rpc"
+	"github.com/sirupsen/logrus"
 )
 
 type QNMApp struct {
@@ -38,6 +36,7 @@ func main() {
 		log.Error("main - loading config file failed", "err", err)
 		return
 	}
+
 	log.Debug("main - node config", "cfg", nodeConfig)
 	rpcBackendErrCh := make(chan error)
 	proxyBackendErrCh := make(chan error)
