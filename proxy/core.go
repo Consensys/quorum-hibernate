@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
 )
@@ -30,21 +29,17 @@ func MakeProxyServices(qn *node.QuorumNodeControl, errc chan error) ([]Proxy, er
 
 func HandlePrivateTx(body []byte, ps *ProxyServer) error {
 	// TODO If tessera proxy works as expected, can this be removed?
-	participants, err := ps.qrmNode.GetTxHandler().IsPrivateTx(body)
-	if err != nil {
-		if err == core.ErrTxNotPvt {
-			return nil
+	if participants, err := ps.qrmNode.GetTxHandler().IsPrivateTx(body); err != nil {
+		return err
+	} else if participants != nil {
+		log.Info("HandlePrivateTx - participants", "keys", participants)
+		if status, err := ps.qrmNode.PrepareNodeManagerForPrivateTx(participants); err != nil {
+			return fmt.Errorf("HandlePrivateTx - preparePrivateTx failed err=%v", err)
+		} else if !status {
+			return fmt.Errorf("HandlePrivateTx - preparePrivateTx failed some participants are down err=%v", err)
 		} else {
-			return err
+			log.Info("private tx prep completed successfully.")
 		}
-	}
-	log.Info("HandlePrivateTx - participants", "keys", participants)
-	if status, err := ps.qrmNode.PrepareNodeManagerForPrivateTx(participants); err != nil {
-		return fmt.Errorf("HandlePrivateTx - preparePrivateTx failed err=%v", err)
-	} else if !status {
-		return fmt.Errorf("HandlePrivateTx - preparePrivateTx failed some participants are down err=%v", err)
-	} else {
-		log.Info("private tx prep completed successfully.")
 	}
 	return nil
 }

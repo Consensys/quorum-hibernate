@@ -3,7 +3,6 @@ package privatetx
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ConsenSysQuorum/node-manager/core"
 	"strings"
 
 	"github.com/ConsenSysQuorum/node-manager/core/types"
@@ -37,7 +36,7 @@ func (q QuorumTxHandler) IsPrivateTx(msg []byte) ([]string, error) {
 			return nil, nil
 		}
 	}
-	return nil, core.ErrTxNotPvt
+	return nil, nil
 }
 
 // TODO needs to be expanded to cover private tx for all apis like contract extension

@@ -114,14 +114,14 @@ func (c ProcessConfig) IsValid() error {
 	if !c.IsDocker() && !c.IsShell() {
 		return errors.New("unsupported controlType. processConfig supports only shell or docker")
 	}
+	if !c.IsGeth() && !c.IsTessera() {
+		return errors.New("process name must be geth or tessera.")
+	}
 	if c.IsDocker() && c.ContainerId == "" {
 		return errors.New("containerId is empty for docker controlType.")
 	}
 	if c.IsShell() && (len(c.StartCommand) == 0 || len(c.StopCommand) == 0) {
 		return errors.New("startCommand or stopCommand is empty for shell controlType.")
-	}
-	if !c.IsGeth() && !c.IsTessera() {
-		return errors.New("process name must be geth or tessera.")
 	}
 	return nil
 }
