@@ -15,7 +15,7 @@ import (
 )
 
 type QNMApp struct {
-	qrmNode      *node.QuorumNodeControl
+	qrmNode      *node.NodeControl
 	proxyServers []proxy.Proxy
 	rpcService   *rpc.RPCService
 }

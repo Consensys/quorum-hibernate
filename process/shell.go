@@ -2,7 +2,6 @@ package process
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -10,12 +9,13 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
+// ShellProcessControl represents process control for a shell process
 type ShellProcessControl struct {
-	cfg               *types.ProcessConfig
-	gethRpcUrl        string
-	tesseraUpcheckUrl string
-	status            bool
-	muxLock           sync.Mutex
+	cfg             *types.ProcessConfig
+	bcclntRpcUrl    string
+	privManUpchkUrl string
+	status          bool
+	muxLock         sync.Mutex
 }
 
 func NewShellProcess(p *types.ProcessConfig, grpc string, turl string, s bool) Process {
@@ -30,27 +30,28 @@ func (sp *ShellProcessControl) setStatus(s bool) {
 	log.Debug("setStatus - process "+sp.cfg.Name, "status", sp.status)
 }
 
+// Status implements Process.Status
 func (sp *ShellProcessControl) Status() bool {
 	return sp.status
 }
 
+// Status implements Process.IsUp
 func (sp *ShellProcessControl) IsUp() bool {
 	s := false
 	var err error
-	switch strings.ToLower(sp.cfg.Name) {
-	case "geth":
-		s, err = IsGethUp(sp.gethRpcUrl)
+	if sp.cfg.IsBcClient() {
+		s, err = IsBlockchainClientUp(sp.bcclntRpcUrl)
 		if err != nil {
 			sp.setStatus(false)
-			log.Error("IsUp - geth is down", "err", err)
+			log.Error("IsUp - blockchain client is down", "err", err)
 		} else {
 			sp.setStatus(s)
 		}
-	case "tessera":
-		s, err = IsTesseraUp(sp.tesseraUpcheckUrl)
+	} else if sp.cfg.IsPrivacyManager() {
+		s, err = IsPrivacyManagerUp(sp.privManUpchkUrl)
 		if err != nil {
 			sp.setStatus(false)
-			log.Error("IsUp - tessera is down", "err", err)
+			log.Error("IsUp - privacy manager is down", "err", err)
 		} else {
 			sp.setStatus(s)
 		}
@@ -59,6 +60,7 @@ func (sp *ShellProcessControl) IsUp() bool {
 	return sp.status
 }
 
+// Status implements Process.Stop
 func (sp *ShellProcessControl) Stop() error {
 	defer sp.muxLock.Unlock()
 	sp.muxLock.Lock()
@@ -83,6 +85,7 @@ func (sp *ShellProcessControl) Stop() error {
 	return nil
 }
 
+// Status implements Process.Start
 func (sp *ShellProcessControl) Start() error {
 	defer sp.muxLock.Unlock()
 	sp.muxLock.Lock()
@@ -90,7 +93,7 @@ func (sp *ShellProcessControl) Start() error {
 		log.Info("Start - process is already up", "name", sp.cfg.Name)
 		return nil
 	}
-	if err := ExecuteShellCommand("start tessera node", sp.cfg.StartCommand); err == nil {
+	if err := ExecuteShellCommand("start privacy manager node", sp.cfg.StartCommand); err == nil {
 		//wait for process to come up
 		if sp.WaitToComeUp() {
 			sp.setStatus(true)
@@ -109,6 +112,8 @@ func (sp *ShellProcessControl) Start() error {
 }
 
 // TODO create helper method that can be called from  docker as well
+// WaitToComeUp waits for the process status to be up by performing up check repeatedly
+// for a certain duration
 func (sp *ShellProcessControl) WaitToComeUp() bool {
 	retryCount := 30
 	c := 1
@@ -124,6 +129,8 @@ func (sp *ShellProcessControl) WaitToComeUp() bool {
 }
 
 // TODO create helper that can be called from  docker as well
+// WaitToBeDown waits for the process status to be down by performing up check repeatedly
+// for a certain duration
 func (sp *ShellProcessControl) WaitToBeDown() bool {
 	retryCount := 30
 	c := 1

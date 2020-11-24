@@ -3,7 +3,6 @@ package process
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -13,12 +12,13 @@ import (
 	"github.com/docker/docker/client"
 )
 
+// DockerControl represents process control for a docker container
 type DockerControl struct {
-	cfg               *types.ProcessConfig
-	gethRpcUrl        string
-	tesseraUpcheckUrl string
-	status            bool
-	muxLock           sync.Mutex
+	cfg             *types.ProcessConfig
+	bcClntRpcUrl    string
+	privManUpchkUrl string
+	status          bool
+	muxLock         sync.Mutex
 }
 
 func NewDockerProcess(p *types.ProcessConfig, grpc string, turl string, s bool) Process {
@@ -33,27 +33,28 @@ func (dp *DockerControl) setStatus(s bool) {
 	log.Debug("setStatus - process "+dp.cfg.Name, "status", dp.status)
 }
 
+// Status implements Process.Status
 func (dp *DockerControl) Status() bool {
 	return dp.status
 }
 
+// IsUp implements Process.IsUp
 func (dp *DockerControl) IsUp() bool {
 	s := false
 	var err error
-	switch strings.ToLower(dp.cfg.Name) {
-	case "geth":
-		s, err = IsGethUp(dp.gethRpcUrl)
+	if dp.cfg.IsBcClient() {
+		s, err = IsBlockchainClientUp(dp.bcClntRpcUrl)
 		if err != nil {
 			dp.setStatus(false)
-			log.Error("IsUp - geth is down", "err", err)
+			log.Error("IsUp - blockchain client is down", "err", err)
 		} else {
 			dp.setStatus(s)
 		}
-	case "tessera":
-		s, err = IsTesseraUp(dp.tesseraUpcheckUrl)
+	} else if dp.cfg.IsPrivacyManager() {
+		s, err = IsPrivacyManagerUp(dp.privManUpchkUrl)
 		if err != nil {
 			dp.setStatus(false)
-			log.Error("IsUp - tessera is down", "err", err)
+			log.Error("IsUp - privacy manager is down", "err", err)
 		} else {
 			dp.setStatus(s)
 		}
@@ -62,6 +63,7 @@ func (dp *DockerControl) IsUp() bool {
 	return dp.status
 }
 
+// Stop implements Process.Stop
 func (dp *DockerControl) Stop() error {
 	defer dp.muxLock.Unlock()
 	dp.muxLock.Lock()
@@ -95,6 +97,7 @@ func (dp *DockerControl) Stop() error {
 	return nil
 }
 
+// Stop implements Process.Stop
 func (dp *DockerControl) Start() error {
 	defer dp.muxLock.Unlock()
 	dp.muxLock.Lock()
@@ -127,6 +130,8 @@ func (dp *DockerControl) Start() error {
 	return nil
 }
 
+// WaitToComeUp waits for the process status to be up by performing up check repeatedly
+// for a certain duration
 func (dp *DockerControl) WaitToComeUp() bool {
 	retryCount := 30
 	c := 1
@@ -141,6 +146,8 @@ func (dp *DockerControl) WaitToComeUp() bool {
 	return false
 }
 
+// WaitToBeDown waits for the process status to be down by performing up check repeatedly
+// for a certain duration
 func (sp *DockerControl) WaitToBeDown() bool {
 	retryCount := 30
 	c := 1

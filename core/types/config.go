@@ -66,7 +66,7 @@ func (c ProxyConfig) IsValid() error {
 
 type NodeManagerConfig struct {
 	Name       string `toml:"name"`       // Name of the other qnm
-	TesseraKey string `toml:"tesseraKey"` // TesseraKey managed by the other qnm
+	PrivManKey string `toml:"privManKey"` // PrivManKey managed by the other qnm
 	RpcUrl     string `toml:"rpcUrl"`     // RPC url of the other qnm
 }
 
@@ -75,8 +75,8 @@ func (c NodeManagerConfig) IsValid() error {
 	if c.Name == "" {
 		return errors.New("node manager name is empty.")
 	}
-	if c.TesseraKey == "" {
-		return errors.New("node manager tesseraKey is empty.")
+	if c.PrivManKey == "" {
+		return errors.New("node manager privacy manager key is empty.")
 	}
 	if c.RpcUrl == "" {
 		return errors.New("node manager rpcUrl is empty.")
@@ -88,7 +88,7 @@ func (c NodeManagerConfig) IsValid() error {
 }
 
 type ProcessConfig struct {
-	Name         string   `toml:"name"`         // name of process. ex: geth / tessera
+	Name         string   `toml:"name"`         // name of process. should be bcclnt or privman
 	ControlType  string   `toml:"controlType"`  // control type supported. shell or docker
 	ContainerId  string   `toml:"containerId"`  // docker container id. required if controlType is docker
 	StopCommand  []string `toml:"stopCommand"`  // stop command. required if controlType is shell
@@ -103,20 +103,20 @@ func (c ProcessConfig) IsDocker() bool {
 	return strings.ToLower(c.ControlType) == "docker"
 }
 
-func (c ProcessConfig) IsGeth() bool {
-	return strings.ToLower(c.Name) == "geth"
+func (c ProcessConfig) IsBcClient() bool {
+	return strings.ToLower(c.Name) == "bcclnt"
 }
 
-func (c ProcessConfig) IsTessera() bool {
-	return strings.ToLower(c.Name) == "tessera"
+func (c ProcessConfig) IsPrivacyManager() bool {
+	return strings.ToLower(c.Name) == "privman"
 }
 
 func (c ProcessConfig) IsValid() error {
 	if !c.IsDocker() && !c.IsShell() {
 		return errors.New("unsupported controlType. processConfig supports only shell or docker")
 	}
-	if !c.IsGeth() && !c.IsTessera() {
-		return errors.New("process name must be geth or tessera.")
+	if !c.IsBcClient() && !c.IsPrivacyManager() {
+		return errors.New("process name must be bcclnt or privman.")
 	}
 	if c.IsDocker() && c.ContainerId == "" {
 		return errors.New("containerId is empty for docker controlType.")
@@ -145,16 +145,16 @@ func (c RPCServerConfig) IsValid() error {
 
 type BasicConfig struct {
 	Name                  string           `toml:"name"`                  // name of this qnm
-	GethRpcUrl            string           `toml:"gethRpcUrl"`            // RPC url of geth managed by this qnm
-	TesseraUpcheckUrl     string           `toml:"tesseraUpcheckUrl"`     // Upcheck url of tessera managed by this qnm
-	TesseraKey            string           `toml:"tesseraKey"`            // Tessera key of tessera managed by this qnm
-	Consensus             string           `toml:"consensus"`             // consensus used by geth. ex: raft / istanbul / clique
+	BcClntRpcUrl          string           `toml:"bcClntRpcUrl"`          // RPC url of blockchain client managed by this qnm
+	PrivManUpcheckUrl     string           `toml:"privManUpcheckUrl"`     // Upcheck url of privacy manager managed by this qnm
+	PrivManKey            string           `toml:"privManKey"`            // public key of privacy manager managed by this qnm
+	Consensus             string           `toml:"consensus"`             // consensus used by blockchain client. ex: raft / istanbul / clique
 	ClientType            string           `toml:"clientType"`            // client used by this qnm. it should be quorum or besu
 	NodeManagerConfigFile string           `toml:"nodeManagerConfigFile"` // node manager config file path
-	InactivityTime        int              `toml:"inactivityTime"`        // inactivity time for geth and tessera
+	InactivityTime        int              `toml:"inactivityTime"`        // inactivity time for blockchain client and privacy manager
 	Server                *RPCServerConfig `toml:"server"`                // RPC server config of this qnm
-	GethProcess           *ProcessConfig   `toml:"gethProcess"`           // geth process managed by this qnm
-	TesseraProcess        *ProcessConfig   `toml:"tesseraProcess"`        // tessera process managed by this qnm
+	BcClntProcess         *ProcessConfig   `toml:"bcClntProcess"`         // blockchain client process managed by this qnm
+	PrivManProcess        *ProcessConfig   `toml:"privManProcess"`        // privacy manager process managed by this qnm
 	Proxies               []*ProxyConfig   `toml:"proxies"`               // proxies managed by this qnm
 }
 
@@ -209,7 +209,7 @@ func (c NodeConfig) IsConsensusValid() error {
 	}
 
 	var resp map[string]interface{}
-	if err := core.CallRPC(c.BasicConfig.GethRpcUrl, []byte(adminInfoReq), &resp); err == nil {
+	if err := core.CallRPC(c.BasicConfig.BcClntRpcUrl, []byte(adminInfoReq), &resp); err == nil {
 		resMap := resp["result"].(map[string]interface{})
 		log.Info("IsConsensusValid - response", "map", resMap)
 
@@ -311,23 +311,23 @@ func (c BasicConfig) IsValid() error {
 		return err
 	}
 
-	if c.GethProcess == nil {
-		return errors.New("geth process config is empty")
+	if c.BcClntProcess == nil {
+		return errors.New("blockchain client process config is empty")
 	}
 
-	if c.TesseraProcess == nil {
-		return errors.New("tessera process config is empty")
+	if c.PrivManProcess == nil {
+		return errors.New("privacy manager process config is empty")
 	}
 
-	if c.GethRpcUrl == "" {
-		return errors.New("geth rpc url is empty")
+	if c.BcClntRpcUrl == "" {
+		return errors.New("blockchain client rpc url is empty")
 	}
 
-	if c.TesseraUpcheckUrl == "" {
-		return errors.New("tessera upcheck url is empty")
+	if c.PrivManUpcheckUrl == "" {
+		return errors.New("privacy manager upcheck url is empty")
 	}
 
-	if c.TesseraKey == "" {
+	if c.PrivManKey == "" {
 		return errors.New("enodeId is empty")
 	}
 
@@ -339,11 +339,11 @@ func (c BasicConfig) IsValid() error {
 		return errors.New("RPC server config is nil")
 	}
 
-	if err := c.GethProcess.IsValid(); err != nil {
+	if err := c.BcClntProcess.IsValid(); err != nil {
 		return err
 	}
 
-	if err := c.TesseraProcess.IsValid(); err != nil {
+	if err := c.PrivManProcess.IsValid(); err != nil {
 		return err
 	}
 

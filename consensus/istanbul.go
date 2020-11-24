@@ -64,7 +64,7 @@ func (r *IstanbulConsensus) getIstanbulIsValidator(qrmRpcUrl string) (bool, erro
 // TODO - if the number of validators are more than 64 this will not work as expected as signers return data for last 64 blocks only
 // ValidateShutdown implements Consensus.ValidateShutdown
 func (r *IstanbulConsensus) ValidateShutdown() error {
-	isValidator, err := r.getIstanbulIsValidator(r.cfg.BasicConfig.GethRpcUrl)
+	isValidator, err := r.getIstanbulIsValidator(r.cfg.BasicConfig.BcClntRpcUrl)
 	if err != nil {
 		log.Error("ValidateShutdown - istanbul isValidator check failed", "err", err)
 		return err
@@ -75,7 +75,7 @@ func (r *IstanbulConsensus) ValidateShutdown() error {
 		return nil
 	}
 
-	activity, err := r.getIstanbulSealerActivity(r.cfg.BasicConfig.GethRpcUrl)
+	activity, err := r.getIstanbulSealerActivity(r.cfg.BasicConfig.BcClntRpcUrl)
 	if err != nil {
 		log.Error("ValidateShutdown - istanbul status check failed", "err", err)
 		return err

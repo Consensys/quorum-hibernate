@@ -1,45 +1,34 @@
+[basicConfig]
 #node manager name
-name = "node1"
+name = "node4"
+#blockchain client RPC URL
+bcClntRpcUrl = "http://localhost:22003"
+privManUpcheckUrl = "http://localhost:9084/upcheck"
+PrivManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
+consensus = "raft"
+clientType = "quorum"
+nodeManagerConfigFile = "./test/shell/nm1.toml"
 
-#geth RPC URL
-gethRpcUrl = "http://localhost:22003"
-tesseraUpcheckUrl = "http://localhost:9084/upcheck"
+inactivityTime = 60
 
-#geth inactivity timeout seconds
-gethInactivityTime = 1000000
-
-#geth's http/ws services that need to be exposed as proxy services
 proxies = [
     { name = "geth-rpc", type = "http", proxyAddr = "localhost:9094", upstreamAddr = "http://localhost:22003", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
-    { name = "tessera", type = "http", proxyAddr = "localhost:9394", upstreamAddr = "http://127.0.0.1:9084", proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], readTimeout = 15, writeTimeout = 15 }
-]
-
-nodeManagers = [
-    { name = "node1", tesseraKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", rpcUrl = "http://localhost:8081" },
-    { name = "node2", tesseraKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", rpcUrl = "http://localhost:8082" },
-    { name = "node3", tesseraKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8083" },
-    { name = "node4", tesseraKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8084" },
-    { name = "node5", tesseraKey = "R56gy4dn24YOjwyesTczYa8m5xhP6hF2uTMCju/1xkY=", rpcUrl = "http://localhost:8085" },
-    { name = "node6", tesseraKey = "UfNSeSGySeKg11DVNEnqrUtxYRVor4+CvluI8tVv62Y=", rpcUrl = "http://localhost:8086" },
-    { name = "node7", tesseraKey = "ROAZBWtSacxXQrOe3FGAqJDyJjFePR5ce4TSIzmJ0Bc=", rpcUrl = "http://localhost:8087" }
+    { name = "tessera", type = "http", proxyAddr = "localhost:9394", upstreamAddr = "http://127.0.0.1:9084", proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], readTimeout = 15, writeTimeout = 15 },
 ]
 
 #rpc server details of node manager
-[server]
+[basicConfig.server]
 # The interface + port the application should bind to
 rpcAddr = "localhost:8084"
 rpcCorsList = ["*"]
 rpcvHosts = ["*"]
 
-#geth's process control config
-[gethProcess]
-name="geth"
+[basicConfig.bcClntProcess]
+name = "bcclnt"
+containerId = ""
 controlType = "docker"
-containerId = "08dadbe5ba81"
 
-
-#tessera's process control config
-[tesseraProcess]
-name="tessera"
+[basicConfig.privManProcess]
+name = "privman"
 controlType = "docker"
-containerId = "1b7871743eb9"
+containerId = ""

@@ -69,7 +69,7 @@ func (r *RaftConsensus) getRaftClusterInfo(qrmRpcUrl string) ([]RaftClusterEntry
 
 // ValidateShutdown implements Consensus.ValidateShutdown
 func (r *RaftConsensus) ValidateShutdown() error {
-	role, err := r.getRole(r.cfg.BasicConfig.GethRpcUrl)
+	role, err := r.getRole(r.cfg.BasicConfig.BcClntRpcUrl)
 	if err != nil {
 		log.Error("ValidateShutdown - raft role failed", "err", err)
 		return err
@@ -84,7 +84,7 @@ func (r *RaftConsensus) ValidateShutdown() error {
 		return nil
 	}
 
-	cluster, err := r.getRaftClusterInfo(r.cfg.BasicConfig.GethRpcUrl)
+	cluster, err := r.getRaftClusterInfo(r.cfg.BasicConfig.BcClntRpcUrl)
 	if err != nil {
 		log.Error("ValidateShutdown - raft cluster failed", "err", err)
 		return err

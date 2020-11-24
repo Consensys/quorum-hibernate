@@ -10,7 +10,7 @@ import (
 )
 
 type NodeRPCAPIs struct {
-	qn *QuorumNodeControl
+	qn *NodeControl
 }
 
 type NodeUpReply struct {
@@ -21,7 +21,7 @@ type PrivateTxPrepReply struct {
 	Status bool
 }
 
-func NewNodeRPCAPIs(qn *QuorumNodeControl) *NodeRPCAPIs {
+func NewNodeRPCAPIs(qn *NodeControl) *NodeRPCAPIs {
 	return &NodeRPCAPIs{qn: qn}
 }
 

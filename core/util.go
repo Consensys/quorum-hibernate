@@ -38,6 +38,7 @@ func GetRandomRetryWaitTime() int {
 
 // CallRPC makes a rpc call to rpcUrl. It makes http post req with rpcTeq as body.
 // The returned JSON result is decoded into resData.
+// resData must be a pointer.
 func CallRPC(rpcUrl string, rpcReq []byte, resData interface{}) error {
 	client := NewHttpClient()
 	log.Debug("CallRPC - making rpc call", "req", string(rpcReq))

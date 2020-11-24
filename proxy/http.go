@@ -8,12 +8,13 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
+// makeHttpHandler returns a function to serve HTTP requests from clients
 func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 
 	return func(res http.ResponseWriter, req *http.Request) {
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
-			const errMsg = "httpHandler - reading request body failed"
+			const errMsg = "Reading request failed"
 			log.Error(errMsg, "name", ps.proxyCfg.Name, "path", req.RequestURI, "err", err)
 			http.Error(res, errMsg, http.StatusInternalServerError)
 			return
@@ -42,16 +43,15 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 			if ps.qrmNode.PrepareNode() {
 				log.Debug("httpHandler - prepared to accept request")
 			} else {
-				const errMsg = "httpHandler - node prepare failed"
-				log.Error(errMsg)
-				http.Error(res, errMsg, http.StatusInternalServerError)
+				log.Error("httpHandler - prepare node failed")
+				http.Error(res, ErrNodeNotReady.Error(), http.StatusInternalServerError)
 				return
 			}
 		}
 
 		if err := HandlePrivateTx(body, ps); err != nil {
 			log.Error("httpHandler - handling pvt tx failed", "err", err)
-			http.Error(res, err.Error(), http.StatusInternalServerError)
+			http.Error(res, ErrParticipantsDown.Error(), http.StatusInternalServerError)
 			return
 		}
 

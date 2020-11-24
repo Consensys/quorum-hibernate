@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -48,7 +47,7 @@ type WebsocketProxy struct {
 	Dialer *websocket.Dialer
 }
 
-// ProxyHandler returns a new http.Handler interface that reverse proxies the
+// WSProxyHandler returns a new http.Handler interface that reverse proxies the
 // request to the given target.
 func WSProxyHandler(ps *ProxyServer, destUrl string) (*WebsocketProxy, error) {
 	url, err := url.Parse(destUrl)
@@ -74,7 +73,7 @@ func NewWSProxy(ps *ProxyServer, target *url.URL) *WebsocketProxy {
 
 // ServeWebsocket implements the http.Handler that proxies WebSocket connections.
 func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	defer log.Info("ServeHTTP-WS - exit serveHTTP websocket", "req", req.RequestURI, "remoteAddr", req.RemoteAddr)
+	defer log.Debug("ServeHTTP-WS - exit serveHTTP websocket", "req", req.RequestURI, "remoteAddr", req.RemoteAddr)
 	if w.Backend == nil {
 		log.Error("ServeHTTP-WS - websocketproxy: backend function is not defined")
 		http.Error(rw, "ServeHTTP-WS - backend missing", http.StatusInternalServerError)
@@ -91,9 +90,8 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if w.ps.qrmNode.PrepareNode() {
 		log.Info("ServeHTTP-WS - node prepared to accept request")
 	} else {
-		err := errors.New("ServeHTTP-WS - node prepare failed")
-		log.Error("ServeHTTP-WS - failed", "err", err)
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		log.Error("ServeHTTP-WS - failed to start node")
+		http.Error(rw, "Failed to start the node", http.StatusInternalServerError)
 		return
 	}
 
@@ -133,7 +131,7 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			log.Debug("ServeHTTP-WS - get X-Forwarded-For prior", "prior", prior)
 			clientIP = strings.Join(prior, ", ") + ", " + clientIP
 		}
-		log.Debug("ServeWebsocket get X-Forwarded-For clientip", "clientip", clientIP)
+		log.Debug("ServeHTTP-WS get X-Forwarded-For clientip", "clientip", clientIP)
 		requestHeader.Set("X-Forwarded-For", clientIP)
 	}
 
@@ -163,16 +161,17 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			// redirects, authentication, etcetera.
 			if err := copyResponse(rw, resp); err != nil {
 				log.Error("ServeHTTP-WS - couldn't write response after failed remote backend handshake:", "err", err)
+				http.Error(rw, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 			}
 		} else {
 			http.Error(rw, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 		}
 		return
 	}
-	log.Info("ServeHTTP-WS - WS handler connected to backend", "name", w.ps.proxyCfg.Name, "dest", w.ps.proxyCfg.UpstreamAddr)
+	log.Info("ServeHTTP-WS - connected to backend", "name", w.ps.proxyCfg.Name, "dest", w.ps.proxyCfg.UpstreamAddr)
 	defer func() {
 		connBackend.Close()
-		log.Info("ServeHTTP-WS - WS handler disconnected from backend", "name", w.ps.proxyCfg.Name, "dest", w.ps.proxyCfg.UpstreamAddr)
+		log.Info("ServeHTTP-WS - disconnected from backend", "name", w.ps.proxyCfg.Name, "dest", w.ps.proxyCfg.UpstreamAddr)
 	}()
 
 	upgrader := w.Upgrader
@@ -238,6 +237,7 @@ func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc c
 			w.ps.qrmNode.ResetInactiveTime()
 
 			if err := w.ps.qrmNode.IsNodeBusy(); err != nil {
+				log.Error("replicateWebsocketConn - node is busy", "err", err)
 				w.closeConnWithError(dst, err)
 				return
 			}
@@ -245,8 +245,8 @@ func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc c
 			if w.ps.qrmNode.PrepareNode() {
 				log.Info("replicateWebsocketConn - prepared to accept request")
 			} else {
-				err = errors.New("replicateWebsocketConn - prepare failed")
-				w.closeConnWithError(dst, err)
+				log.Error("replicateWebsocketConn - prepare node failed")
+				w.closeConnWithError(dst, ErrNodeNotReady)
 				errc <- err
 				break
 			}
@@ -254,7 +254,8 @@ func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc c
 
 		if isReqFromSource {
 			if err := HandlePrivateTx(msg, w.ps); err != nil {
-				w.closeConnWithError(dst, err)
+				log.Error("replicateWebsocketConn - handling private transaction failed", "err", err)
+				w.closeConnWithError(dst, ErrParticipantsDown)
 				errc <- err
 				break
 			}

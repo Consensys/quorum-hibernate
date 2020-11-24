@@ -1,6 +1,7 @@
-# Quorum Node Manager
+# Node Manager
 
-Quorum Node Manger is a tool that monitors inactivity in `geth` and `tessera` and stops them when they are inactive.
+Node Manger is a proxy tool that monitors inactivity in `blockchain client` and `privacy manager` and stops them when they are inactive.
+When it receives request from a client, it will bring up blockchain client and privacy manager if they are down.
 
 ## Usage 
 
@@ -20,7 +21,7 @@ go build [-o node-manager]
 
 - Running with a custom configuration path
 ```bash
-./node-manager -config <path to toml config file>
+./node-manager --config <path to toml config file> --verbosity <verbose level>
 ```
 
 sample node config file
@@ -29,17 +30,18 @@ sample node config file
 [basicConfig]
 #node manager name
 name = "node1"
-#geth RPC URL
-gethRpcUrl = "http://localhost:22000"
-tesseraUpcheckUrl = "http://localhost:9001/upcheck"
-tesseraKey="oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
-consensus="raft"
-nodeManagerConfigFile="./nodemanager.local.toml"
+#blockchain client RPC URL
+bcClntRpcUrl = "http://localhost:22000"
+privManUpcheckUrl = "http://localhost:9001/upcheck"
+PrivManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
+consensus = "raft"
+clientType = "quorum"
+nodeManagerConfigFile = "./test/shell/nm1.toml"
 
-#geth/tessera inactivity timeout seconds
-inactivityTime = 1000
+#blockchain client/privacy manager inactivity timeout seconds
+inactivityTime = 60
 
-#geth/tessera http/ws services that need to be exposed as proxy services
+#blockchain client's http/ws services and privacy manager's http that need to be exposed as proxy services
 proxies = [
     { name = "geth-rpc", type = "http", proxyAddr = "localhost:9091", upstreamAddr = "http://localhost:22000", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
     { name = "geth-graphql", type = "http", proxyAddr = "localhost:9191", upstreamAddr = "http://localhost:8547/graphql", proxyPaths = ["/graphql"], readTimeout = 15, writeTimeout = 15 },
@@ -54,29 +56,28 @@ rpcAddr = "localhost:8081"
 rpcCorsList = ["*"]
 rpcvHosts = ["*"]
 
-#geth's process control config
-[basicConfig.gethProcess]
-name="geth"
+#blockchain client's process control config
+[basicConfig.bcClntProcess]
+name = "geth"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"]
 
-#tessera's process control config
-[basicConfig.tesseraProcess]
-name="tessera"
+#privacy manager process control config
+[basicConfig.privManProcess]
+name = "tessera"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"]
-
 ```
 
 sample node manager config file
 
 ```$xslt
 nodeManagers = [
-    { name = "node1", tesseraKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", rpcUrl = "http://localhost:8081" },
-    { name = "node2", tesseraKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", rpcUrl = "http://localhost:8082" },
-    { name = "node3", tesseraKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8083" },
-    { name = "node4", tesseraKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8084" }
+    { name = "node1", privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", rpcUrl = "http://localhost:8081" },
+    { name = "node2", privManKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", rpcUrl = "http://localhost:8082" },
+    { name = "node3", privManKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8083" },
+    { name = "node4", privManKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8084" }
 ]
 ```
