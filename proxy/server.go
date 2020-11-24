@@ -13,14 +13,15 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/node"
 )
 
+// ProxyServer represents a proxy server
 type ProxyServer struct {
-	qrmNode    *node.QuorumNodeControl
-	proxyCfg   *types.ProxyConfig
+	qrmNode    *node.QuorumNodeControl // node controller
+	proxyCfg   *types.ProxyConfig      // proxy config
 	mux        *http.ServeMux
-	srv        *http.Server
+	srv        *http.Server           // http server for the proxy
 	rp         *httputil.ReverseProxy // handler for http reverse proxy
 	wp         *WebsocketProxy        // handler for websocket
-	errCh      chan error
+	errCh      chan error             // error channel
 	shutdownWg sync.WaitGroup
 }
 
@@ -84,6 +85,7 @@ func initWSHandler(ps *ProxyServer) error {
 	return nil
 }
 
+// Start starts the proxy server
 func (ps ProxyServer) Start() {
 	ps.shutdownWg.Add(1)
 	go func() {
@@ -97,6 +99,7 @@ func (ps ProxyServer) Start() {
 	}()
 }
 
+// Stop stops the proxy server
 func (ps ProxyServer) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

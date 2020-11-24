@@ -10,10 +10,19 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
+// Process is an interface that represents a process like geth or tessara
+// It allows  a process to be stopped & started.
+// It allows the process's status to be checked.
+// This should be used by node controller to control geth, privacyManager.
 type Process interface {
+	// Start starts the process. it returns error if it fails.
 	Start() error
+	// Stop stops the process. it returns error if it fails.
 	Stop() error
+	// IsUp performs Up check for the process by trying to execute the http get / rpc call
+	// trying to connect to the process
 	IsUp() bool
+	// Status returns the cached status of last IsUp check
 	Status() bool
 }
 

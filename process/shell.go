@@ -10,6 +10,7 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
+// ShellProcessControl represents process control for a shell process
 type ShellProcessControl struct {
 	cfg               *types.ProcessConfig
 	gethRpcUrl        string
@@ -30,10 +31,12 @@ func (sp *ShellProcessControl) setStatus(s bool) {
 	log.Debug("setStatus - process "+sp.cfg.Name, "status", sp.status)
 }
 
+// Status implements Process.Status
 func (sp *ShellProcessControl) Status() bool {
 	return sp.status
 }
 
+// Status implements Process.IsUp
 func (sp *ShellProcessControl) IsUp() bool {
 	s := false
 	var err error
@@ -59,6 +62,7 @@ func (sp *ShellProcessControl) IsUp() bool {
 	return sp.status
 }
 
+// Status implements Process.Stop
 func (sp *ShellProcessControl) Stop() error {
 	defer sp.muxLock.Unlock()
 	sp.muxLock.Lock()
@@ -83,6 +87,7 @@ func (sp *ShellProcessControl) Stop() error {
 	return nil
 }
 
+// Status implements Process.Start
 func (sp *ShellProcessControl) Start() error {
 	defer sp.muxLock.Unlock()
 	sp.muxLock.Lock()
@@ -109,6 +114,8 @@ func (sp *ShellProcessControl) Start() error {
 }
 
 // TODO create helper method that can be called from  docker as well
+// WaitToComeUp waits for the process status to be up by performing up check repeatedly
+// for a certain duration
 func (sp *ShellProcessControl) WaitToComeUp() bool {
 	retryCount := 30
 	c := 1
@@ -124,6 +131,8 @@ func (sp *ShellProcessControl) WaitToComeUp() bool {
 }
 
 // TODO create helper that can be called from  docker as well
+// WaitToBeDown waits for the process status to be down by performing up check repeatedly
+// for a certain duration
 func (sp *ShellProcessControl) WaitToBeDown() bool {
 	retryCount := 30
 	c := 1

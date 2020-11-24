@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/client"
 )
 
+// DockerControl represents process control for a docker container
 type DockerControl struct {
 	cfg               *types.ProcessConfig
 	gethRpcUrl        string
@@ -33,10 +34,12 @@ func (dp *DockerControl) setStatus(s bool) {
 	log.Debug("setStatus - process "+dp.cfg.Name, "status", dp.status)
 }
 
+// Status implements Process.Status
 func (dp *DockerControl) Status() bool {
 	return dp.status
 }
 
+// IsUp implements Process.IsUp
 func (dp *DockerControl) IsUp() bool {
 	s := false
 	var err error
@@ -62,6 +65,7 @@ func (dp *DockerControl) IsUp() bool {
 	return dp.status
 }
 
+// Stop implements Process.Stop
 func (dp *DockerControl) Stop() error {
 	defer dp.muxLock.Unlock()
 	dp.muxLock.Lock()
@@ -95,6 +99,7 @@ func (dp *DockerControl) Stop() error {
 	return nil
 }
 
+// Stop implements Process.Stop
 func (dp *DockerControl) Start() error {
 	defer dp.muxLock.Unlock()
 	dp.muxLock.Lock()
@@ -127,6 +132,8 @@ func (dp *DockerControl) Start() error {
 	return nil
 }
 
+// WaitToComeUp waits for the process status to be up by performing up check repeatedly
+// for a certain duration
 func (dp *DockerControl) WaitToComeUp() bool {
 	retryCount := 30
 	c := 1
@@ -141,6 +148,8 @@ func (dp *DockerControl) WaitToComeUp() bool {
 	return false
 }
 
+// WaitToBeDown waits for the process status to be down by performing up check repeatedly
+// for a certain duration
 func (sp *DockerControl) WaitToBeDown() bool {
 	retryCount := 30
 	c := 1

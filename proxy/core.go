@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,11 +10,17 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/node"
 )
 
-// Proxy represents a proxy server that can be started / stopped
+// Proxy represents a proxy server
+// It allows the server to be started and stopped.
 type Proxy interface {
 	Start()
 	Stop()
 }
+
+var (
+	ErrParticipantsDown = errors.New("Some participant nodes are down")
+	ErrNodeNotReady     = errors.New("node is not ready to accept request")
+)
 
 func MakeProxyServices(qn *node.QuorumNodeControl, errc chan error) ([]Proxy, error) {
 	var proxies []Proxy
@@ -27,6 +34,10 @@ func MakeProxyServices(qn *node.QuorumNodeControl, errc chan error) ([]Proxy, er
 	return proxies, nil
 }
 
+// HandlePrivateTx helps with processing private transactions.
+// if the body is a private transaction request it will get participants of the transaction and
+// wake them up via qnm2qnm rpc call.
+// if body is not a private transaction it will return nil.
 func HandlePrivateTx(body []byte, ps *ProxyServer) error {
 	// TODO If tessera proxy works as expected, can this be removed?
 	if participants, err := ps.qrmNode.GetTxHandler().IsPrivateTx(body); err != nil {
