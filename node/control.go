@@ -16,18 +16,18 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
-// QuorumNodeControl represents a node controller.
-// It tracks quorum/tessera processes' inactivity and it allows inactivity to be reset when
+// NodeControl represents a node controller.
+// It tracks blockchain client/privacyManager processes' inactivity and it allows inactivity to be reset when
 // there is some activity.
-// It accepts request to stop geth/tessera when there is inactivity.
-// It starts geth/tessera processes when there is a activity.
-// It takes care of managing combined status of geth and tessera.
-type QuorumNodeControl struct {
+// It accepts request to stop blockchain client/privacyManager when there is inactivity.
+// It starts blockchain client/privacyManager processes when there is a activity.
+// It takes care of managing combined status of blockchain client & privacyManager.
+type NodeControl struct {
 	config             *types.NodeConfig   // config of this node
 	im                 *InactivityMonitor  // inactivity monitor
 	nm                 *qnm.NodeManager    // node manager to communicate with other qnm
-	gethp              proc.Process        // geth process controller
-	tesserap           proc.Process        // tessera process controller
+	bcclnt             proc.Process        // blockchain client process controller
+	pmclnt             proc.Process        // privacy manager process controller
 	consensus          cons.Consensus      // consenus validator
 	txh                privatetx.TxHandler // Transaction handler
 	nodeStatus         types.NodeStatus    // status of this node
@@ -41,8 +41,8 @@ type QuorumNodeControl struct {
 	statusMux          sync.Mutex          // lock for setting the status
 }
 
-func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
-	quorumNode := &QuorumNodeControl{
+func NewQuorumNodeControl(cfg *types.NodeConfig) *NodeControl {
+	quorumNode := &NodeControl{
 		cfg,
 		nil,
 		qnm.NewNodeManager(cfg),
@@ -61,19 +61,19 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 		sync.Mutex{},
 	}
 
-	if cfg.BasicConfig.GethProcess.IsShell() {
-		quorumNode.gethp = proc.NewShellProcess(cfg.BasicConfig.GethProcess, cfg.BasicConfig.GethRpcUrl, cfg.BasicConfig.TesseraUpcheckUrl, true)
-	} else if cfg.BasicConfig.GethProcess.IsDocker() {
-		quorumNode.gethp = proc.NewDockerProcess(cfg.BasicConfig.GethProcess, cfg.BasicConfig.GethRpcUrl, cfg.BasicConfig.TesseraUpcheckUrl, true)
+	if cfg.BasicConfig.BcClntProcess.IsShell() {
+		quorumNode.bcclnt = proc.NewShellProcess(cfg.BasicConfig.BcClntProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+	} else if cfg.BasicConfig.BcClntProcess.IsDocker() {
+		quorumNode.bcclnt = proc.NewDockerProcess(cfg.BasicConfig.BcClntProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
 	}
 
-	if cfg.BasicConfig.TesseraProcess.IsShell() {
-		quorumNode.tesserap = proc.NewShellProcess(cfg.BasicConfig.TesseraProcess, cfg.BasicConfig.GethRpcUrl, cfg.BasicConfig.TesseraUpcheckUrl, true)
-	} else if cfg.BasicConfig.TesseraProcess.IsDocker() {
-		quorumNode.tesserap = proc.NewDockerProcess(cfg.BasicConfig.TesseraProcess, cfg.BasicConfig.GethRpcUrl, cfg.BasicConfig.TesseraUpcheckUrl, true)
+	if cfg.BasicConfig.PrivManProcess.IsShell() {
+		quorumNode.pmclnt = proc.NewShellProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+	} else if cfg.BasicConfig.PrivManProcess.IsDocker() {
+		quorumNode.pmclnt = proc.NewDockerProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
 	}
 
-	if quorumNode.gethp.Status() && quorumNode.tesserap.Status() {
+	if quorumNode.bcclnt.Status() && quorumNode.pmclnt.Status() {
 		quorumNode.SetNodeStatus(types.Up)
 	} else {
 		quorumNode.SetNodeStatus(types.Down)
@@ -92,38 +92,38 @@ func NewQuorumNodeControl(cfg *types.NodeConfig) *QuorumNodeControl {
 	return quorumNode
 }
 
-func (qn *QuorumNodeControl) GetRPCConfig() *types.RPCServerConfig {
+func (qn *NodeControl) GetRPCConfig() *types.RPCServerConfig {
 	return qn.config.BasicConfig.Server
 }
 
-func (qn *QuorumNodeControl) GetNodeConfig() *types.NodeConfig {
+func (qn *NodeControl) GetNodeConfig() *types.NodeConfig {
 	return qn.config
 }
 
-func (qn *QuorumNodeControl) GetNodeStatus() types.NodeStatus {
+func (qn *NodeControl) GetNodeStatus() types.NodeStatus {
 	return qn.nodeStatus
 }
 
-func (qn *QuorumNodeControl) GetProxyConfig() []*types.ProxyConfig {
+func (qn *NodeControl) GetProxyConfig() []*types.ProxyConfig {
 	return qn.config.BasicConfig.Proxies
 }
 
-func (qn *QuorumNodeControl) GetTxHandler() privatetx.TxHandler {
+func (qn *NodeControl) GetTxHandler() privatetx.TxHandler {
 	return qn.txh
 }
 
-func (qn *QuorumNodeControl) SetNodeStatus(ns types.NodeStatus) {
+func (qn *NodeControl) SetNodeStatus(ns types.NodeStatus) {
 	defer qn.statusMux.Unlock()
 	qn.statusMux.Lock()
 	qn.nodeStatus = ns
 }
 
-// IsNodeUp performs up check for geth and tessera and returns the combined status
-// if both geth and tessera are up, the node status is up(true) else down(false)
-func (qn *QuorumNodeControl) IsNodeUp() bool {
-	gs := qn.gethp.IsUp()
-	ts := qn.tesserap.IsUp()
-	log.Debug("IsNodeUp", "geth", gs, "tessera", ts)
+// IsNodeUp performs up check for blockchain client and privacy manager and returns the combined status
+// if both blockchain client and privacy manager are up, the node status is up(true) else down(false)
+func (qn *NodeControl) IsNodeUp() bool {
+	gs := qn.bcclnt.IsUp()
+	ts := qn.pmclnt.IsUp()
+	log.Debug("IsNodeUp", "blockchain client", gs, "privacy manager", ts)
 	if gs && ts {
 		qn.SetNodeStatus(types.Up)
 	} else {
@@ -133,7 +133,7 @@ func (qn *QuorumNodeControl) IsNodeUp() bool {
 }
 
 // IsNodeBusy returns error if the node is busy with shutdown/startup
-func (qn *QuorumNodeControl) IsNodeBusy() error {
+func (qn *NodeControl) IsNodeBusy() error {
 	switch qn.nodeStatus {
 	case types.ShutdownInprogress, types.ShutdownInitiated:
 		return errors.New("node is being shutdown, try after sometime")
@@ -145,26 +145,26 @@ func (qn *QuorumNodeControl) IsNodeBusy() error {
 	return nil
 }
 
-// Start starts geth/tessera start/stop monitor and inactivity tracker
-func (qn *QuorumNodeControl) Start() {
+// Start starts blockchain client and privacy manager start/stop monitor and inactivity tracker
+func (qn *NodeControl) Start() {
 	qn.StartStopNodeMonitor()
 	qn.im = NewInactivityMonitor(qn)
 	qn.im.StartInactivityTimer()
 }
 
-// Stop stops geth/tessera start/stop monitor and inactivity tracker
-func (qn *QuorumNodeControl) Stop() {
+// Stop stops blockchain client and privacy manager start/stop monitor and inactivity tracker
+func (qn *NodeControl) Stop() {
 	qn.im.Stop()
 	qn.stopCh <- true
 }
 
 // ResetInactiveTime resets inactivity time of the tracker
-func (nm *QuorumNodeControl) ResetInactiveTime() {
+func (nm *NodeControl) ResetInactiveTime() {
 	nm.inactivityResetCh <- true
 }
 
-//StartStopNodeMonitor listens for requests to start/stop geth/tessera
-func (qn *QuorumNodeControl) StartStopNodeMonitor() {
+//StartStopNodeMonitor listens for requests to start/stop blockchain client and privacy manager
+func (qn *NodeControl) StartStopNodeMonitor() {
 	go func() {
 		log.Info("StartStopNodeMonitor - node start/stop monitor started")
 		for {
@@ -193,26 +193,26 @@ func (qn *QuorumNodeControl) StartStopNodeMonitor() {
 	}()
 }
 
-func (qn *QuorumNodeControl) RequestStartNode() {
+func (qn *NodeControl) RequestStartNode() {
 	qn.startNodeCh <- true
 }
 
-func (qn *QuorumNodeControl) RequestStopNode() {
+func (qn *NodeControl) RequestStopNode() {
 	qn.stopNodeCh <- true
 }
 
-func (qn *QuorumNodeControl) WaitStartNode() bool {
+func (qn *NodeControl) WaitStartNode() bool {
 	status := <-qn.startCompleteCh
 	return status
 }
 
-func (qn *QuorumNodeControl) WaitStopNode() bool {
+func (qn *NodeControl) WaitStopNode() bool {
 	status := <-qn.shutdownCompleteCh
 	return status
 }
 
 // TODO handle error if node failed to start
-func (qn *QuorumNodeControl) PrepareNode() bool {
+func (qn *NodeControl) PrepareNode() bool {
 	if !qn.IsNodeUp() {
 		status := qn.StartNode()
 		log.Debug("PrepareNode - node start completed", "status", status)
@@ -223,7 +223,7 @@ func (qn *QuorumNodeControl) PrepareNode() bool {
 	}
 }
 
-func (qn *QuorumNodeControl) StopNode() bool {
+func (qn *NodeControl) StopNode() bool {
 	defer qn.startStopMux.Unlock()
 	qn.startStopMux.Lock()
 
@@ -273,41 +273,41 @@ func (qn *QuorumNodeControl) StopNode() bool {
 	// TODO parallelize / loop
 	gs := true
 	ts := true
-	if qn.gethp.Stop() != nil {
+	if qn.bcclnt.Stop() != nil {
 		gs = false
 	}
-	if qn.tesserap.Stop() != nil {
+	if qn.pmclnt.Stop() != nil {
 		ts = false
 	}
 	if gs && ts {
 		qn.SetNodeStatus(types.Down)
 	}
-	// if stopping of geth or tessera fails Status will remain as ShutdownInprogress and qnm will not process any requests from clients
+	// if stopping of blockchain client or privacy manager fails Status will remain as ShutdownInprogress and qnm will not process any requests from clients
 	// it will need some manual intervention to set it to the correct status
 	return gs && ts
 }
 
-func (qn *QuorumNodeControl) StartNode() bool {
+func (qn *NodeControl) StartNode() bool {
 	defer qn.startStopMux.Unlock()
 	qn.startStopMux.Lock()
 	qn.SetNodeStatus(types.StartupInitiated)
 	qn.SetNodeStatus(types.StartupInprogress)
 	gs := true
 	ts := true
-	if qn.tesserap.Start() != nil {
+	if qn.pmclnt.Start() != nil {
 		gs = false
 	}
-	if qn.gethp.Start() != nil {
+	if qn.bcclnt.Start() != nil {
 		ts = false
 	}
 	if gs && ts {
 		qn.SetNodeStatus(types.Up)
 	}
-	// if start up of geth or tessera fails Status will remain as StartupInprogress and qnm will not process any requests from clients
+	// if start up of blockchain client or privacy manager fails Status will remain as StartupInprogress and qnm will not process any requests from clients
 	// it will need some manual intervention to set it to the correct status
 	return gs && ts
 }
 
-func (qn *QuorumNodeControl) PrepareNodeManagerForPrivateTx(privateFor []string) (bool, error) {
+func (qn *NodeControl) PrepareNodeManagerForPrivateTx(privateFor []string) (bool, error) {
 	return qn.nm.ValidateForPrivateTx(privateFor)
 }

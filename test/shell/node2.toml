@@ -1,19 +1,17 @@
 [basicConfig]
 #node manager name
-name = "node1"
+name = "node2"
 
-#geth RPC URL
-gethRpcUrl = "http://localhost:22001"
-tesseraUpcheckUrl = "http://localhost:9002/upcheck"
-tesseraKey="QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc="
-consensus="raft"
-clientType="quorum"
-nodeManagerConfigFile="./test/shell/nm1.toml"
+#blockchain client RPC URL
+bcClntRpcUrl = "http://localhost:22001"
+privManUpcheckUrl = "http://localhost:9002/upcheck"
+privManKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc="
+consensus = "raft"
+clientType = "quorum"
+nodeManagerConfigFile = "./test/shell/nm1.toml"
 
-#geth inactivity timeout seconds
 inactivityTime = 60
 
-#geth's http/ws services that need to be exposed as proxy services
 proxies = [
     { name = "geth-rpc", type = "http", proxyAddr = "localhost:9092", upstreamAddr = "http://localhost:22001", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
     { name = "geth-ws", type = "ws", proxyAddr = "localhost:9292", upstreamAddr = "ws://localhost:23001", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
@@ -27,18 +25,16 @@ rpcAddr = "localhost:8082"
 rpcCorsList = ["*"]
 rpcvHosts = ["*"]
 
-#geth's process control config
-[basicConfig.gethProcess]
+[basicConfig.bcClntProcess]
 controlType = "shell"
-name = "geth"
+name = "bcclnt"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22001"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "2"]
 
 
-#tessera's process control config
-[basicConfig.tesseraProcess]
+[basicConfig.privManProcess]
 controlType = "shell"
-name = "tessera"
+name = "privman"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"]
 

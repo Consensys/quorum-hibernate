@@ -17,10 +17,10 @@ func NewNodeManager(cfg *types.NodeConfig) *NodeManager {
 	return &NodeManager{cfg: cfg, client: core.NewHttpClient()}
 }
 
-func (nm *NodeManager) getNodeManagerConfigByTesseraKey(key string) *types.NodeManagerConfig {
+func (nm *NodeManager) getNodeManagerConfigByPrivManKey(key string) *types.NodeManagerConfig {
 	for _, n := range nm.getLatestNodeManagerConfig() {
-		if n.TesseraKey == key {
-			log.Info("getNodeManagerConfigByTesseraKey - tesseraKey matched", "node", n)
+		if n.PrivManKey == key {
+			log.Debug("getNodeManagerConfigByPrivManKey - privacy manager key matched", "node", n)
 			return n
 		}
 	}
@@ -44,11 +44,11 @@ func (nm *NodeManager) getLatestNodeManagerConfig() []*types.NodeManagerConfig {
 
 // TODO if a qnm is down/not reachable should I mark it as down and proceed?
 // TODO parallelize request
-func (nm *NodeManager) ValidateForPrivateTx(tesseraKeys []string) (bool, error) {
+func (nm *NodeManager) ValidateForPrivateTx(prvManKeys []string) (bool, error) {
 	var preparePvtTxReq = []byte(fmt.Sprintf(PreparePvtTxMethod, nm.cfg.BasicConfig.Name))
 	var statusArr []bool
-	for _, tessKey := range tesseraKeys {
-		nmCfg := nm.getNodeManagerConfigByTesseraKey(tessKey)
+	for _, key := range prvManKeys {
+		nmCfg := nm.getNodeManagerConfigByPrivManKey(key)
 		if nmCfg != nil {
 			respResult := NodeManagerPrivateTxPrepResult{}
 			if err := core.CallRPC(nmCfg.RpcUrl, preparePvtTxReq, &respResult); err != nil {
@@ -61,7 +61,7 @@ func (nm *NodeManager) ValidateForPrivateTx(tesseraKeys []string) (bool, error) 
 				statusArr = append(statusArr, respResult.Result.Status)
 			}
 		} else {
-			log.Warn("ValidateForPrivateTx - tessera key not found, probably node not using qnm", "key", tessKey)
+			log.Warn("ValidateForPrivateTx - privacy manager key not found, probably node not using qnm", "key", key)
 		}
 	}
 
@@ -84,7 +84,7 @@ func (nm *NodeManager) ValidateOtherQnms() ([]NodeStatusInfo, error) {
 	nodeManagerCount := 0
 	for _, n := range nm.getLatestNodeManagerConfig() {
 		//skip self
-		if n.TesseraKey == nm.cfg.BasicConfig.TesseraKey {
+		if n.PrivManKey == nm.cfg.BasicConfig.PrivManKey {
 			continue
 		}
 		nodeManagerCount++

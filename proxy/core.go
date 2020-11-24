@@ -22,7 +22,7 @@ var (
 	ErrNodeNotReady     = errors.New("node is not ready to accept request")
 )
 
-func MakeProxyServices(qn *node.QuorumNodeControl, errc chan error) ([]Proxy, error) {
+func MakeProxyServices(qn *node.NodeControl, errc chan error) ([]Proxy, error) {
 	var proxies []Proxy
 	for _, c := range qn.GetProxyConfig() {
 		if p, err := NewProxyServer(qn, c, errc); err != nil {
@@ -39,7 +39,7 @@ func MakeProxyServices(qn *node.QuorumNodeControl, errc chan error) ([]Proxy, er
 // wake them up via qnm2qnm rpc call.
 // if body is not a private transaction it will return nil.
 func HandlePrivateTx(body []byte, ps *ProxyServer) error {
-	// TODO If tessera proxy works as expected, can this be removed?
+	// TODO If privacy manager proxy works as expected, can this be removed?
 	if participants, err := ps.qrmNode.GetTxHandler().IsPrivateTx(body); err != nil {
 		return err
 	} else if participants != nil {

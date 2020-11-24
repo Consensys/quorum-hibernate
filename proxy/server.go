@@ -15,8 +15,8 @@ import (
 
 // ProxyServer represents a proxy server
 type ProxyServer struct {
-	qrmNode    *node.QuorumNodeControl // node controller
-	proxyCfg   *types.ProxyConfig      // proxy config
+	qrmNode    *node.NodeControl  // node controller
+	proxyCfg   *types.ProxyConfig // proxy config
 	mux        *http.ServeMux
 	srv        *http.Server           // http server for the proxy
 	rp         *httputil.ReverseProxy // handler for http reverse proxy
@@ -25,7 +25,7 @@ type ProxyServer struct {
 	shutdownWg sync.WaitGroup
 }
 
-func NewProxyServer(qn *node.QuorumNodeControl, pc *types.ProxyConfig, errc chan error) (Proxy, error) {
+func NewProxyServer(qn *node.NodeControl, pc *types.ProxyConfig, errc chan error) (Proxy, error) {
 	ps := &ProxyServer{qn, pc, nil, nil, nil, nil, errc, sync.WaitGroup{}}
 	url, err := url.Parse(ps.proxyCfg.UpstreamAddr)
 	if err != nil {

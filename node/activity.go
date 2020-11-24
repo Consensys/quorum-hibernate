@@ -7,15 +7,15 @@ import (
 )
 
 // InactivityMonitor tracks inactivity of the node
-// once inactivity reaches the threshold it requests node controller to stop geth/tessera
-// it allows inactivity to be reset via QuorumNodeControl
+// once inactivity reaches the threshold it requests node controller to stop blockchain client/privacy manager
+// it allows inactivity to be reset via NodeControl
 type InactivityMonitor struct {
-	qrmNode           *QuorumNodeControl
+	qrmNode           *NodeControl
 	inactiveTimeCount int
 	stopCh            chan bool
 }
 
-func NewInactivityMonitor(qn *QuorumNodeControl) *InactivityMonitor {
+func NewInactivityMonitor(qn *NodeControl) *InactivityMonitor {
 	return &InactivityMonitor{qn, 0, make(chan bool)}
 }
 
