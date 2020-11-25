@@ -4,7 +4,7 @@ name = "node4"
 #blockchain client RPC URL
 bcClntRpcUrl = "http://localhost:22003"
 privManUpcheckUrl = "http://localhost:9084/upcheck"
-PrivManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
+privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
 consensus = "raft"
 clientType = "quorum"
 nodeManagerConfigFile = "./test/shell/nm1.toml"

@@ -21,10 +21,11 @@ type DockerControl struct {
 	muxLock         sync.Mutex
 }
 
+// TODO(cjh) grpc already has another meaning - avoiding using here
 func NewDockerProcess(p *types.ProcessConfig, grpc string, turl string, s bool) Process {
 	sp := &DockerControl{p, grpc, turl, s, sync.Mutex{}}
 	sp.IsUp()
-	log.Debug("shell process created", "name", sp.cfg.Name)
+	log.Debug("docker process created", "name", sp.cfg.Name)
 	return sp
 }
 

@@ -63,12 +63,12 @@ func initHttpHandler(ps *ProxyServer, url *url.URL) error {
 		return nil
 	}
 	for _, p := range ps.proxyCfg.ProxyPaths {
-		if h, err := makeHttpHandler(ps); err != nil {
+		h, err := makeHttpHandler(ps) // TODO(cjh) define outside of loop?
+		if err != nil {
 			return err
-		} else {
-			ps.mux.Handle(p, h)
-			log.Info("initHttpHandler - registering http handler", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstrAddr", ps.proxyCfg.UpstreamAddr, "name", ps.proxyCfg.Name, "type", ps.proxyCfg.Type, "path", p)
 		}
+		ps.mux.Handle(p, h)
+		log.Info("initHttpHandler - registering http handler", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstrAddr", ps.proxyCfg.UpstreamAddr, "name", ps.proxyCfg.Name, "type", ps.proxyCfg.Type, "path", p)
 	}
 	return nil
 }

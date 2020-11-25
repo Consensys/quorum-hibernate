@@ -12,8 +12,17 @@ import (
 	"github.com/naoina/toml"
 )
 
+// namedValidationError provides additional context to an error, useful for providing context when there is a validation error with an element in an array
+type namedValidationError struct {
+	name, errMsg string
+}
+
+func (e namedValidationError) Error() string {
+	return fmt.Sprintf("name = %v: %v", e.name, e.errMsg)
+}
+
 type ProxyConfig struct {
-	Name         string   `toml:"name"`         // Name of qnm process
+	Name         string   `toml:"name"`         // name of qnm process
 	Type         string   `toml:"type"`         // proxy scheme - http or ws
 	ProxyAddr    string   `toml:"proxyAddr"`    // proxy address
 	UpstreamAddr string   `toml:"upstreamAddr"` // upstream address of the proxy address
@@ -33,33 +42,31 @@ func (c ProxyConfig) IsWS() bool {
 // IsValid returns nil if the ProxyConfig is valid else returns error
 func (c ProxyConfig) IsValid() error {
 	if c.Name == "" {
-		return errors.New("proxy config name is empty.")
+		return errors.New("name is empty")
 	}
 	if !c.IsWS() && !c.IsHttp() {
-		return errors.New("proxy config - unsupported proxy type. supports http or ws only.")
+		return namedValidationError{name: c.Name, errMsg: "invalid type. supports only http or ws"}
 	}
 	if c.ProxyAddr == "" {
-		return errors.New("proxy config - proxyAddr is empty.")
+		return namedValidationError{name: c.Name, errMsg: "proxyAddr is empty"}
 	}
 	if c.UpstreamAddr == "" {
-		return errors.New("proxy config -  upstreamAddr is empty.")
+		return namedValidationError{name: c.Name, errMsg: "upstreamAddr is empty"}
 	}
-	if !isValidUrl(c.ProxyAddr) {
-		return errors.New("proxy addr is invalid")
+	if err := isValidUrl(c.ProxyAddr); err != nil {
+		return namedValidationError{name: c.Name, errMsg: fmt.Sprintf("invalid proxyAddr: %v", err)}
 	}
-	if !isValidUrl(c.UpstreamAddr) {
-		return errors.New("proxy upstreamAddr is invalid")
+	if err := isValidUrl(c.UpstreamAddr); err != nil {
+		return namedValidationError{name: c.Name, errMsg: fmt.Sprintf("invalid upstreamAddr: %v", err)}
 	}
 	if len(c.ProxyPaths) == 0 {
-		return errors.New("proxy paths is empty")
+		return namedValidationError{name: c.Name, errMsg: "proxyPaths is empty"}
 	}
-
 	if c.ReadTimeout == 0 {
-		return errors.New("proxy readTimeout is zero")
+		return namedValidationError{name: c.Name, errMsg: "readTimeout is zero"}
 	}
-
 	if c.WriteTimeout == 0 {
-		return errors.New("proxy readTimeout is zero")
+		return namedValidationError{name: c.Name, errMsg: "writeTimeout is zero"}
 	}
 	return nil
 }
@@ -73,16 +80,16 @@ type NodeManagerConfig struct {
 // IsValid returns nil if the NodeManagerConfig is valid else returns error
 func (c NodeManagerConfig) IsValid() error {
 	if c.Name == "" {
-		return errors.New("node manager name is empty.")
+		return errors.New("name is empty")
 	}
 	if c.PrivManKey == "" {
-		return errors.New("node manager privacy manager key is empty.")
+		return namedValidationError{name: c.Name, errMsg: "privManKey is empty"}
 	}
 	if c.RpcUrl == "" {
-		return errors.New("node manager rpcUrl is empty.")
+		return namedValidationError{name: c.Name, errMsg: "rpcUrl is empty"}
 	}
-	if !isValidUrl(c.RpcUrl) {
-		return errors.New("node manager invalid rpc url")
+	if err := isValidUrl(c.RpcUrl); err != nil {
+		return namedValidationError{name: c.Name, errMsg: fmt.Sprintf("invalid rpcUrl: %v", err)}
 	}
 	return nil
 }
@@ -113,16 +120,16 @@ func (c ProcessConfig) IsPrivacyManager() bool {
 
 func (c ProcessConfig) IsValid() error {
 	if !c.IsDocker() && !c.IsShell() {
-		return errors.New("unsupported controlType. processConfig supports only shell or docker")
+		return errors.New("invalid controlType. supports only shell or docker")
 	}
 	if !c.IsBcClient() && !c.IsPrivacyManager() {
-		return errors.New("process name must be bcclnt or privman.")
+		return errors.New("invalid name. supports only bcclnt or privman")
 	}
 	if c.IsDocker() && c.ContainerId == "" {
-		return errors.New("containerId is empty for docker controlType.")
+		return errors.New("containerId is empty for docker controlType")
 	}
 	if c.IsShell() && (len(c.StartCommand) == 0 || len(c.StopCommand) == 0) {
-		return errors.New("startCommand or stopCommand is empty for shell controlType.")
+		return errors.New("startCommand or stopCommand is empty for shell controlType")
 	}
 	return nil
 }
@@ -135,10 +142,10 @@ type RPCServerConfig struct {
 
 func (c RPCServerConfig) IsValid() error {
 	if c.RpcAddr == "" {
-		return errors.New("RPC server config - empty rpcAddr")
+		return errors.New("rpcAddr is empty")
 	}
-	if !isValidUrl(c.RpcAddr) {
-		return errors.New("RPC server config - invalid rpcAddr")
+	if err := isValidUrl(c.RpcAddr); err != nil {
+		return fmt.Errorf("invalid rpcAddr: %v", err)
 	}
 	return nil
 }
@@ -159,12 +166,23 @@ type BasicConfig struct {
 }
 
 type NodeConfig struct {
-	BasicConfig  *BasicConfig         `toml:"basicConfig"`  // basic config of this qnm
-	NodeManagers []*NodeManagerConfig `toml:"nodeManagers"` // node manager config of other qnms
+	BasicConfig  *BasicConfig         `toml:"basicConfig"` // basic config of this qnm
+	NodeManagers NodeManagerConfigArr // node manager config of other qnms
+}
+
+type NodeManagerConfigArr []*NodeManagerConfig
+
+func (a *NodeManagerConfigArr) IsValid() error {
+	for _, c := range *a {
+		if err := c.IsValid(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type NodeManagerListConfig struct {
-	NodeManagers []*NodeManagerConfig `toml:"nodeManagers"` // node manger config list of other qnms
+	NodeManagers NodeManagerConfigArr `toml:"nodeManagers"` // node manger config list of other qnms
 }
 
 func ReadNodeConfig(configFile string) (NodeConfig, error) {
@@ -247,11 +265,8 @@ func ReadNodeManagerConfig(configFile string) ([]*NodeManagerConfig, error) {
 	if err = toml.NewDecoder(f).Decode(&input); err != nil {
 		return nil, err
 	}
-	// validate config rules
-	for _, n := range input.NodeManagers {
-		if err = n.IsValid(); err != nil {
-			return nil, err
-		}
+	if err := input.NodeManagers.IsValid(); err != nil {
+		return nil, err
 	}
 
 	return input.NodeManagers, nil
@@ -259,15 +274,13 @@ func ReadNodeManagerConfig(configFile string) ([]*NodeManagerConfig, error) {
 
 func (c NodeConfig) IsValid() error {
 	if c.BasicConfig == nil {
-		return errors.New("basic config is nil")
+		return errors.New("basicConfig is nil")
 	}
 	if err := c.BasicConfig.IsValid(); err != nil {
-		return err
+		return fmt.Errorf("invalid basicConfig: %v", err)
 	}
-	for _, n := range c.NodeManagers {
-		if err := n.IsValid(); err != nil {
-			return err
-		}
+	if err := c.NodeManagers.IsValid(); err != nil {
+		return fmt.Errorf("invalid nodeManagers config: %v", err)
 	}
 	return nil
 }
@@ -294,11 +307,11 @@ func (c BasicConfig) IsBesuClient() bool {
 
 func (c BasicConfig) IsValid() error {
 	if c.Name == "" {
-		return errors.New("Name is empty")
+		return errors.New("name is empty")
 	}
 
 	if c.NodeManagerConfigFile == "" {
-		return errors.New("NodeManagerConfigFile is empty")
+		return errors.New("nodeManagerConfigFile is empty")
 	}
 
 	err := c.isConsensusValid()
@@ -312,39 +325,39 @@ func (c BasicConfig) IsValid() error {
 	}
 
 	if c.BcClntProcess == nil {
-		return errors.New("blockchain client process config is empty")
+		return errors.New("bcClntProcess is empty")
 	}
 
 	if c.PrivManProcess == nil {
-		return errors.New("privacy manager process config is empty")
+		return errors.New("privManProcess is empty")
 	}
 
 	if c.BcClntRpcUrl == "" {
-		return errors.New("blockchain client rpc url is empty")
+		return errors.New("bcClntRpcUrl is empty")
 	}
 
 	if c.PrivManUpcheckUrl == "" {
-		return errors.New("privacy manager upcheck url is empty")
+		return errors.New("privManUpcheckUrl is empty")
 	}
 
 	if c.PrivManKey == "" {
-		return errors.New("enodeId is empty")
+		return errors.New("privManKey is empty")
 	}
 
 	if c.InactivityTime < 60 {
-		return errors.New("InactivityTime should be greater than or equal to 60seconds")
+		return errors.New("inactivityTime must be greater than or equal to 60 (seconds)")
 	}
 
 	if c.Server == nil {
-		return errors.New("RPC server config is nil")
+		return errors.New("server is empty")
 	}
 
 	if err := c.BcClntProcess.IsValid(); err != nil {
-		return err
+		return fmt.Errorf("invalid bcClntProcess: %v", err)
 	}
 
 	if err := c.PrivManProcess.IsValid(); err != nil {
-		return err
+		return fmt.Errorf("invalid privManProcess: %v", err)
 	}
 
 	if err := c.Server.IsValid(); err != nil {
@@ -352,12 +365,12 @@ func (c BasicConfig) IsValid() error {
 	}
 
 	if len(c.Proxies) == 0 {
-		return errors.New("proxies config is empty")
+		return errors.New("proxies is empty")
 	}
 
 	for _, n := range c.Proxies {
 		if err := n.IsValid(); err != nil {
-			return err
+			return fmt.Errorf("invalid proxies config: %v", err)
 		}
 	}
 
@@ -385,8 +398,7 @@ func (c BasicConfig) IsClientTypeValid() error {
 	return nil
 }
 
-func isValidUrl(addr string) bool {
-	u, err := url.Parse(addr)
-	log.Debug("isValidUrl", "url", u, "err", err)
-	return err == nil
+func isValidUrl(addr string) error {
+	_, err := url.Parse(addr)
+	return err
 }
