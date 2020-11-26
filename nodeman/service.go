@@ -44,7 +44,7 @@ func (nm *NodeManager) getLatestConfig() []*types.NodeManagerConfig {
 	return nm.cfg.NodeManagers
 }
 
-// TODO if a qnm is down/not reachable should I mark it as down and proceed?
+// TODO if a node manager is down/not reachable should we mark it as down and proceed?
 // ValidatePeerPrivateTxStatus validates participants readiness status to process private tx
 func (nm *NodeManager) ValidatePeerPrivateTxStatus(participantKeys []string) (bool, error) {
 	statusArr := nm.peerPrivateTxStatus(participantKeys)
@@ -118,7 +118,7 @@ func (nm *NodeManager) peerPrivateTxStatus(participantKeys []string) []bool {
 				resCh <- result
 			}(nmCfg)
 		} else {
-			log.Warn("peerPrivateTxStatus - privacy manager key not found, probably node not managed by qnm", "key", key)
+			log.Warn("peerPrivateTxStatus - privacy manager key not found, probably node not managed by node manager", "key", key)
 		}
 
 	}

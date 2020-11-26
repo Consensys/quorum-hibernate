@@ -14,13 +14,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type QNMApp struct {
-	qrmNode      *node.NodeControl
+type NodeManagerApp struct {
+	node         *node.NodeControl
 	proxyServers []proxy.Proxy
 	rpcService   *rpc.RPCService
 }
 
-var qnmApp = QNMApp{}
+var nmApp = NodeManagerApp{}
 
 func main() {
 	var verbosity int
@@ -47,23 +47,23 @@ func main() {
 }
 
 func Start(nodeConfig types.NodeConfig, err error, proxyBackendErrCh chan error, rpcBackendErrCh chan error) bool {
-	qnmApp.qrmNode = node.NewQuorumNodeControl(&nodeConfig)
-	if qnmApp.proxyServers, err = proxy.MakeProxyServices(qnmApp.qrmNode, proxyBackendErrCh); err != nil {
+	nmApp.node = node.NewQuorumNodeControl(&nodeConfig)
+	if nmApp.proxyServers, err = proxy.MakeProxyServices(nmApp.node, proxyBackendErrCh); err != nil {
 		log.Error("Start - creating proxies failed", "err", err)
 		return false
 	}
-	qnmApp.rpcService = rpc.NewRPCService(qnmApp.qrmNode, qnmApp.qrmNode.GetRPCConfig(), rpcBackendErrCh)
+	nmApp.rpcService = rpc.NewRPCService(nmApp.node, nmApp.node.GetRPCConfig(), rpcBackendErrCh)
 
 	// start quorum node service
-	qnmApp.qrmNode.Start()
+	nmApp.node.Start()
 
 	// start proxies
-	for _, p := range qnmApp.proxyServers {
+	for _, p := range nmApp.proxyServers {
 		p.Start()
 	}
 
 	// start rpc server
-	if err := qnmApp.rpcService.Start(); err != nil {
+	if err := nmApp.rpcService.Start(); err != nil {
 		log.Info("Start - rpc server failed", "err", err)
 		return false
 	}
@@ -109,9 +109,9 @@ func readNodeConfigFromFile(configFile string) (types.NodeConfig, error) {
 }
 
 func Shutdown() {
-	for _, p := range qnmApp.proxyServers {
+	for _, p := range nmApp.proxyServers {
 		p.Stop()
 	}
-	qnmApp.rpcService.Stop()
-	qnmApp.qrmNode.Stop()
+	nmApp.rpcService.Stop()
+	nmApp.node.Stop()
 }

@@ -22,7 +22,7 @@ func (e namedValidationError) Error() string {
 }
 
 type ProxyConfig struct {
-	Name         string   `toml:"name"`         // name of qnm process
+	Name         string   `toml:"name"`         // name of node manager process
 	Type         string   `toml:"type"`         // proxy scheme - http or ws
 	ProxyAddr    string   `toml:"proxyAddr"`    // proxy address
 	UpstreamAddr string   `toml:"upstreamAddr"` // upstream address of the proxy address
@@ -72,9 +72,9 @@ func (c ProxyConfig) IsValid() error {
 }
 
 type NodeManagerConfig struct {
-	Name       string `toml:"name"`       // Name of the other qnm
-	PrivManKey string `toml:"privManKey"` // PrivManKey managed by the other qnm
-	RpcUrl     string `toml:"rpcUrl"`     // RPC url of the other qnm
+	Name       string `toml:"name"`       // Name of the other node manager
+	PrivManKey string `toml:"privManKey"` // PrivManKey managed by the other node manager
+	RpcUrl     string `toml:"rpcUrl"`     // RPC url of the other node manager
 }
 
 // IsValid returns nil if the NodeManagerConfig is valid else returns error
@@ -151,23 +151,23 @@ func (c RPCServerConfig) IsValid() error {
 }
 
 type BasicConfig struct {
-	Name                  string           `toml:"name"`                  // name of this qnm
-	BcClntRpcUrl          string           `toml:"bcClntRpcUrl"`          // RPC url of blockchain client managed by this qnm
-	PrivManUpcheckUrl     string           `toml:"privManUpcheckUrl"`     // Upcheck url of privacy manager managed by this qnm
-	PrivManKey            string           `toml:"privManKey"`            // public key of privacy manager managed by this qnm
+	Name                  string           `toml:"name"`                  // name of this node manager
+	BcClntRpcUrl          string           `toml:"bcClntRpcUrl"`          // RPC url of blockchain client managed by this node manager
+	PrivManUpcheckUrl     string           `toml:"privManUpcheckUrl"`     // Upcheck url of privacy manager managed by this node manager
+	PrivManKey            string           `toml:"privManKey"`            // public key of privacy manager managed by this node manager
 	Consensus             string           `toml:"consensus"`             // consensus used by blockchain client. ex: raft / istanbul / clique
-	ClientType            string           `toml:"clientType"`            // client used by this qnm. it should be quorum or besu
+	ClientType            string           `toml:"clientType"`            // client used by this node manager. it should be quorum or besu
 	NodeManagerConfigFile string           `toml:"nodeManagerConfigFile"` // node manager config file path
 	InactivityTime        int              `toml:"inactivityTime"`        // inactivity time for blockchain client and privacy manager
-	Server                *RPCServerConfig `toml:"server"`                // RPC server config of this qnm
-	BcClntProcess         *ProcessConfig   `toml:"bcClntProcess"`         // blockchain client process managed by this qnm
-	PrivManProcess        *ProcessConfig   `toml:"privManProcess"`        // privacy manager process managed by this qnm
-	Proxies               []*ProxyConfig   `toml:"proxies"`               // proxies managed by this qnm
+	Server                *RPCServerConfig `toml:"server"`                // RPC server config of this node manager
+	BcClntProcess         *ProcessConfig   `toml:"bcClntProcess"`         // blockchain client process managed by this node manager
+	PrivManProcess        *ProcessConfig   `toml:"privManProcess"`        // privacy manager process managed by this node manager
+	Proxies               []*ProxyConfig   `toml:"proxies"`               // proxies managed by this node manager
 }
 
 type NodeConfig struct {
-	BasicConfig  *BasicConfig         `toml:"basicConfig"` // basic config of this qnm
-	NodeManagers NodeManagerConfigArr // node manager config of other qnms
+	BasicConfig  *BasicConfig         `toml:"basicConfig"` // basic config of this node manager
+	NodeManagers NodeManagerConfigArr // node manager config of other node manager
 }
 
 type NodeManagerConfigArr []*NodeManagerConfig
@@ -182,7 +182,7 @@ func (a *NodeManagerConfigArr) IsValid() error {
 }
 
 type NodeManagerListConfig struct {
-	NodeManagers NodeManagerConfigArr `toml:"nodeManagers"` // node manger config list of other qnms
+	NodeManagers NodeManagerConfigArr `toml:"nodeManagers"` // node manger config list of other node manager
 }
 
 func ReadNodeConfig(configFile string) (NodeConfig, error) {

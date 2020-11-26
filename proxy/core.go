@@ -36,7 +36,7 @@ func MakeProxyServices(qn *node.NodeControl, errc chan error) ([]Proxy, error) {
 
 // HandlePrivateTx helps with processing private transactions.
 // if the body is a private transaction request it will get participants of the transaction and
-// wake them up via qnm2qnm rpc call.
+// wake them up via p2p rpc call.
 // if body is not a private transaction it will return nil.
 func HandlePrivateTx(body []byte, ps *ProxyServer) error {
 	// TODO If privacy manager proxy works as expected, can this be removed?

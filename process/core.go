@@ -35,7 +35,7 @@ const BlockNumberReq = `{"jsonrpc":"2.0", "method":"eth_blockNumber", "params":[
 
 var httpClnt = core.NewHttpClient()
 
-// TODO when blockchain client is started by QNM it starts and runs ok. but when QNM is shutdown, blockchain client gets shutdown
+// TODO when blockchain client is started by Node Manager it starts and runs ok. but when nodeManager is shutdown, blockchain client gets shutdown
 func ExecuteShellCommand(desc string, cmdArr []string) error {
 	log.Debug("ExecuteShellCommand", "desc", desc, "command", cmdArr)
 	var cmd *exec.Cmd

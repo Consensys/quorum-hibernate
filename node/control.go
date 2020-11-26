@@ -25,7 +25,7 @@ import (
 type NodeControl struct {
 	config             *types.NodeConfig    // config of this node
 	im                 *InactivityMonitor   // inactivity monitor
-	nm                 *nodeman.NodeManager // node manager to communicate with other qnm
+	nm                 *nodeman.NodeManager // node manager to communicate with other node manager
 	bcclnt             proc.Process         // blockchain client process controller
 	pmclnt             proc.Process         // privacy manager process controller
 	consensus          cons.Consensus       // consenus validator
@@ -253,7 +253,7 @@ func (qn *NodeControl) StopNode() bool {
 		log.Error("StopNode - cannot be shutdown", "err", err)
 		return false
 	}
-	var qnms []nodeman.NodeStatusInfo
+	var peersStatus []nodeman.NodeStatusInfo
 	var err error
 
 	// 1st check if hibernating node will break the consensus model
@@ -267,21 +267,21 @@ func (qn *NodeControl) StopNode() bool {
 	// consensus is ok. check with network to prevent multiple nodes
 	// going down at the same time
 	retryCount := 1
-	for retryCount <= core.Qnm2QnmValidationRetryLimit {
+	for retryCount <= core.Peer2PeerValidationRetryLimit {
 		w := core.GetRandomRetryWaitTime()
-		log.Info("StopNode - waiting for qnm2qnm validation try", "wait time in seconds", w)
+		log.Info("StopNode - waiting for p2p validation try", "wait time in seconds", w)
 		time.Sleep(time.Duration(w) * time.Millisecond)
-		qnms, err = qn.nm.ValidatePeers()
+		peersStatus, err = qn.nm.ValidatePeers()
 		if err == nil {
-			log.Info("StopNode - qnm2qnm validation passed")
+			log.Info("StopNode - p2p validation passed")
 			break
 		}
-		log.Error("StopNode - qnm2qnm validation failed", "retryLimit", core.Qnm2QnmValidationRetryLimit, "retryCount", retryCount, "err", err, "qnms", qnms)
+		log.Error("StopNode - p2p validation failed", "retryLimit", core.Peer2PeerValidationRetryLimit, "retryCount", retryCount, "err", err, "peersStatus", peersStatus)
 		retryCount++
 	}
 
-	if retryCount > core.Qnm2QnmValidationRetryLimit {
-		log.Error("StopNode - node cannot be shutdown, qnm2qnm validation failed after retrying")
+	if retryCount > core.Peer2PeerValidationRetryLimit {
+		log.Error("StopNode - node cannot be shutdown, p2p validation failed after retrying")
 		return false
 	}
 
@@ -293,7 +293,7 @@ func (qn *NodeControl) StopNode() bool {
 	if bcStatus && pmStatus {
 		qn.SetNodeStatus(types.Down)
 	}
-	// if stopping of blockchain client or privacy manager fails Status will remain as ShutdownInprogress and qnm will not process any requests from clients
+	// if stopping of blockchain client or privacy manager fails Status will remain as ShutdownInprogress and node manager will not process any requests from clients
 	// it will need some manual intervention to set it to the correct status
 	return bcStatus && pmStatus
 }
@@ -341,7 +341,7 @@ func (qn *NodeControl) StartNode() bool {
 	if gs && ts {
 		qn.SetNodeStatus(types.Up)
 	}
-	// if start up of blockchain client or privacy manager fails Status will remain as StartupInprogress and qnm will not process any requests from clients
+	// if start up of blockchain client or privacy manager fails Status will remain as StartupInprogress and node manager will not process any requests from clients
 	// it will need some manual intervention to set it to the correct status
 	return gs && ts
 }
