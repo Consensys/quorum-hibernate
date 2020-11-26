@@ -52,16 +52,16 @@ func (nm *NodeManager) ValidateForPrivateTx(prvManKeys []string) (bool, error) {
 		if nmCfg != nil {
 			respResult := NodeManagerPrivateTxPrepResult{}
 			if err := core.CallRPC(nmCfg.RpcUrl, preparePvtTxReq, &respResult); err != nil {
-				log.Error("ValidateForPrivateTx failed", "err", err)
+				log.Error("ValidateForPrivateTx rpc failed", "err", err)
 				statusArr = append(statusArr, false)
 			} else if respResult.Error != nil {
-				log.Error("ValidateForPrivateTx result failed", "err", respResult.Error)
+				log.Error("ValidateForPrivateTx rpc result failed", "err", respResult.Error)
 				statusArr = append(statusArr, false)
 			} else {
 				statusArr = append(statusArr, respResult.Result.Status)
 			}
 		} else {
-			log.Warn("ValidateForPrivateTx - privacy manager key not found, probably node not using qnm", "key", key)
+			log.Warn("ValidateForPrivateTx - privacy manager key not found, probably node not managed by qnm", "key", key)
 		}
 	}
 

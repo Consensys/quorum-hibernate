@@ -243,7 +243,6 @@ func (qn *NodeControl) StopNode() bool {
 		log.Info("StopNode - consensus check passed, node can be shutdown")
 	} else {
 		log.Info("StopNode - consensus check failed, node cannot be shutdown", "err", err)
-		qn.SetNodeStatus(types.Up)
 		return false
 	}
 
@@ -292,6 +291,10 @@ func (qn *NodeControl) StopNode() bool {
 func (qn *NodeControl) StartNode() bool {
 	defer qn.startStopMux.Unlock()
 	qn.startStopMux.Lock()
+	if qn.nodeStatus == types.Up {
+		log.Debug("StartNode - node is already up")
+		return true
+	}
 	qn.SetNodeStatus(types.StartupInitiated)
 	qn.SetNodeStatus(types.StartupInprogress)
 	gs := true
