@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ConsenSysQuorum/node-manager/nodeman"
 	"github.com/ConsenSysQuorum/node-manager/privatetx"
-	"github.com/ConsenSysQuorum/node-manager/qnm"
 
 	cons "github.com/ConsenSysQuorum/node-manager/consensus"
 	"github.com/ConsenSysQuorum/node-manager/core"
@@ -23,29 +23,29 @@ import (
 // It starts blockchain client/privacyManager processes when there is a activity.
 // It takes care of managing combined status of blockchain client & privacyManager.
 type NodeControl struct {
-	config             *types.NodeConfig   // config of this node
-	im                 *InactivityMonitor  // inactivity monitor
-	nm                 *qnm.NodeManager    // node manager to communicate with other qnm
-	bcclnt             proc.Process        // blockchain client process controller
-	pmclnt             proc.Process        // privacy manager process controller
-	consensus          cons.Consensus      // consenus validator
-	txh                privatetx.TxHandler // Transaction handler
-	nodeStatus         types.NodeStatus    // status of this node
-	inactivityResetCh  chan bool           // channel to reset inactivity
-	stopNodeCh         chan bool           // channel to request stop node
-	shutdownCompleteCh chan bool           // channel to notify stop node action status
-	startNodeCh        chan bool           // channel to request start node
-	startCompleteCh    chan bool           // channel to notify start node action status
-	stopCh             chan bool           // channel to stop start/stop node monitor
-	startStopMux       sync.Mutex          // lock for starting and stopping node
-	statusMux          sync.Mutex          // lock for setting the status
+	config             *types.NodeConfig    // config of this node
+	im                 *InactivityMonitor   // inactivity monitor
+	nm                 *nodeman.NodeManager // node manager to communicate with other qnm
+	bcclnt             proc.Process         // blockchain client process controller
+	pmclnt             proc.Process         // privacy manager process controller
+	consensus          cons.Consensus       // consenus validator
+	txh                privatetx.TxHandler  // Transaction handler
+	nodeStatus         types.NodeStatus     // status of this node
+	inactivityResetCh  chan bool            // channel to reset inactivity
+	stopNodeCh         chan bool            // channel to request stop node
+	shutdownCompleteCh chan bool            // channel to notify stop node action status
+	startNodeCh        chan bool            // channel to request start node
+	startCompleteCh    chan bool            // channel to notify start node action status
+	stopCh             chan bool            // channel to stop start/stop node monitor
+	startStopMux       sync.Mutex           // lock for starting and stopping node
+	statusMux          sync.Mutex           // lock for setting the status
 }
 
 func NewQuorumNodeControl(cfg *types.NodeConfig) *NodeControl {
 	quorumNode := &NodeControl{
 		cfg,
 		nil,
-		qnm.NewNodeManager(cfg),
+		nodeman.NewNodeManager(cfg),
 		nil,
 		nil,
 		nil,
@@ -121,15 +121,33 @@ func (qn *NodeControl) SetNodeStatus(ns types.NodeStatus) {
 // IsNodeUp performs up check for blockchain client and privacy manager and returns the combined status
 // if both blockchain client and privacy manager are up, the node status is up(true) else down(false)
 func (qn *NodeControl) IsNodeUp() bool {
-	gs := qn.bcclnt.IsUp()
-	ts := qn.pmclnt.IsUp()
-	log.Debug("IsNodeUp", "blockchain client", gs, "privacy manager", ts)
-	if gs && ts {
+	bcclntStatus, pmStatus := qn.checkUpStatus()
+	log.Debug("IsNodeUp", "blockchain client", bcclntStatus, "privacy manager", pmStatus)
+	if bcclntStatus && pmStatus {
 		qn.SetNodeStatus(types.Up)
 	} else {
 		qn.SetNodeStatus(types.Down)
 	}
-	return gs && ts
+	return bcclntStatus && pmStatus
+}
+
+// checkUpStatus checks up status of blockchain client and privacy manager in parallel
+func (qn *NodeControl) checkUpStatus() (bool, bool) {
+	var bcclntStatus bool
+	var pmStatus bool
+	var wg = sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		bcclntStatus = qn.bcclnt.IsUp()
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		pmStatus = qn.pmclnt.IsUp()
+	}()
+	wg.Wait()
+	return bcclntStatus, pmStatus
 }
 
 // IsNodeBusy returns error if the node is busy with shutdown/startup
@@ -235,7 +253,7 @@ func (qn *NodeControl) StopNode() bool {
 		log.Error("StopNode - cannot be shutdown", "err", err)
 		return false
 	}
-	var qnms []qnm.NodeStatusInfo
+	var qnms []nodeman.NodeStatusInfo
 	var err error
 
 	// 1st check if hibernating node will break the consensus model
@@ -253,7 +271,7 @@ func (qn *NodeControl) StopNode() bool {
 		w := core.GetRandomRetryWaitTime()
 		log.Info("StopNode - waiting for qnm2qnm validation try", "wait time in seconds", w)
 		time.Sleep(time.Duration(w) * time.Millisecond)
-		qnms, err = qn.nm.ValidateOtherQnms()
+		qnms, err = qn.nm.ValidatePeers()
 		if err == nil {
 			log.Info("StopNode - qnm2qnm validation passed")
 			break
@@ -271,21 +289,36 @@ func (qn *NodeControl) StopNode() bool {
 
 	qn.SetNodeStatus(types.ShutdownInprogress)
 
-	// TODO parallelize / loop
-	gs := true
-	ts := true
-	if qn.bcclnt.Stop() != nil {
-		gs = false
-	}
-	if qn.pmclnt.Stop() != nil {
-		ts = false
-	}
-	if gs && ts {
+	bcStatus, pmStatus := qn.stopProcesses()
+	if bcStatus && pmStatus {
 		qn.SetNodeStatus(types.Down)
 	}
 	// if stopping of blockchain client or privacy manager fails Status will remain as ShutdownInprogress and qnm will not process any requests from clients
 	// it will need some manual intervention to set it to the correct status
-	return gs && ts
+	return bcStatus && pmStatus
+}
+
+// stopProcesses stops blockchain client and privacy manager processes in parallel
+func (qn *NodeControl) stopProcesses() (bool, bool) {
+	gs := true
+	ts := true
+	var wg = sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if qn.bcclnt.Stop() != nil {
+			gs = false
+		}
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if qn.pmclnt.Stop() != nil {
+			ts = false
+		}
+	}()
+	wg.Wait()
+	return gs, ts
 }
 
 func (qn *NodeControl) StartNode() bool {
@@ -314,5 +347,5 @@ func (qn *NodeControl) StartNode() bool {
 }
 
 func (qn *NodeControl) PrepareNodeManagerForPrivateTx(privateFor []string) (bool, error) {
-	return qn.nm.ValidateForPrivateTx(privateFor)
+	return qn.nm.ValidatePeerPrivateTxStatus(privateFor)
 }

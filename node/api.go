@@ -6,7 +6,7 @@ import (
 
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 
-	"github.com/ConsenSysQuorum/node-manager/qnm"
+	"github.com/ConsenSysQuorum/node-manager/nodeman"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
@@ -69,11 +69,11 @@ func (n *NodeRPCAPIs) PrepareForPrivateTx(req *http.Request, from *string, reply
 }
 
 // NodeStatus returns current status of this node
-func (n *NodeRPCAPIs) NodeStatus(req *http.Request, from *string, reply *qnm.NodeStatusInfo) error {
+func (n *NodeRPCAPIs) NodeStatus(req *http.Request, from *string, reply *nodeman.NodeStatusInfo) error {
 	status := n.qn.GetNodeStatus()
 	inactiveTimeLimit := n.qn.config.BasicConfig.InactivityTime
 	curInactiveTimeCount := n.qn.im.GetInactivityTimeCount()
-	*reply = qnm.NodeStatusInfo{Status: status, InactiveTimeLimit: inactiveTimeLimit, InactiveTime: curInactiveTimeCount, TimeToShutdown: inactiveTimeLimit - curInactiveTimeCount}
+	*reply = nodeman.NodeStatusInfo{Status: status, InactiveTimeLimit: inactiveTimeLimit, InactiveTime: curInactiveTimeCount, TimeToShutdown: inactiveTimeLimit - curInactiveTimeCount}
 	log.Info("NodeStatus - rpc call", "from", *from, "status", status)
 	return nil
 }
