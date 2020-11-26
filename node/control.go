@@ -154,9 +154,9 @@ func (qn *NodeControl) checkUpStatus() (bool, bool) {
 func (qn *NodeControl) IsNodeBusy() error {
 	switch qn.nodeStatus {
 	case types.ShutdownInprogress, types.ShutdownInitiated:
-		return errors.New("node is being shutdown, try after sometime")
+		return errors.New(core.NodeIsBeingShutdown)
 	case types.StartupInprogress, types.StartupInitiated:
-		return errors.New("node is being started, try after sometime")
+		return errors.New(core.NodeIsBeingStarted)
 	case types.Up, types.Down:
 		return nil
 	}

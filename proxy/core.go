@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/ConsenSysQuorum/node-manager/core"
+
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
 )
@@ -18,8 +20,8 @@ type Proxy interface {
 }
 
 var (
-	ErrParticipantsDown = errors.New("Some participant nodes are down")
-	ErrNodeNotReady     = errors.New("node is not ready to accept request")
+	ErrParticipantsDown = errors.New(core.SomeParticipantsDown)
+	ErrNodeNotReady     = errors.New(core.NodeIsNotReadyToAcceptRequest)
 )
 
 func MakeProxyServices(qn *node.NodeControl, errc chan error) ([]Proxy, error) {
