@@ -23,14 +23,12 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 		// you can reassign the body if you need to parse it as multipart
 		req.Body = ioutil.NopCloser(bytes.NewReader(body))
 
-		// TODO(cjh) consider /partyinfo/validate too
-
-		if req.RequestURI != "/partyinfo" {
+		if req.RequestURI != "/partyinfo" && req.RequestURI != "/partyinfo/validate" {
 			logRequestPayload(req, ps.proxyCfg.Name, ps.proxyCfg.UpstreamAddr, string(body))
 		}
 
 		// TODO move request URIs to be excluded to config
-		if req.RequestURI != "/partyinfo" && req.RequestURI != "/upcheck" {
+		if req.RequestURI != "/partyinfo" && req.RequestURI != "/upcheck" && req.RequestURI != "/partyinfo/validate" {
 			ps.qrmNode.ResetInactiveTime()
 		}
 
