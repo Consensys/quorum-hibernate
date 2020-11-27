@@ -1,4 +1,4 @@
-package qnm
+package nodeman
 
 import (
 	"net/http"

@@ -4,7 +4,7 @@ package types
 type NodeStatus uint8
 
 const (
-	ShutdownInitiated  NodeStatus = iota // indicates that shutdown initiated after confirming other qnms are not shuttingdown
+	ShutdownInitiated  NodeStatus = iota // indicates that shutdown initiated after confirming other node managers are not shuttingdown
 	ShutdownInprogress                   // indicates that shutdown process has started
 	StartupInitiated                     // indicates start up of blockchain client and privacy manager has been initiated
 	StartupInprogress                    // indicates start up of blockchain client and privacy manager is in progress

@@ -4,7 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ConsenSysQuorum/node-manager/qnm"
+	"github.com/ConsenSysQuorum/node-manager/core/types"
+
+	"github.com/ConsenSysQuorum/node-manager/nodeman"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
@@ -45,18 +47,33 @@ func (n *NodeRPCAPIs) IsNodeUp(req *http.Request, from *string, reply *NodeUpRep
 func (n *NodeRPCAPIs) PrepareForPrivateTx(req *http.Request, from *string, reply *PrivateTxPrepReply) error {
 	log.Debug("PrepareForPrivateTx - rpc call - request received to prepare node", "from", *from)
 	n.qn.ResetInactiveTime()
-	status := n.qn.PrepareNode()
-	*reply = PrivateTxPrepReply{Status: status}
+	var status bool
+	if err := n.qn.IsNodeBusy(); err != nil {
+		*reply = PrivateTxPrepReply{Status: false}
+	} else {
+		if n.qn.nodeStatus == types.Down {
+			// send the response immediately and run prepare node in the background
+			*reply = PrivateTxPrepReply{Status: false}
+			go func() {
+				log.Info("PrepareForPrivateTx - rpc call - prepareNode triggered")
+				s := n.qn.PrepareNode()
+				log.Info("PrepareForPrivateTx - rpc call - prepareNode triggered completed", "status", s)
+			}()
+		} else {
+			status = n.qn.PrepareNode()
+			*reply = PrivateTxPrepReply{Status: status}
+		}
+	}
 	log.Info("PrepareForPrivateTx - rpc call - request processed to prepare node", "from", *from, "status", status)
 	return nil
 }
 
 // NodeStatus returns current status of this node
-func (n *NodeRPCAPIs) NodeStatus(req *http.Request, from *string, reply *qnm.NodeStatusInfo) error {
+func (n *NodeRPCAPIs) NodeStatus(req *http.Request, from *string, reply *nodeman.NodeStatusInfo) error {
 	status := n.qn.GetNodeStatus()
 	inactiveTimeLimit := n.qn.config.BasicConfig.InactivityTime
 	curInactiveTimeCount := n.qn.im.GetInactivityTimeCount()
-	*reply = qnm.NodeStatusInfo{Status: status, InactiveTimeLimit: inactiveTimeLimit, InactiveTime: curInactiveTimeCount, TimeToShutdown: inactiveTimeLimit - curInactiveTimeCount}
+	*reply = nodeman.NodeStatusInfo{Status: status, InactiveTimeLimit: inactiveTimeLimit, InactiveTime: curInactiveTimeCount, TimeToShutdown: inactiveTimeLimit - curInactiveTimeCount}
 	log.Info("NodeStatus - rpc call", "from", *from, "status", status)
 	return nil
 }

@@ -21,9 +21,8 @@ type DockerControl struct {
 	muxLock         sync.Mutex
 }
 
-// TODO(cjh) grpc already has another meaning - avoiding using here
-func NewDockerProcess(p *types.ProcessConfig, grpc string, turl string, s bool) Process {
-	sp := &DockerControl{p, grpc, turl, s, sync.Mutex{}}
+func NewDockerProcess(p *types.ProcessConfig, bcRpcUrl string, pmUpchkUrl string, s bool) Process {
+	sp := &DockerControl{p, bcRpcUrl, pmUpchkUrl, s, sync.Mutex{}}
 	sp.IsUp()
 	log.Debug("docker process created", "name", sp.cfg.Name)
 	return sp
