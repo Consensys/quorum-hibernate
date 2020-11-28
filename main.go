@@ -47,7 +47,7 @@ func main() {
 }
 
 func Start(nodeConfig types.NodeConfig, err error, proxyBackendErrCh chan error, rpcBackendErrCh chan error) bool {
-	nmApp.node = node.NewQuorumNodeControl(&nodeConfig)
+	nmApp.node = node.NewNodeControl(&nodeConfig)
 	if nmApp.proxyServers, err = proxy.MakeProxyServices(nmApp.node, proxyBackendErrCh); err != nil {
 		log.Error("Start - creating proxies failed", "err", err)
 		return false
