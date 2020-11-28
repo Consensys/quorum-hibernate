@@ -43,7 +43,7 @@ type NodeControl struct {
 }
 
 func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
-	quorumNode := &NodeControl{
+	nodeCtr := &NodeControl{
 		cfg,
 		nil,
 		nodeman.NewNodeManager(cfg),
@@ -64,34 +64,34 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 	}
 
 	if cfg.BasicConfig.BcClntProcess.IsShell() {
-		quorumNode.bcclnt = proc.NewShellProcess(cfg.BasicConfig.BcClntProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+		nodeCtr.bcclnt = proc.NewShellProcess(cfg.BasicConfig.BcClntProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
 	} else if cfg.BasicConfig.BcClntProcess.IsDocker() {
-		quorumNode.bcclnt = proc.NewDockerProcess(cfg.BasicConfig.BcClntProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+		nodeCtr.bcclnt = proc.NewDockerProcess(cfg.BasicConfig.BcClntProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
 	}
 
 	if cfg.BasicConfig.PrivManProcess.IsShell() {
-		quorumNode.pmclnt = proc.NewShellProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+		nodeCtr.pmclnt = proc.NewShellProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
 	} else if cfg.BasicConfig.PrivManProcess.IsDocker() {
-		quorumNode.pmclnt = proc.NewDockerProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+		nodeCtr.pmclnt = proc.NewDockerProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
 	}
 
-	if quorumNode.bcclnt.Status() && quorumNode.pmclnt.Status() {
-		quorumNode.SetNodeStatus(types.Up)
+	if nodeCtr.bcclnt.Status() && nodeCtr.pmclnt.Status() {
+		nodeCtr.SetNodeStatus(types.Up)
 	} else {
-		quorumNode.SetNodeStatus(types.Down)
+		nodeCtr.SetNodeStatus(types.Down)
 	}
 
-	if quorumNode.config.BasicConfig.IsRaft() {
-		quorumNode.consensus = cons.NewRaftConsensus(quorumNode.config)
-	} else if quorumNode.config.BasicConfig.IsIstanbul() {
-		quorumNode.consensus = cons.NewIstanbulConsensus(quorumNode.config)
+	if nodeCtr.config.BasicConfig.IsRaft() {
+		nodeCtr.consensus = cons.NewRaftConsensus(nodeCtr.config)
+	} else if nodeCtr.config.BasicConfig.IsIstanbul() {
+		nodeCtr.consensus = cons.NewIstanbulConsensus(nodeCtr.config)
 	}
 
-	if quorumNode.config.BasicConfig.IsQuorumClient() {
-		quorumNode.txh = privatetx.NewQuorumTxHandler(quorumNode.config)
+	if nodeCtr.config.BasicConfig.IsQuorumClient() {
+		nodeCtr.txh = privatetx.NewQuorumTxHandler(nodeCtr.config)
 	} // TODO add tx handler for Besu
 
-	return quorumNode
+	return nodeCtr
 }
 
 func (nc *NodeControl) GetRPCConfig() *types.RPCServerConfig {
