@@ -36,8 +36,7 @@ func main() {
 		log.Error("main - loading config file failed", "err", err)
 		return
 	}
-
-	log.Debug("main - node config", "cfg", nodeConfig)
+	log.Debug("main - node config", "basic", nodeConfig.BasicConfig, "nms", nodeConfig.NodeManagers)
 	rpcBackendErrCh := make(chan error)
 	proxyBackendErrCh := make(chan error)
 	if !Start(nodeConfig, err, proxyBackendErrCh, rpcBackendErrCh) {

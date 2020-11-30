@@ -7,10 +7,11 @@ privManUpcheckUrl = "http://localhost:9081/upcheck"
 privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
 consensus = "raft"
 clientType = "quorum"
+upcheckPollingInterval = 1
 nodeManagerConfigFile = "./test/shell/nm1.toml"
 
 #geth/tessera inactivity timeout seconds
-inactivityTime = 60
+inactivityTime = 6000
 
 #geth's http/ws services that need to be exposed as proxy services
 proxies = [

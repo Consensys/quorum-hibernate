@@ -37,7 +37,7 @@ privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
 consensus = "raft"
 clientType = "quorum"
 nodeManagerConfigFile = "./test/shell/nm1.toml"
-
+upcheckPollingInterval = 1
 #blockchain client/privacy manager inactivity timeout seconds
 inactivityTime = 60
 

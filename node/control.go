@@ -187,7 +187,7 @@ func (nc *NodeControl) ResetInactiveTime() {
 
 func (nc *NodeControl) startNodeStatusMonitor() {
 	go func() {
-		timer := time.NewTicker(time.Second)
+		timer := time.NewTicker(time.Duration(nc.config.BasicConfig.UpchkPollingInterval) * time.Second)
 		defer timer.Stop()
 		log.Info("NodeStatusMonitor - node status monitor started")
 		for {

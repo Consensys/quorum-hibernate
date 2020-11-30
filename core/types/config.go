@@ -151,18 +151,19 @@ func (c RPCServerConfig) IsValid() error {
 }
 
 type BasicConfig struct {
-	Name                  string           `toml:"name"`                  // name of this node manager
-	BcClntRpcUrl          string           `toml:"bcClntRpcUrl"`          // RPC url of blockchain client managed by this node manager
-	PrivManUpcheckUrl     string           `toml:"privManUpcheckUrl"`     // Upcheck url of privacy manager managed by this node manager
-	PrivManKey            string           `toml:"privManKey"`            // public key of privacy manager managed by this node manager
-	Consensus             string           `toml:"consensus"`             // consensus used by blockchain client. ex: raft / istanbul / clique
-	ClientType            string           `toml:"clientType"`            // client used by this node manager. it should be quorum or besu
-	NodeManagerConfigFile string           `toml:"nodeManagerConfigFile"` // node manager config file path
-	InactivityTime        int              `toml:"inactivityTime"`        // inactivity time for blockchain client and privacy manager
-	Server                *RPCServerConfig `toml:"server"`                // RPC server config of this node manager
-	BcClntProcess         *ProcessConfig   `toml:"bcClntProcess"`         // blockchain client process managed by this node manager
-	PrivManProcess        *ProcessConfig   `toml:"privManProcess"`        // privacy manager process managed by this node manager
-	Proxies               []*ProxyConfig   `toml:"proxies"`               // proxies managed by this node manager
+	Name                  string           `toml:"name"`                   // name of this node manager
+	BcClntRpcUrl          string           `toml:"bcClntRpcUrl"`           // RPC url of blockchain client managed by this node manager
+	PrivManUpcheckUrl     string           `toml:"privManUpcheckUrl"`      // Upcheck url of privacy manager managed by this node manager
+	PrivManKey            string           `toml:"privManKey"`             // public key of privacy manager managed by this node manager
+	Consensus             string           `toml:"consensus"`              // consensus used by blockchain client. ex: raft / istanbul / clique
+	ClientType            string           `toml:"clientType"`             // client used by this node manager. it should be quorum or besu
+	UpchkPollingInterval  int              `toml:"upcheckPollingInterval"` // up check polling interval in seconds for the node
+	NodeManagerConfigFile string           `toml:"nodeManagerConfigFile"`  // node manager config file path
+	InactivityTime        int              `toml:"inactivityTime"`         // inactivity time for blockchain client and privacy manager
+	Server                *RPCServerConfig `toml:"server"`                 // RPC server config of this node manager
+	BcClntProcess         *ProcessConfig   `toml:"bcClntProcess"`          // blockchain client process managed by this node manager
+	PrivManProcess        *ProcessConfig   `toml:"privManProcess"`         // privacy manager process managed by this node manager
+	Proxies               []*ProxyConfig   `toml:"proxies"`                // proxies managed by this node manager
 }
 
 type NodeConfig struct {
@@ -322,6 +323,10 @@ func (c BasicConfig) IsValid() error {
 	err = c.IsClientTypeValid()
 	if err != nil {
 		return err
+	}
+
+	if c.UpchkPollingInterval <= 0 {
+		return errors.New("up check polling interval must be greater than zero")
 	}
 
 	if c.BcClntProcess == nil {
