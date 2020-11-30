@@ -9,9 +9,8 @@ privManKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg="
 consensus = "raft"
 clientType = "quorum"
 nodeManagerConfigFile = "./test/shell/nm1.toml"
-
-inactivityTime = 60
-
+upcheckPollingInterval = 1
+inactivityTime = 6000
 
 proxies = [
     { name = "geth-rpc", type = "http", proxyAddr = "localhost:9094", upstreamAddr = "http://localhost:22003", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },

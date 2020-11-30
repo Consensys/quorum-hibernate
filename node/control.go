@@ -5,13 +5,15 @@ import (
 	"sync"
 	"time"
 
-	cons "github.com/ConsenSysQuorum/node-manager/consensus"
-	"github.com/ConsenSysQuorum/node-manager/core"
-	"github.com/ConsenSysQuorum/node-manager/core/types"
-	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/nodeman"
 	"github.com/ConsenSysQuorum/node-manager/privatetx"
+
+	cons "github.com/ConsenSysQuorum/node-manager/consensus"
+	"github.com/ConsenSysQuorum/node-manager/core"
 	proc "github.com/ConsenSysQuorum/node-manager/process"
+
+	"github.com/ConsenSysQuorum/node-manager/core/types"
+	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
 // NodeControl represents a node controller.
@@ -35,6 +37,7 @@ type NodeControl struct {
 	startNodeCh        chan bool            // channel to request start node
 	startCompleteCh    chan bool            // channel to notify start node action status
 	stopCh             chan bool            // channel to stop start/stop node monitor
+	nsStopCh           chan bool            // channel to stop node status monitor
 	startStopMux       sync.Mutex           // lock for starting and stopping node
 	statusMux          sync.Mutex           // lock for setting the status
 }
@@ -49,6 +52,7 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 		nil,
 		nil,
 		types.Up,
+		make(chan bool, 1),
 		make(chan bool, 1),
 		make(chan bool, 1),
 		make(chan bool, 1),
@@ -77,23 +81,19 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 		node.SetNodeStatus(types.Down)
 	}
 
-	node.populateConsensusHandler()
+	if node.config.BasicConfig.IsRaft() {
+		node.consensus = cons.NewRaftConsensus(node.config)
+	} else if node.config.BasicConfig.IsIstanbul() {
+		node.consensus = cons.NewIstanbulConsensus(node.config)
+	} else if node.config.BasicConfig.IsClique() {
+		node.consensus = cons.NewCliqueConsensus(node.config)
+	}
 
 	if node.config.BasicConfig.IsQuorumClient() {
 		node.txh = privatetx.NewQuorumTxHandler(node.config)
 	} // TODO add tx handler for Besu
 
 	return node
-}
-
-func (n *NodeControl) populateConsensusHandler() {
-	if n.config.BasicConfig.IsRaft() {
-		n.consensus = cons.NewRaftConsensus(n.config)
-	} else if n.config.BasicConfig.IsIstanbul() {
-		n.consensus = cons.NewIstanbulConsensus(n.config)
-	} else if n.config.BasicConfig.IsClique() {
-		n.consensus = cons.NewCliqueConsensus(n.config)
-	}
 }
 
 func (n *NodeControl) GetRPCConfig() *types.RPCServerConfig {
@@ -172,17 +172,37 @@ func (n *NodeControl) Start() {
 	n.StartStopNodeMonitor()
 	n.im = NewInactivityMonitor(n)
 	n.im.StartInactivityTimer()
+	n.startNodeStatusMonitor()
 }
 
 // Stop stops blockchain client and privacy manager start/stop monitor and inactivity tracker
 func (n *NodeControl) Stop() {
 	n.im.Stop()
 	n.stopCh <- true
+	n.nsStopCh <- true
 }
 
 // ResetInactiveTime resets inactivity time of the tracker
 func (n *NodeControl) ResetInactiveTime() {
 	n.inactivityResetCh <- true
+}
+
+func (n *NodeControl) startNodeStatusMonitor() {
+	go func() {
+		timer := time.NewTicker(time.Duration(n.config.BasicConfig.UpchkPollingInterval) * time.Second)
+		defer timer.Stop()
+		log.Info("NodeStatusMonitor - node status monitor started")
+		for {
+			select {
+			case <-timer.C:
+				status := n.IsNodeUp()
+				log.Debug("startNodeStatusMonitor", "status", status)
+			case <-n.nsStopCh:
+				log.Info("startNodeStatusMonitor - node status monitor stopped")
+				return
+			}
+		}
+	}()
 }
 
 //StartStopNodeMonitor listens for requests to start/stop blockchain client and privacy manager
@@ -235,13 +255,13 @@ func (n *NodeControl) WaitStopNode() bool {
 
 // TODO handle error if node failed to start
 func (n *NodeControl) PrepareNode() bool {
-	if !n.IsNodeUp() {
+	if n.nodeStatus == types.Up {
+		log.Info("PrepareNode - node is up")
+		return true
+	} else {
 		status := n.StartNode()
 		log.Debug("PrepareNode - node start completed", "status", status)
 		return status
-	} else {
-		log.Info("node is UP")
-		return true
 	}
 }
 

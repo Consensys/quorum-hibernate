@@ -15,7 +15,7 @@ import (
 
 // ProxyServer represents a proxy server
 type ProxyServer struct {
-	qrmNode    *node.NodeControl  // node controller
+	nodeCtrl   *node.NodeControl  // node controller
 	proxyCfg   *types.ProxyConfig // proxy config
 	mux        *http.ServeMux
 	srv        *http.Server           // http server for the proxy

@@ -36,8 +36,7 @@ func main() {
 		log.Error("main - loading config file failed", "err", err)
 		return
 	}
-
-	log.Debug("main - node config", "cfg", nodeConfig)
+	log.Debug("main - node config", "basic", nodeConfig.BasicConfig, "nms", nodeConfig.NodeManagers)
 	rpcBackendErrCh := make(chan error)
 	proxyBackendErrCh := make(chan error)
 	if !Start(nodeConfig, err, proxyBackendErrCh, rpcBackendErrCh) {
@@ -54,7 +53,7 @@ func Start(nodeConfig types.NodeConfig, err error, proxyBackendErrCh chan error,
 	}
 	nmApp.rpcService = rpc.NewRPCService(nmApp.node, nmApp.node.GetRPCConfig(), rpcBackendErrCh)
 
-	// start quorum node service
+	// start node service
 	nmApp.node.Start()
 
 	// start proxies

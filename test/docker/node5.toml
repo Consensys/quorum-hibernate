@@ -7,9 +7,10 @@ privManUpcheckUrl = "http://localhost:9085/upcheck"
 privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
 consensus = "raft"
 clientType = "quorum"
+upcheckPollingInterval = 1
 nodeManagerConfigFile = "./test/shell/nm1.toml"
 
-inactivityTime = 60
+inactivityTime = 6000
 
 proxies = [
     { name = "geth-rpc", type = "http", proxyAddr = "localhost:9095", upstreamAddr = "http://localhost:22004", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
