@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ConsenSysQuorum/node-manager/core/types"
-
 	"github.com/ConsenSysQuorum/node-manager/core"
-
+	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
@@ -45,17 +43,17 @@ func NewIstanbulConsensus(qn *types.NodeConfig) Consensus {
 	return &IstanbulConsensus{cfg: qn, client: core.NewHttpClient()}
 }
 
-func (r *IstanbulConsensus) getIstanbulSealerActivity(qrmRpcUrl string) (*IstanbulSealActivity, error) {
+func (i *IstanbulConsensus) getIstanbulSealerActivity() (*IstanbulSealActivity, error) {
 	var respResult IstanbulSealActivityResp
-	if err := core.CallRPC(qrmRpcUrl, []byte(IstanbulStatusReq), &respResult); err != nil {
+	if err := core.CallRPC(i.cfg.BasicConfig.BcClntRpcUrl, []byte(IstanbulStatusReq), &respResult); err != nil {
 		return nil, err
 	}
 	return &respResult.Result, respResult.Error
 }
 
-func (r *IstanbulConsensus) getIstanbulIsValidator(qrmRpcUrl string) (bool, error) {
+func (i *IstanbulConsensus) getIstanbulIsValidator() (bool, error) {
 	var respResult IstanbulIsValidatorResp
-	if err := core.CallRPC(qrmRpcUrl, []byte(IstanbulIsValidatorReq), &respResult); err != nil {
+	if err := core.CallRPC(i.cfg.BasicConfig.BcClntRpcUrl, []byte(IstanbulIsValidatorReq), &respResult); err != nil {
 		return false, err
 	}
 	return respResult.Result, respResult.Error
@@ -63,8 +61,8 @@ func (r *IstanbulConsensus) getIstanbulIsValidator(qrmRpcUrl string) (bool, erro
 
 // TODO - if the number of validators are more than 64 this will not work as expected as signers return data for last 64 blocks only
 // ValidateShutdown implements Consensus.ValidateShutdown
-func (r *IstanbulConsensus) ValidateShutdown() error {
-	isValidator, err := r.getIstanbulIsValidator(r.cfg.BasicConfig.BcClntRpcUrl)
+func (i *IstanbulConsensus) ValidateShutdown() error {
+	isValidator, err := i.getIstanbulIsValidator()
 	if err != nil {
 		log.Error("ValidateShutdown - istanbul isValidator check failed", "err", err)
 		return err
@@ -75,7 +73,7 @@ func (r *IstanbulConsensus) ValidateShutdown() error {
 		return nil
 	}
 
-	activity, err := r.getIstanbulSealerActivity(r.cfg.BasicConfig.BcClntRpcUrl)
+	activity, err := i.getIstanbulSealerActivity()
 	if err != nil {
 		log.Error("ValidateShutdown - istanbul status check failed", "err", err)
 		return err
