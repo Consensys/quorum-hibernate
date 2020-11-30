@@ -51,17 +51,17 @@ func NewRaftConsensus(qn *types.NodeConfig) Consensus {
 	return &RaftConsensus{cfg: qn, client: core.NewHttpClient()}
 }
 
-func (r *RaftConsensus) getRole(qrmRpcUrl string) (string, error) {
+func (r *RaftConsensus) getRole(rpcUrl string) (string, error) {
 	var respResult RaftRoleResp
-	if err := core.CallRPC(qrmRpcUrl, []byte(RaftRoleReq), &respResult); err != nil {
+	if err := core.CallRPC(rpcUrl, []byte(RaftRoleReq), &respResult); err != nil {
 		return "", err
 	}
 	return respResult.Result, respResult.Error
 }
 
-func (r *RaftConsensus) getRaftClusterInfo(qrmRpcUrl string) ([]RaftClusterEntry, error) {
+func (r *RaftConsensus) getRaftClusterInfo(rpcUrl string) ([]RaftClusterEntry, error) {
 	var respResult RaftClusterResp
-	if err := core.CallRPC(qrmRpcUrl, []byte(RaftClusterReq), &respResult); err != nil {
+	if err := core.CallRPC(rpcUrl, []byte(RaftClusterReq), &respResult); err != nil {
 		return nil, err
 	}
 	return respResult.Result, respResult.Error

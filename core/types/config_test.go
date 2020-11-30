@@ -64,6 +64,7 @@ privManUpcheckUrl = "http://localhost:9001/upcheck"
 privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
 consensus = "raft"
 clientType = "quorum"
+upcheckPollingInterval = 1
 nodeManagerConfigFile = "./test/shell/nm1.toml"
 
 #blockchain client/privacy manager inactivity timeout seconds
@@ -86,14 +87,14 @@ rpcvHosts = ["*"]
 
 #blockchain client's process control config
 [basicConfig.bcClntProcess]
-name = "geth"
+name = "bcclnt"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"]
 
 #privacy manager process control config
 [basicConfig.privManProcess]
-name = "tessera"
+name = "privman"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"]
@@ -117,6 +118,7 @@ startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/start
 			PrivManKey:            "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
 			Consensus:             "raft",
 			ClientType:            "quorum",
+			UpchkPollingInterval:  1,
 			NodeManagerConfigFile: "./test/shell/nm1.toml",
 			InactivityTime:        60,
 			Server: &RPCServerConfig{
@@ -125,14 +127,14 @@ startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/start
 				RPCVHosts:   []string{"*"},
 			},
 			BcClntProcess: &ProcessConfig{
-				Name:         "geth",
+				Name:         "bcclnt",
 				ControlType:  "shell",
 				ContainerId:  "",
 				StopCommand:  []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"},
 				StartCommand: []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"},
 			},
 			PrivManProcess: &ProcessConfig{
-				Name:         "tessera",
+				Name:         "privman",
 				ControlType:  "shell",
 				ContainerId:  "",
 				StopCommand:  []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"},
