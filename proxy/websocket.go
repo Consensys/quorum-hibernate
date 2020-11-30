@@ -234,14 +234,12 @@ func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc c
 		}
 
 		if isReqFromSource {
-			w.ps.nodeCtrl.ResetInactiveTime()
-
 			if err := w.ps.nodeCtrl.IsNodeBusy(); err != nil {
 				log.Error("replicateWebsocketConn - node is busy", "err", err)
 				w.closeConnWithError(dst, err)
 				return
 			}
-
+			w.ps.nodeCtrl.ResetInactiveTime()
 			if w.ps.nodeCtrl.PrepareNode() {
 				log.Info("replicateWebsocketConn - prepared to accept request")
 			} else {
@@ -253,12 +251,12 @@ func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc c
 		}
 
 		if isReqFromSource {
-			/*if err := HandlePrivateTx(msg, w.ps); err != nil {
+			if err := HandlePrivateTx(msg, w.ps); err != nil {
 				log.Error("replicateWebsocketConn - handling private transaction failed", "err", err)
 				w.closeConnWithError(dst, ErrParticipantsDown)
 				errc <- err
 				break
-			}*/
+			}
 		}
 
 		err = dst.WriteMessage(msgType, msg)
