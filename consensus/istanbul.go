@@ -81,32 +81,22 @@ func (i *IstanbulConsensus) ValidateShutdown() error {
 
 	totalValidators := len(activity.SealerActivity)
 	maxSealBlocks := activity.NumBlocks / totalValidators
-	zeroBlockSealCnt := 0
-	for _, numBlocks := range activity.SealerActivity {
-		if numBlocks == 0 {
-			zeroBlockSealCnt++
-		}
+
+	if activity.NumBlocks == 0 {
+		return errors.New("istanbul consensus check failed - block minting not started at network")
 	}
 
-	log.Info("ValidateShutdown - istanbul consensus check", "totalValidators", totalValidators, "maxSealBlocks", maxSealBlocks, "activity", activity.SealerActivity)
-
-	if zeroBlockSealCnt == totalValidators {
-		return errors.New("istanbul consensus check - looks like all validators are down")
-	}
-
-	var percMap = make(map[string]int)
 	var numNodesDown = 0
-	for id, numBlocks := range activity.SealerActivity {
+	for _, numBlocks := range activity.SealerActivity {
 		sealDiff := maxSealBlocks - numBlocks
 		if sealDiff >= validatorDownSealDiff {
 			numNodesDown++
 		}
-		percMap[id] = sealDiff
 	}
 
 	numOfNodesThatCanBeDown := (totalValidators - 1) / 3
 
-	log.Info("ValidateShutdown - istanbul consensus check", "numOfNodesThatCanBeDown", numOfNodesThatCanBeDown, "numNodesDown", numNodesDown, "percMap", percMap)
+	log.Debug("ValidateShutdown - istanbul consensus check", "numOfNodesThatCanBeDown", numOfNodesThatCanBeDown, "numNodesDown", numNodesDown, "activityMap", activity)
 
 	if numNodesDown >= numOfNodesThatCanBeDown {
 		errMsg := fmt.Sprintf("istanbul consensus check - the number of nodes currently down has reached threshold, numOfNodesThatCanBeDown:%d numNodesDown:%d", numOfNodesThatCanBeDown, numNodesDown)
