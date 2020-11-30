@@ -12,7 +12,7 @@ import (
 func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 
 	return func(res http.ResponseWriter, req *http.Request) {
-		if err := ps.qrmNode.IsNodeBusy(); err != nil {
+		if err := ps.nodeCtrl.IsNodeBusy(); err != nil {
 			http.Error(res, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -30,11 +30,11 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 
 		if req.RequestURI != "/partyinfo" && req.RequestURI != "/upcheck" && req.RequestURI != "/partyinfo/validate" {
 			logRequestPayload(req, ps.proxyCfg.Name, ps.proxyCfg.UpstreamAddr, string(body))
-			ps.qrmNode.ResetInactiveTime()
+			ps.nodeCtrl.ResetInactiveTime()
 
 			log.Info("httpHandler - request", "path", req.RequestURI)
 
-			if ps.qrmNode.PrepareNode() {
+			if ps.nodeCtrl.PrepareNode() {
 				log.Debug("httpHandler - prepared to accept request")
 			} else {
 				log.Error("httpHandler - prepare node failed")

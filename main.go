@@ -54,7 +54,7 @@ func Start(nodeConfig types.NodeConfig, err error, proxyBackendErrCh chan error,
 	}
 	nmApp.rpcService = rpc.NewRPCService(nmApp.node, nmApp.node.GetRPCConfig(), rpcBackendErrCh)
 
-	// start quorum node service
+	// start node service
 	nmApp.node.Start()
 
 	// start proxies

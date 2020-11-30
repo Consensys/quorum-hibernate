@@ -87,7 +87,7 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if w.ps.qrmNode.PrepareNode() {
+	if w.ps.nodeCtrl.PrepareNode() {
 		log.Info("ServeHTTP-WS - node prepared to accept request")
 	} else {
 		log.Error("ServeHTTP-WS - failed to start node")
@@ -234,15 +234,15 @@ func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc c
 		}
 
 		if isReqFromSource {
-			w.ps.qrmNode.ResetInactiveTime()
+			w.ps.nodeCtrl.ResetInactiveTime()
 
-			if err := w.ps.qrmNode.IsNodeBusy(); err != nil {
+			if err := w.ps.nodeCtrl.IsNodeBusy(); err != nil {
 				log.Error("replicateWebsocketConn - node is busy", "err", err)
 				w.closeConnWithError(dst, err)
 				return
 			}
 
-			if w.ps.qrmNode.PrepareNode() {
+			if w.ps.nodeCtrl.PrepareNode() {
 				log.Info("replicateWebsocketConn - prepared to accept request")
 			} else {
 				log.Error("replicateWebsocketConn - prepare node failed")
@@ -253,12 +253,12 @@ func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc c
 		}
 
 		if isReqFromSource {
-			if err := HandlePrivateTx(msg, w.ps); err != nil {
+			/*if err := HandlePrivateTx(msg, w.ps); err != nil {
 				log.Error("replicateWebsocketConn - handling private transaction failed", "err", err)
 				w.closeConnWithError(dst, ErrParticipantsDown)
 				errc <- err
 				break
-			}
+			}*/
 		}
 
 		err = dst.WriteMessage(msgType, msg)

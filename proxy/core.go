@@ -42,13 +42,13 @@ func MakeProxyServices(qn *node.NodeControl, errc chan error) ([]Proxy, error) {
 // if body is not a private transaction it will return nil.
 func HandlePrivateTx(body []byte, ps *ProxyServer) error {
 	// TODO If privacy manager proxy works as expected, can this be removed?
-	participants, err := ps.qrmNode.GetTxHandler().IsPrivateTx(body)
+	participants, err := ps.nodeCtrl.GetTxHandler().IsPrivateTx(body)
 	if err != nil {
 		return err
 	}
 	if participants != nil {
 		log.Info("HandlePrivateTx - participants", "keys", participants)
-		if status, err := ps.qrmNode.PrepareNodeManagerForPrivateTx(participants); err != nil {
+		if status, err := ps.nodeCtrl.PrepareNodeManagerForPrivateTx(participants); err != nil {
 			return fmt.Errorf("HandlePrivateTx - preparePrivateTx failed err=%v", err)
 		} else if !status {
 			return fmt.Errorf("HandlePrivateTx - preparePrivateTx failed some participants are down err=%v", err)
