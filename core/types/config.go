@@ -220,6 +220,7 @@ func (c NodeConfig) IsConsensusValid() error {
 		protocolKey  = "protocols"
 		ethKey       = "eth"
 		consensusKey = "consensus"
+		istanbulKey  = "istanbul"
 	)
 	log.Debug("IsConsensusValid - validating consensus info")
 
@@ -238,6 +239,12 @@ func (c NodeConfig) IsConsensusValid() error {
 		protocols, ok := resMap[protocolKey].(map[string]interface{})
 		if !ok {
 			return errors.New("IsConsensusValid - invalid consensus info found")
+		}
+		if protocols[istanbulKey] != nil {
+			if c.BasicConfig.IsIstanbul() {
+				return nil
+			}
+			return errors.New("IsConsensusValid - invalid consensus. it should be istanbul")
 		}
 		eth := protocols[ethKey].(map[string]interface{})
 		if _, ok := eth[consensusKey]; !ok {
