@@ -27,8 +27,10 @@ type ProxyConfig struct {
 	ProxyAddr    string   `toml:"proxyAddr"`    // proxy address
 	UpstreamAddr string   `toml:"upstreamAddr"` // upstream address of the proxy address
 	ProxyPaths   []string `toml:"proxyPaths"`   // httpRequestURI paths of the upstream address
-	ReadTimeout  int      `toml:"readTimeout"`  // readTimeout of the proxy server
-	WriteTimeout int      `toml:"writeTimeout"` // writeTimeout of the proxy server
+	// httpRequestURI paths of the upstream address that should be ignored for activity
+	IgnorePathsForActivity []string `toml:"ignorePathsForActivity"`
+	ReadTimeout            int      `toml:"readTimeout"`  // readTimeout of the proxy server
+	WriteTimeout           int      `toml:"writeTimeout"` // writeTimeout of the proxy server
 }
 
 func (c ProxyConfig) IsHttp() bool {
