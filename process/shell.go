@@ -37,6 +37,7 @@ func (sp *ShellProcessControl) Status() bool {
 
 // Status implements Process.IsUp
 func (sp *ShellProcessControl) IsUp() bool {
+
 	s := false
 	var err error
 	if sp.cfg.IsBcClient() {

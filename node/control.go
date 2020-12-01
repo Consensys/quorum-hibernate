@@ -9,6 +9,8 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/privatetx"
 
 	cons "github.com/ConsenSysQuorum/node-manager/consensus"
+	besu "github.com/ConsenSysQuorum/node-manager/consensus/besu"
+	qnm "github.com/ConsenSysQuorum/node-manager/consensus/quorum"
 	"github.com/ConsenSysQuorum/node-manager/core"
 	proc "github.com/ConsenSysQuorum/node-manager/process"
 
@@ -30,6 +32,7 @@ type NodeControl struct {
 	pmclnt             proc.Process         // privacy manager process controller
 	consensus          cons.Consensus       // consenus validator
 	txh                privatetx.TxHandler  // Transaction handler
+	withPrivMan        bool                 // indicates if the node is running with a privacy manage
 	nodeStatus         types.NodeStatus     // status of this node
 	inactivityResetCh  chan bool            // channel to reset inactivity
 	stopNodeCh         chan bool            // channel to request stop node
@@ -51,6 +54,7 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 		nil,
 		nil,
 		nil,
+		cfg.BasicConfig.PrivManProcess != nil,
 		types.Up,
 		make(chan bool, 1),
 		make(chan bool, 1),
@@ -69,31 +73,58 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 		node.bcclnt = proc.NewDockerProcess(cfg.BasicConfig.BcClntProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
 	}
 
-	if cfg.BasicConfig.PrivManProcess.IsShell() {
-		node.pmclnt = proc.NewShellProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
-	} else if cfg.BasicConfig.PrivManProcess.IsDocker() {
-		node.pmclnt = proc.NewDockerProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+	if node.WithPrivMan() {
+		if cfg.BasicConfig.PrivManProcess.IsShell() {
+			node.pmclnt = proc.NewShellProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+		} else if cfg.BasicConfig.PrivManProcess.IsDocker() {
+			node.pmclnt = proc.NewDockerProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+		}
 	}
-
-	if node.bcclnt.Status() && node.pmclnt.Status() {
-		node.SetNodeStatus(types.Up)
-	} else {
-		node.SetNodeStatus(types.Down)
-	}
-
-	if node.config.BasicConfig.IsRaft() {
-		node.consensus = cons.NewRaftConsensus(node.config)
-	} else if node.config.BasicConfig.IsIstanbul() {
-		node.consensus = cons.NewIstanbulConsensus(node.config)
-	} else if node.config.BasicConfig.IsClique() {
-		node.consensus = cons.NewCliqueConsensus(node.config)
-	}
+	node.populateConsensusHandler()
+	node.setNodeStatus()
 
 	if node.config.BasicConfig.IsQuorumClient() {
 		node.txh = privatetx.NewQuorumTxHandler(node.config)
 	} // TODO add tx handler for Besu
 
 	return node
+}
+
+func (n *NodeControl) WithPrivMan() bool {
+	return n.withPrivMan
+}
+
+func (n *NodeControl) setNodeStatus() {
+	if n.withPrivMan {
+		if n.bcclnt.Status() && n.pmclnt.Status() {
+			n.SetNodeStatus(types.Up)
+		} else {
+			n.SetNodeStatus(types.Down)
+		}
+	} else {
+		if n.bcclnt.Status() {
+			n.SetNodeStatus(types.Up)
+		} else {
+			n.SetNodeStatus(types.Down)
+		}
+	}
+}
+
+func (n *NodeControl) populateConsensusHandler() {
+	if n.config.BasicConfig.IsQuorumClient() {
+		if n.config.BasicConfig.IsRaft() {
+			n.consensus = qnm.NewRaftConsensus(n.config)
+		} else if n.config.BasicConfig.IsIstanbul() {
+			n.consensus = qnm.NewIstanbulConsensus(n.config)
+		} else if n.config.BasicConfig.IsClique() {
+			n.consensus = qnm.NewCliqueConsensus(n.config)
+		}
+	} else if n.config.BasicConfig.IsBesuClient() {
+		if n.config.BasicConfig.IsClique() {
+			n.consensus = besu.NewCliqueConsensus(n.config)
+
+		}
+	}
 }
 
 func (n *NodeControl) GetRPCConfig() *types.RPCServerConfig {
@@ -138,18 +169,22 @@ func (n *NodeControl) IsNodeUp() bool {
 // checkUpStatus checks up status of blockchain client and privacy manager in parallel
 func (n *NodeControl) checkUpStatus() (bool, bool) {
 	var bcclntStatus bool
-	var pmStatus bool
 	var wg = sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		bcclntStatus = n.bcclnt.IsUp()
 	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		pmStatus = n.pmclnt.IsUp()
-	}()
+
+	pmStatus := true
+	if n.WithPrivMan() {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			pmStatus = n.pmclnt.IsUp()
+		}()
+	}
+
 	wg.Wait()
 	return bcclntStatus, pmStatus
 }
@@ -356,7 +391,7 @@ func (n *NodeControl) StartNode() bool {
 	n.SetNodeStatus(types.StartupInprogress)
 	gs := true
 	ts := true
-	if n.pmclnt.Start() != nil {
+	if n.withPrivMan && n.pmclnt.Start() != nil {
 		gs = false
 	}
 	if n.bcclnt.Start() != nil {
