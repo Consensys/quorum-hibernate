@@ -2,7 +2,6 @@ package privatetx
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -15,14 +14,31 @@ type QuorumTxHandler struct {
 }
 
 const (
+	// send transaction
 	ethSendTx    = "eth_sendTransaction"
 	ethSendRawTx = "eth_sendRawPrivateTransaction"
 
+	// sign transaction
 	ethSignTx      = "eth_signTransaction"
 	personalSignTx = "personal_signTransaction"
 
+	// private state extension
+	pvtStateExtAppr = "quorumExtension_approveExtension"
+	pvtStateExtExt  = "quorumExtension_extendContract"
+
 	privateFor = "privateFor"
 )
+
+// map to validate requests that need privacy manager keys to be extracted.
+var pvtReqParamMap = map[string]int{
+	// method name : number items expected in params array
+	ethSendTx:       1,
+	ethSendRawTx:    1,
+	ethSignTx:       1,
+	personalSignTx:  2,
+	pvtStateExtExt:  4,
+	pvtStateExtAppr: 3,
+}
 
 func NewQuorumTxHandler(cfg *types.NodeConfig) TxHandler {
 	return &QuorumTxHandler{cfg: cfg}
@@ -31,13 +47,7 @@ func NewQuorumTxHandler(cfg *types.NodeConfig) TxHandler {
 // IsPrivateTx implements TxHandler.IsPrivateTx
 func (q QuorumTxHandler) IsPrivateTx(msg []byte) ([]string, error) {
 	if containsPrivateTxKeyWords(string(msg)) {
-		if keys, err := decodePvtTx(msg); err != nil {
-			log.Error("IsPrivateTx - failed to unmarshal private tx from request", "err", err)
-			return nil, fmt.Errorf("IsPrivateTx - failed to unmarshal private tx from request err=%v", err)
-		} else {
-			log.Info("AJ KEYS", "K", keys)
-			return keys, nil
-		}
+		return decodePvtTx(msg)
 	}
 	return nil, nil
 }
@@ -61,51 +71,42 @@ func decodePvtTx(body []byte) ([]string, error) {
 		return nil, nil
 	}
 	method = txMap["method"].(string)
-	if method == ethSendTx || method == ethSignTx || method == personalSignTx {
-		if params, ok := txMap["params"].([]interface{}); ok {
-			if len(params) == 0 {
-				log.Warn("decodePvtTx - params len is zero", "method", method)
-				return nil, nil
-			}
-			if dataMap, ok := params[0].(map[string]interface{}); ok {
-				if keys, ok := dataMap["privateFor"]; ok {
-					return privKeys(keys), nil
-				} else {
-					return nil, errors.New("privateFor missing in " + method)
-				}
-			} else {
-				return nil, errors.New("tx data map missing in params " + method)
-			}
-		} else {
-			return nil, errors.New("params missing in " + method)
-		}
-	} else if method == ethSendRawTx {
-		if params, ok := txMap["params"].([]interface{}); ok {
-			if len(params) == 0 {
-				log.Warn("decodePvtTx - params len is zero", "method", method)
-				return nil, nil
-			}
+	keys := validatePrivateReq(txMap, method)
+	return keys, nil
+}
 
-			if len(params) == 1 {
-				log.Warn("decodePvtTx - params is having only one parameter", "method", method, "params", params)
-				return nil, nil
-			}
-
-			for _, param := range params {
-				if pvtMap, ok := param.(map[string]interface{}); ok {
-					if keys, ok := pvtMap["privateFor"]; ok {
-						return privKeys(keys), nil
-					}
-				}
-			}
-			return nil, fmt.Errorf("privateFor missing in %s params %v", method, params)
-		} else {
-			return nil, errors.New("params missing in " + ethSendRawTx)
-		}
-	} else {
-		log.Warn("decodePvtTx - unhandled private transaction", "method", method)
+func validatePrivateReq(txMap map[string]interface{}, method string) []string {
+	var expArgs int
+	var ok bool
+	if expArgs, ok = pvtReqParamMap[method]; !ok {
+		log.Warn("validatePrivateReq - method is missing in private request param map", "method", method)
+		return nil
 	}
-	return nil, nil
+	if params, ok := txMap["params"].([]interface{}); ok {
+		if len(params) == 0 {
+			log.Warn("validatePrivateReq - params len is zero", "method", method)
+			return nil
+		}
+
+		if len(params) != expArgs {
+			log.Warn("validatePrivateReq - params does not have enough arguments", "expected", expArgs, "method", method, "params", params)
+			return nil
+		}
+
+		for _, param := range params {
+			if pvtMap, ok := param.(map[string]interface{}); ok {
+				if keys, ok := pvtMap["privateFor"]; ok {
+					return privKeys(keys)
+				}
+			}
+		}
+		log.Warn(fmt.Sprintf("privateFor missing in %s params %v", method, params), "txmap", txMap)
+		return nil
+	} else {
+		log.Warn("params missing in " + method)
+		return nil
+	}
+	return nil
 }
 
 func privKeys(keys interface{}) []string {

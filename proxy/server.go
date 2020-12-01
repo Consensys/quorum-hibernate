@@ -15,24 +15,35 @@ import (
 
 // ProxyServer represents a proxy server
 type ProxyServer struct {
-	nodeCtrl   *node.NodeControl  // node controller
-	proxyCfg   *types.ProxyConfig // proxy config
-	mux        *http.ServeMux
-	srv        *http.Server           // http server for the proxy
-	rp         *httputil.ReverseProxy // handler for http reverse proxy
-	wp         *WebsocketProxy        // handler for websocket
-	errCh      chan error             // error channel
-	shutdownWg sync.WaitGroup
+	nodeCtrl      *node.NodeControl  // node controller
+	proxyCfg      *types.ProxyConfig // proxy config
+	ignorePathMap map[string]bool
+	mux           *http.ServeMux
+	srv           *http.Server           // http server for the proxy
+	rp            *httputil.ReverseProxy // handler for http reverse proxy
+	wp            *WebsocketProxy        // handler for websocket
+	errCh         chan error             // error channel
+	shutdownWg    sync.WaitGroup
+}
+
+// CanIgnoreRequest implements Proxy.CanIgnoreRequest
+func (ps ProxyServer) CanIgnoreRequest(req string) bool {
+	_, ok := ps.ignorePathMap[req]
+	return ok
 }
 
 func NewProxyServer(qn *node.NodeControl, pc *types.ProxyConfig, errc chan error) (Proxy, error) {
-	ps := &ProxyServer{qn, pc, nil, nil, nil, nil, errc, sync.WaitGroup{}}
+	ps := &ProxyServer{qn, pc, make(map[string]bool), nil, nil, nil, nil, errc, sync.WaitGroup{}}
 	url, err := url.Parse(ps.proxyCfg.UpstreamAddr)
 	if err != nil {
 		return nil, err
 	}
 
 	ps.mux = http.NewServeMux()
+
+	for _, p := range ps.proxyCfg.IgnorePathsForActivity {
+		ps.ignorePathMap[p] = true
+	}
 
 	if ps.proxyCfg.IsHttp() {
 		err = initHttpHandler(ps, url)

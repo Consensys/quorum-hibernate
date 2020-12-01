@@ -28,7 +28,7 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 		// you can reassign the body if you need to parse it as multipart
 		req.Body = ioutil.NopCloser(bytes.NewReader(body))
 
-		if req.RequestURI != "/partyinfo" && req.RequestURI != "/upcheck" && req.RequestURI != "/partyinfo/validate" {
+		if !ps.CanIgnoreRequest(req.RequestURI) {
 			logRequestPayload(req, ps.proxyCfg.Name, ps.proxyCfg.UpstreamAddr, string(body))
 			ps.nodeCtrl.ResetInactiveTime()
 
