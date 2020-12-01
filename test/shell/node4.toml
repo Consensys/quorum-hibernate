@@ -15,7 +15,7 @@ inactivityTime = 6000
 proxies = [
     { name = "geth-rpc", type = "http", proxyAddr = "localhost:9094", upstreamAddr = "http://localhost:22003", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
     { name = "geth-ws", type = "ws", proxyAddr = "localhost:9294", upstreamAddr = "ws://localhost:23003", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
-    { name = "tessera", type = "http", proxyAddr = "localhost:9394", upstreamAddr = "http://127.0.0.1:9004", proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], readTimeout = 15, writeTimeout = 15 },
+    { name = "tessera", type = "http", proxyAddr = "localhost:9394", upstreamAddr = "http://127.0.0.1:9004", proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"],ignorePathsForActivity=["/upcheck", "/partyinfo", "/partyinfo/validate"], readTimeout = 15, writeTimeout = 15 },
 ]
 
 #rpc server details of node manager

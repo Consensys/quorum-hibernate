@@ -15,8 +15,13 @@ import (
 // Proxy represents a proxy server
 // It allows the server to be started and stopped.
 type Proxy interface {
+	// Start starts a proxy server
 	Start()
+	// Stop stops a proxy server
 	Stop()
+	// CanIgnoreRequest returns true if a request should be ignored
+	// from being tracked for activity and starting up node if the node is down.
+	CanIgnoreRequest(req string) bool
 }
 
 var (
