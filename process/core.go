@@ -50,6 +50,7 @@ func ExecuteShellCommand(desc string, cmdArr []string) error {
 		log.Error("ExecuteShellCommand - cmd failed", "desc", desc, "err", err)
 		return err
 	}
+	log.Debug("ExecuteShellCommand - cmd success", "desc", desc)
 	return nil
 }
 
@@ -57,7 +58,7 @@ func ExecuteShellCommand(desc string, cmdArr []string) error {
 func IsBlockchainClientUp(rpcUrl string) (bool, error) {
 	var resp BlockNumberResp
 	if err := core.CallRPC(rpcUrl, []byte(BlockNumberReq), &resp); err != nil {
-		log.Error("IsBlockchainClientUp - failed", "err", err)
+		log.Info("IsBlockchainClientUp - failed", "err", err)
 		return false, core.ErrNodeDown
 	}
 	return true, nil
@@ -73,7 +74,7 @@ func IsPrivacyManagerUp(upcheckUrl string) (bool, error) {
 
 	resp, err := httpClnt.Do(req)
 	if err != nil {
-		log.Warn("IsPrivacyManagerUp - client do req failed", "err", err)
+		log.Info("IsPrivacyManagerUp - client do req failed", "err", err)
 		return false, err
 	}
 	defer resp.Body.Close()
