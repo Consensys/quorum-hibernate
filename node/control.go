@@ -80,9 +80,7 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 			node.pmclnt = proc.NewDockerProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
 		}
 	}
-	node.populateConsensusHandler()
-	node.setNodeStatus()
-
+	populateConsensusHandler(node)
 	if node.config.BasicConfig.IsQuorumClient() {
 		node.txh = privatetx.NewQuorumTxHandler(node.config)
 	} // TODO add tx handler for Besu
@@ -94,23 +92,7 @@ func (n *NodeControl) WithPrivMan() bool {
 	return n.withPrivMan
 }
 
-func (n *NodeControl) setNodeStatus() {
-	if n.withPrivMan {
-		if n.bcclnt.Status() && n.pmclnt.Status() {
-			n.SetNodeStatus(types.Up)
-		} else {
-			n.SetNodeStatus(types.Down)
-		}
-	} else {
-		if n.bcclnt.Status() {
-			n.SetNodeStatus(types.Up)
-		} else {
-			n.SetNodeStatus(types.Down)
-		}
-	}
-}
-
-func (n *NodeControl) populateConsensusHandler() {
+func populateConsensusHandler(n *NodeControl) {
 	if n.config.BasicConfig.IsQuorumClient() {
 		if n.config.BasicConfig.IsRaft() {
 			n.consensus = qnm.NewRaftConsensus(n.config)
@@ -122,7 +104,6 @@ func (n *NodeControl) populateConsensusHandler() {
 	} else if n.config.BasicConfig.IsBesuClient() {
 		if n.config.BasicConfig.IsClique() {
 			n.consensus = besu.NewCliqueConsensus(n.config)
-
 		}
 	}
 }
