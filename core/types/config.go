@@ -342,20 +342,8 @@ func (c BasicConfig) IsValid() error {
 		return errors.New("bcClntProcess is empty")
 	}
 
-	if c.PrivManProcess == nil {
-		return errors.New("privManProcess is empty")
-	}
-
 	if c.BcClntRpcUrl == "" {
 		return errors.New("bcClntRpcUrl is empty")
-	}
-
-	if c.PrivManUpcheckUrl == "" {
-		return errors.New("privManUpcheckUrl is empty")
-	}
-
-	if c.PrivManKey == "" {
-		return errors.New("privManKey is empty")
 	}
 
 	if c.InactivityTime < 60 {
@@ -370,8 +358,18 @@ func (c BasicConfig) IsValid() error {
 		return fmt.Errorf("invalid bcClntProcess: %v", err)
 	}
 
-	if err := c.PrivManProcess.IsValid(); err != nil {
-		return fmt.Errorf("invalid privManProcess: %v", err)
+	if c.PrivManProcess != nil {
+		if c.PrivManUpcheckUrl == "" {
+			return errors.New("privManUpcheckUrl is empty")
+		}
+
+		if c.PrivManKey == "" {
+			return errors.New("privManKey is empty")
+		}
+
+		if err := c.PrivManProcess.IsValid(); err != nil {
+			return fmt.Errorf("invalid privManProcess: %v", err)
+		}
 	}
 
 	if err := c.Server.IsValid(); err != nil {

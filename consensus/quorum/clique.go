@@ -1,10 +1,11 @@
-package consensus
+package quorum
 
 import (
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/ConsenSysQuorum/node-manager/consensus"
 	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
@@ -17,7 +18,7 @@ type CliqueConsensus struct {
 
 // IstanbulSealActivity represents output of RPC istanbul_status
 type CliqueStatus struct {
-	InTurnPercent  int
+	InTurnPercent  int            `json:"inTurnPercent"`
 	NumBlocks      int            `json:"numBlocks"`
 	SealerActivity map[string]int `json:"sealerActivity"`
 }
@@ -40,7 +41,7 @@ const (
 	CoinBaseReq     = `{"jsonrpc":"2.0", "method":"eth_coinbase", "id":67}`
 )
 
-func NewCliqueConsensus(qn *types.NodeConfig) Consensus {
+func NewCliqueConsensus(qn *types.NodeConfig) consensus.Consensus {
 	return &CliqueConsensus{cfg: qn, client: core.NewHttpClient()}
 }
 

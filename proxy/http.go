@@ -42,10 +42,12 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 				return
 			}
 
-			if err := HandlePrivateTx(body, ps); err != nil {
-				log.Error("httpHandler - handling pvt tx failed", "err", err)
-				http.Error(res, ErrParticipantsDown.Error(), http.StatusInternalServerError)
-				return
+			if ps.nodeCtrl.WithPrivMan() {
+				if err := HandlePrivateTx(body, ps); err != nil {
+					log.Error("httpHandler - handling pvt tx failed", "err", err)
+					http.Error(res, ErrParticipantsDown.Error(), http.StatusInternalServerError)
+					return
+				}
 			}
 
 		}

@@ -1,14 +1,13 @@
-package consensus
+package quorum
 
 import (
 	"errors"
 	"fmt"
 	"net/http"
 
-	"github.com/ConsenSysQuorum/node-manager/core/types"
-
+	"github.com/ConsenSysQuorum/node-manager/consensus"
 	"github.com/ConsenSysQuorum/node-manager/core"
-
+	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
@@ -47,7 +46,7 @@ const (
 	RaftClusterReq = `{"jsonrpc":"2.0", "method":"raft_cluster", "params":[], "id":67}`
 )
 
-func NewRaftConsensus(qn *types.NodeConfig) Consensus {
+func NewRaftConsensus(qn *types.NodeConfig) consensus.Consensus {
 	return &RaftConsensus{cfg: qn, client: core.NewHttpClient()}
 }
 

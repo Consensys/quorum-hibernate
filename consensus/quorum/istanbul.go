@@ -1,10 +1,11 @@
-package consensus
+package quorum
 
 import (
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/ConsenSysQuorum/node-manager/consensus"
 	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
@@ -39,7 +40,7 @@ const (
 	IstanbulIsValidatorReq = `{"jsonrpc":"2.0", "method":"istanbul_isValidator", "params":[], "id":67}`
 )
 
-func NewIstanbulConsensus(qn *types.NodeConfig) Consensus {
+func NewIstanbulConsensus(qn *types.NodeConfig) consensus.Consensus {
 	return &IstanbulConsensus{cfg: qn, client: core.NewHttpClient()}
 }
 
