@@ -3,18 +3,18 @@
 name = "node2"
 #blockchain client RPC URL
 bcClntRpcUrl = "http://localhost:22001"
-privManUpcheckUrl = "http://localhost:9082/upcheck"
-privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
-consensus = "raft"
+privManUpcheckUrl = "http://localhost:9002/upcheck"
+privManKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc="
+consensus = "istanbul"
 clientType = "quorum"
 upcheckPollingInterval = 1
-nodeManagerConfigFile = "./test/shell/nm1.toml"
+nodeManagerConfigFile = "./test/docker/nm1.toml"
 
-inactivityTime = 6000
+inactivityTime = 60
 
 proxies = [
     { name = "geth-rpc", type = "http", proxyAddr = "localhost:9092", upstreamAddr = "http://localhost:22001", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
-    { name = "tessera", type = "http", proxyAddr = "localhost:9392", upstreamAddr = "http://127.0.0.1:9082", proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], readTimeout = 15, writeTimeout = 15 },
+    { name = "tessera", type = "http", proxyAddr = "localhost:9392", upstreamAddr = "http://127.0.0.1:9002", proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], ignorePathsForActivity=["/upcheck", "/partyinfo", "/partyinfo/validate"], readTimeout = 15, writeTimeout = 15 },
 ]
 
 #rpc server details of node manager
@@ -26,10 +26,10 @@ rpcvHosts = ["*"]
 
 [basicConfig.bcClntProcess]
 name = "bcclnt"
-containerId = ""
+containerId = "37bb0f5c6b3a"
 controlType = "docker"
 
 [basicConfig.privManProcess]
 name = "privman"
 controlType = "docker"
-containerId = ""
+containerId = "24995f82ae3a"

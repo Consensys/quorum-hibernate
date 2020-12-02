@@ -70,7 +70,7 @@ func initHttpHandler(ps *ProxyServer, url *url.URL) error {
 	ps.rp = httputil.NewSingleHostReverseProxy(url)
 	ps.rp.ModifyResponse = func(res *http.Response) error {
 		respStatus := res.Status
-		log.Info("initHttpHandler - response status", "status", respStatus, "code", res.StatusCode)
+		log.Debug("initHttpHandler - response status", "status", respStatus, "code", res.StatusCode)
 		return nil
 	}
 	h, err := makeHttpHandler(ps)
