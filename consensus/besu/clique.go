@@ -46,8 +46,6 @@ type CoinBaseResp struct {
 }
 
 const (
-	allowedSigningDiff = 2
-
 	// Clique RPC APIs
 	CliqueStatusReq = `{"jsonrpc":"2.0", "method":"clique_getSignerMetrics", "params":[], "id":67}`
 	CoinBaseReq     = `{"jsonrpc":"2.0", "method":"eth_coinbase", "id":67}`
@@ -97,71 +95,80 @@ func (c *CliqueConsensus) getConsensusStatus() (*[]CliqueStatus, error) {
 	return &respResult.Result, respResult.Error
 }
 
+// ValidateShutdown implements Consensus.ValidateShutdown
+// It validates if the node can be hibernated. returns error if it cannot be
+// hibernated. The logic used for checking if the node can be hibernated or
+// not is as below:
+// 1. check if the node is a signer. if not return nil
+// 2. if the node is a signer, get the total number of signers for the network,
+//    get the signer metrics for the last 100 blocks
+// 3. get the number of signer nodes down by checking if a signer node had
+//    signed a block in the last cycle. If not consider the node to be down
+// 4. Once the number of signer nodes that are down is calculated, check if the
+//    current node can go down based on already down nodes and total number of
+//    signer nodes.
+// For clique the requirement is to have 51% of the nodes up and running
 func (c *CliqueConsensus) ValidateShutdown() error {
 	// get coinbase accout
 	coinbase, err := c.getCoinBaseAccount()
 	if err != nil {
-		log.Error("failed to read the coinbase account", "err", err)
+		log.Error("ValidateShutdown - failed to read the coinbase account", "err", err)
 		return err
 	}
 
 	// get all signers
 	signers, err := c.getSigners()
 	if err != nil {
-		log.Error("failed to read the coinbase account", "err", err)
+		log.Error("ValidateShutdown - failed to read the signers", "err", err)
 		return err
 	}
 
 	isSigner := false
+	// check if the coinbase account is one of the signers
 	for _, signer := range signers {
 		if signer == coinbase {
 			isSigner = true
+			break
 		}
 	}
-	// not signer account return nil
+	// not signer account, ok to stop. return nil
 	if !isSigner {
 		return nil
 	}
 
 	curBlockNum, err := c.getCurrentBlockNumber()
 	if err != nil {
-		log.Error("failed to read current block number", "err", err)
+		log.Error("ValidateShutdown - failed to read current block number", "err", err)
 		return err
 	}
 
 	// get the signing status of the network
 	status, err := c.getConsensusStatus()
 	if err != nil {
-		log.Error("failed to get the signing status for the network", "err", err)
+		log.Error("ValidateShutdown - failed to get the signing status for the network", "err", err)
 		return err
 	}
 
-	totalSigners := int64(len(signers))
-	minProposedBlock := curBlockNum - totalSigners
-
 	nodesDown := 0
-
-	// check if the coinbase account is one of the signers
+	totalSigners := int64(len(signers))
+	// calculate the no of nodes that are down
 	for _, v := range *status {
 		proposed, err := strconv.ParseInt(v.LastProposedBlockNumber[2:], 16, 64)
 		if err != nil {
-			log.Error("error is parsing value", "err", err)
+			log.Error("ValidateShutdown - error converting LastProposedBlockNumber to hex value", "err", err)
 			return err
 		}
-		if proposed < minProposedBlock {
+		if curBlockNum-proposed > totalSigners {
 			nodesDown++
 		}
 	}
 
 	allowedDownNodes := (totalSigners - 1) / 2
-
 	if nodesDown >= int(allowedDownNodes) {
 		errMsg := fmt.Sprintf("clique consensus check - the number of nodes currently down has reached threshold, numOfNodesThatCanBeDown:%d numNodesDown:%d", allowedDownNodes, nodesDown)
 		// current node cannot go down. return error
 		log.Error(errMsg)
 		return errors.New(errMsg)
-		return nil
 	}
-
 	return nil
 }

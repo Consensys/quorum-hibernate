@@ -33,6 +33,7 @@ type NodeControl struct {
 	consensus          cons.Consensus       // consenus validator
 	txh                privatetx.TxHandler  // Transaction handler
 	withPrivMan        bool                 // indicates if the node is running with a privacy manage
+	consValid          bool                 // indicates if network level consensus is valid
 	nodeStatus         types.NodeStatus     // status of this node
 	inactivityResetCh  chan bool            // channel to reset inactivity
 	stopNodeCh         chan bool            // channel to request stop node
@@ -55,6 +56,7 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 		nil,
 		nil,
 		cfg.BasicConfig.PrivManProcess != nil,
+		false,
 		types.Up,
 		make(chan bool, 1),
 		make(chan bool, 1),
@@ -297,12 +299,11 @@ func (n *NodeControl) StopNode() bool {
 	var err error
 
 	// 1st check if hibernating node will break the consensus model
-	if err := n.consensus.ValidateShutdown(); err == nil {
-		log.Info("StopNode - consensus check passed, node can be shutdown")
-	} else {
-		log.Info("StopNode - consensus check failed, node cannot be shutdown", "err", err)
+	if err := n.checkAndValidateConsensus(); err != nil {
+		log.Error("StopNode - consensus validation failed", "err", err)
 		return false
 	}
+	log.Debug("StopNode - consensus check passed, node can be shutdown")
 
 	// consensus is ok. check with network to prevent multiple nodes
 	// going down at the same time
@@ -336,6 +337,19 @@ func (n *NodeControl) StopNode() bool {
 	// if stopping of blockchain client or privacy manager fails Status will remain as ShutdownInprogress and node manager will not process any requests from clients
 	// it will need some manual intervention to set it to the correct status
 	return bcStatus && pmStatus
+}
+
+func (n *NodeControl) checkAndValidateConsensus() error {
+	// validate if the consensus passed in config is correct.
+	// for besu bypass this check as it does not provide any rpc api to confirm consensus
+	if !n.consValid && !n.config.BasicConfig.IsBesuClient() {
+		if err := n.config.IsConsensusValid(); err != nil {
+			return err
+		}
+		n.consValid = true
+	}
+	// perform consensus level validations for node hibernation
+	return n.consensus.ValidateShutdown()
 }
 
 // stopProcesses stops blockchain client and privacy manager processes in parallel
