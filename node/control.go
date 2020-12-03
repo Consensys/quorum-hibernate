@@ -86,12 +86,24 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 	if node.config.BasicConfig.IsQuorumClient() {
 		node.txh = privatetx.NewQuorumTxHandler(node.config)
 	} // TODO add tx handler for Besu
-
+	updateInactivityTimeWithRandomBuff(node)
 	return node
 }
 
 func (n *NodeControl) WithPrivMan() bool {
 	return n.withPrivMan
+}
+
+func updateInactivityTimeWithRandomBuff(n *NodeControl) {
+	// introduce random delay of 2% of inactivity time that should
+	// be added on top of inactivity time
+	delay := (2 * n.config.BasicConfig.InactivityTime) / 100
+	if delay < 10 {
+		delay = 10
+	}
+	oldv := n.config.BasicConfig.InactivityTime
+	n.config.BasicConfig.InactivityTime += core.GetRandomRetryWaitTime(1, delay)
+	log.Info("updateInactivityTimeWithRandomBuff - updated inactive time", "old", oldv, "new", n.config.BasicConfig.InactivityTime)
 }
 
 func populateConsensusHandler(n *NodeControl) {
