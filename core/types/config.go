@@ -233,7 +233,7 @@ func (c NodeConfig) IsConsensusValid() error {
 	var resp map[string]interface{}
 	if err := core.CallRPC(c.BasicConfig.BcClntRpcUrl, []byte(adminInfoReq), &resp); err == nil {
 		resMap := resp["result"].(map[string]interface{})
-		log.Info("IsConsensusValid - response", "map", resMap)
+		log.Debug("IsConsensusValid - response", "map", resMap)
 
 		if resMap[protocolKey] == nil {
 			return errors.New("IsConsensusValid - no consensus info found")

@@ -26,18 +26,21 @@ const (
 	pvtStateExtAppr = "quorumExtension_approveExtension"
 	pvtStateExtExt  = "quorumExtension_extendContract"
 
-	privateFor = "privateFor"
+	// estimate gas
+	estimateGas = "eth_estimateGas"
+	privateFor  = "privateFor"
 )
 
 // map to validate requests that need privacy manager keys to be extracted.
 var pvtReqParamMap = map[string]int{
 	// method name : number items expected in params array
 	ethSendTx:       1,
-	ethSendRawTx:    1,
+	ethSendRawTx:    2,
 	ethSignTx:       1,
 	personalSignTx:  2,
 	pvtStateExtExt:  4,
 	pvtStateExtAppr: 3,
+	estimateGas:     1,
 }
 
 func NewQuorumTxHandler(cfg *types.NodeConfig) TxHandler {
