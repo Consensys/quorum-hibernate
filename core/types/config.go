@@ -209,10 +209,6 @@ func ReadNodeConfig(configFile string) (NodeConfig, error) {
 		return NodeConfig{}, err
 	}
 
-	if err := input.IsConsensusValid(); err != nil {
-		log.Error("consensus mismatch", "err", err)
-		return NodeConfig{}, err
-	}
 	return input, nil
 }
 
@@ -259,8 +255,6 @@ func (c NodeConfig) IsConsensusValid() error {
 			}
 			return fmt.Errorf("IsConsensusValid - consensus mismatch. expected:%s, have:%s", expected, c.BasicConfig.Consensus)
 		}
-	} else {
-		log.Info("IsConsensusValid: could not validate consensus as node probably is down", "err", err)
 	}
 	return nil
 }

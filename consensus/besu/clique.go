@@ -97,6 +97,18 @@ func (c *CliqueConsensus) getConsensusStatus() (*[]CliqueStatus, error) {
 	return &respResult.Result, respResult.Error
 }
 
+// validates if the node can be hibernated. returns error if it cannot be
+// hibernated. The logic used for checking if the node can be hibernated or
+// not is as below:
+// 1. check if the node is a signer. if not return nil
+// 2. if the node is a signer, get the total number of signers for the network,
+//    geth the signer metrics for the last 100 blocks
+// 3. get the number of signer nodes down by checking if a signer node had
+//    signed a block in the last cycle. If not consider the node to be down
+// 4. Once the number of signer nodes that down is calculated, check if the
+//    current node can go down based on already down nodes and total number
+//    signer nodes.
+// For clique the requirement is to have 51% of the nodes up and running
 func (c *CliqueConsensus) ValidateShutdown() error {
 	// get coinbase accout
 	coinbase, err := c.getCoinBaseAccount()
@@ -136,11 +148,8 @@ func (c *CliqueConsensus) ValidateShutdown() error {
 		return err
 	}
 
-	totalSigners := int64(len(signers))
-	minProposedBlock := curBlockNum - totalSigners
-
 	nodesDown := 0
-
+	totalSigners := int64(len(signers))
 	// check if the coinbase account is one of the signers
 	for _, v := range *status {
 		proposed, err := strconv.ParseInt(v.LastProposedBlockNumber[2:], 16, 64)
@@ -148,20 +157,17 @@ func (c *CliqueConsensus) ValidateShutdown() error {
 			log.Error("error is parsing value", "err", err)
 			return err
 		}
-		if proposed < minProposedBlock {
+		if curBlockNum-proposed > totalSigners {
 			nodesDown++
 		}
 	}
 
 	allowedDownNodes := (totalSigners - 1) / 2
-
 	if nodesDown >= int(allowedDownNodes) {
 		errMsg := fmt.Sprintf("clique consensus check - the number of nodes currently down has reached threshold, numOfNodesThatCanBeDown:%d numNodesDown:%d", allowedDownNodes, nodesDown)
 		// current node cannot go down. return error
 		log.Error(errMsg)
 		return errors.New(errMsg)
-		return nil
 	}
-
 	return nil
 }

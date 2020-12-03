@@ -16,7 +16,7 @@ type CliqueConsensus struct {
 	client *http.Client
 }
 
-// IstanbulSealActivity represents output of RPC istanbul_status
+// CliqueStatus represents output of RPC clique_status
 type CliqueStatus struct {
 	InTurnPercent  int            `json:"inTurnPercent"`
 	NumBlocks      int            `json:"numBlocks"`
