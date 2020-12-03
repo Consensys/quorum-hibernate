@@ -139,7 +139,7 @@ func (nm *NodeManager) ValidatePeers() ([]NodeStatusInfo, error) {
 
 	shutdownInProgress := false
 	for _, n := range statusArr {
-		if n.Status == types.ShutdownInitiated || n.Status == types.ShutdownInprogress {
+		if n.Status == types.ShutdownInprogress || n.Status == types.WaitingPeerConfirmation {
 			shutdownInProgress = true
 			break
 		}

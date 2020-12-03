@@ -97,22 +97,23 @@ func (c *CliqueConsensus) getConsensusStatus() (*[]CliqueStatus, error) {
 	return &respResult.Result, respResult.Error
 }
 
-func (c *CliqueConsensus) ValidateShutdown() error {
+func (c *CliqueConsensus) ValidateShutdown() (bool, error) {
+	isSigner := false
+
 	// get coinbase accout
 	coinbase, err := c.getCoinBaseAccount()
 	if err != nil {
 		log.Error("failed to read the coinbase account", "err", err)
-		return err
+		return isSigner, err
 	}
 
 	// get all signers
 	signers, err := c.getSigners()
 	if err != nil {
 		log.Error("failed to read the coinbase account", "err", err)
-		return err
+		return isSigner, err
 	}
 
-	isSigner := false
 	for _, signer := range signers {
 		if signer == coinbase {
 			isSigner = true
@@ -120,20 +121,20 @@ func (c *CliqueConsensus) ValidateShutdown() error {
 	}
 	// not signer account return nil
 	if !isSigner {
-		return nil
+		return isSigner, nil
 	}
 
 	curBlockNum, err := c.getCurrentBlockNumber()
 	if err != nil {
 		log.Error("failed to read current block number", "err", err)
-		return err
+		return isSigner, err
 	}
 
 	// get the signing status of the network
 	status, err := c.getConsensusStatus()
 	if err != nil {
 		log.Error("failed to get the signing status for the network", "err", err)
-		return err
+		return isSigner, err
 	}
 
 	totalSigners := int64(len(signers))
@@ -146,7 +147,7 @@ func (c *CliqueConsensus) ValidateShutdown() error {
 		proposed, err := strconv.ParseInt(v.LastProposedBlockNumber[2:], 16, 64)
 		if err != nil {
 			log.Error("error is parsing value", "err", err)
-			return err
+			return isSigner, err
 		}
 		if proposed < minProposedBlock {
 			nodesDown++
@@ -159,9 +160,8 @@ func (c *CliqueConsensus) ValidateShutdown() error {
 		errMsg := fmt.Sprintf("clique consensus check - the number of nodes currently down has reached threshold, numOfNodesThatCanBeDown:%d numNodesDown:%d", allowedDownNodes, nodesDown)
 		// current node cannot go down. return error
 		log.Error(errMsg)
-		return errors.New(errMsg)
-		return nil
+		return isSigner, errors.New(errMsg)
 	}
 
-	return nil
+	return isSigner, nil
 }

@@ -8,8 +8,9 @@ package consensus
 // status of other nodes in the cluster. It should make rpc calls to blockchain client's consensus specific
 // APIS to decide that.
 //
-// For example, raft should call raft_cluster and raft_role APIs to decide whether node can be shutdown or not
+// For example, raft should call raft_cluster and raft_role APIs to decide whether node can be shutdown or no
+
 type Consensus interface {
 	// ValidateShutdown return mil if node is good to shutdown else returns error
-	ValidateShutdown() error
+	ValidateShutdown() (consensusNode bool, err error)
 }
