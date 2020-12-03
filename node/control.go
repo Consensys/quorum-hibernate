@@ -33,6 +33,7 @@ type NodeControl struct {
 	consensus          cons.Consensus       // consenus validator
 	txh                privatetx.TxHandler  // Transaction handler
 	withPrivMan        bool                 // indicates if the node is running with a privacy manage
+	consValid          bool                 // indicates if network level consensus is valid
 	nodeStatus         types.NodeStatus     // status of this node
 	inactivityResetCh  chan bool            // channel to reset inactivity
 	stopNodeCh         chan bool            // channel to request stop node
@@ -55,6 +56,7 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 		nil,
 		nil,
 		cfg.BasicConfig.PrivManProcess != nil,
+		false,
 		types.Up,
 		make(chan bool, 1),
 		make(chan bool, 1),
@@ -84,12 +86,23 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 	if node.config.BasicConfig.IsQuorumClient() {
 		node.txh = privatetx.NewQuorumTxHandler(node.config)
 	} // TODO add tx handler for Besu
-
+	node.config.BasicConfig.InactivityTime += getRandomBufferTime(node.config.BasicConfig.InactivityTime)
+	log.Debug("Node config - inactivity time after random buffer", "InactivityTime", node.config.BasicConfig.InactivityTime)
 	return node
 }
 
 func (n *NodeControl) WithPrivMan() bool {
 	return n.withPrivMan
+}
+
+func getRandomBufferTime(inactivityTime int) int {
+	// introduce random delay of 2% of inactivity time that should
+	// be added on top of inactivity time
+	delay := (2 * inactivityTime) / 100
+	if delay < 10 {
+		delay = 10
+	}
+	return core.GetRandomRetryWaitTime(1, delay)
 }
 
 func populateConsensusHandler(n *NodeControl) {
@@ -296,18 +309,19 @@ func (n *NodeControl) StopNode() bool {
 	var peersStatus []nodeman.NodeStatusInfo
 	var err error
 
-	consensusNode, err := n.consensus.ValidateShutdown()
+	consensusNode, err := n.checkAndValidateConsensus()
 	if err != nil {
 		log.Info("StopNode - consensus check failed, node cannot be shutdown", "err", err)
 		return false
 	}
+	log.Debug("StopNode - consensus check passed, node can be shutdown")
 
 	if consensusNode {
 		// consensus is ok. check with network to prevent multiple nodes
 		// going down at the same time
 		n.SetNodeStatus(types.WaitingPeerConfirmation)
 		//for retryCount <= core.Peer2PeerValidationRetryLimit {
-		w := core.GetRandomRetryWaitTime()
+		w := core.GetRandomRetryWaitTime(10, 1000)
 		log.Info("StopNode - waiting for p2p validation try", "wait time in seconds", w)
 		time.Sleep(time.Duration(w) * time.Millisecond)
 
@@ -328,6 +342,19 @@ func (n *NodeControl) StopNode() bool {
 	// if stopping of blockchain client or privacy manager fails Status will remain as ShutdownInprogress and node manager will not process any requests from clients
 	// it will need some manual intervention to set it to the correct status
 	return bcStatus && pmStatus
+}
+
+func (n *NodeControl) checkAndValidateConsensus() (bool, error) {
+	// validate if the consensus passed in config is correct.
+	// for besu bypass this check as it does not provide any rpc api to confirm consensus
+	if !n.consValid && n.config.BasicConfig.IsQuorumClient() {
+		if err := n.config.IsConsensusValid(); err != nil {
+			return false, err
+		}
+		n.consValid = true
+	}
+	// perform consensus level validations for node hibernation
+	return n.consensus.ValidateShutdown()
 }
 
 // stopProcesses stops blockchain client and privacy manager processes in parallel

@@ -28,11 +28,9 @@ func NewHttpClient() *http.Client {
 	return netClient
 }
 
-// GetRandomRetryWaitTime returns a random wait time within a range of 100 to 1000
-func GetRandomRetryWaitTime() int {
+// GetRandomRetryWaitTime returns a random wait time within a range of min to max
+func GetRandomRetryWaitTime(min int, max int) int {
 	rand.Seed(time.Now().UnixNano())
-	min := 100
-	max := 1000
 	return rand.Intn(max-min+1) + min
 }
 

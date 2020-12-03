@@ -6,12 +6,12 @@ name = "node2"
 bcClntRpcUrl = "http://localhost:22001"
 privManUpcheckUrl = "http://localhost:9002/upcheck"
 privManKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc="
-consensus = "raft"
+consensus = "istanbul"
 clientType = "quorum"
 upcheckPollingInterval = 1
-nodeManagerConfigFile = "./test/shell/nm1.toml"
+nodeManagerConfigFile = "./nm1.toml"
 
-inactivityTime = 6000
+inactivityTime = 60
 
 proxies = [
     { name = "geth-rpc", type = "http", proxyAddr = "localhost:9092", upstreamAddr = "http://localhost:22001", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
@@ -27,17 +27,15 @@ rpcCorsList = ["*"]
 rpcvHosts = ["*"]
 
 [basicConfig.bcClntProcess]
-controlType = "shell"
 name = "bcclnt"
-stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22001"]
-startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "2"]
-
+controlType = "shell"
+stopCommand = ["bash", "/Users/saiv/quorum-projects/scripts/stopNode.sh", "22001"]
+startCommand = ["bash", "/Users/saiv/quorum-projects/scripts/startNode.sh", "2"]
 
 [basicConfig.privManProcess]
-controlType = "shell"
 name = "privman"
-stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"]
-startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"]
-
+controlType = "shell"
+stopCommand = ["bash", "/Users/saiv/quorum-projects/scripts/stopTessera.sh", "2"]
+startCommand = ["bash", "/Users/saiv/quorum-projects/scripts/startTessera.sh", "2"]
 
 	
