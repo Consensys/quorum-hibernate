@@ -108,23 +108,23 @@ func (c *CliqueConsensus) getConsensusStatus() (*[]CliqueStatus, error) {
 //    current node can go down based on already down nodes and total number of
 //    signer nodes.
 // For clique the requirement is to have 51% of the nodes up and running
-func (c *CliqueConsensus) ValidateShutdown() error {
+func (c *CliqueConsensus) ValidateShutdown() (bool, error) {
+	isSigner := false
+
 	// get coinbase accout
 	coinbase, err := c.getCoinBaseAccount()
 	if err != nil {
-		log.Error("ValidateShutdown - failed to read the coinbase account", "err", err)
-		return err
+		log.Error("failed to read the coinbase account", "err", err)
+		return isSigner, err
 	}
 
 	// get all signers
 	signers, err := c.getSigners()
 	if err != nil {
 		log.Error("ValidateShutdown - failed to read the signers", "err", err)
-		return err
+		return isSigner, err
 	}
 
-	isSigner := false
-	// check if the coinbase account is one of the signers
 	for _, signer := range signers {
 		if signer == coinbase {
 			isSigner = true
@@ -133,20 +133,20 @@ func (c *CliqueConsensus) ValidateShutdown() error {
 	}
 	// not signer account, ok to stop. return nil
 	if !isSigner {
-		return nil
+		return isSigner, nil
 	}
 
 	curBlockNum, err := c.getCurrentBlockNumber()
 	if err != nil {
 		log.Error("ValidateShutdown - failed to read current block number", "err", err)
-		return err
+		return isSigner, err
 	}
 
 	// get the signing status of the network
 	status, err := c.getConsensusStatus()
 	if err != nil {
 		log.Error("ValidateShutdown - failed to get the signing status for the network", "err", err)
-		return err
+		return isSigner, err
 	}
 
 	nodesDown := 0
@@ -155,8 +155,8 @@ func (c *CliqueConsensus) ValidateShutdown() error {
 	for _, v := range *status {
 		proposed, err := strconv.ParseInt(v.LastProposedBlockNumber[2:], 16, 64)
 		if err != nil {
-			log.Error("ValidateShutdown - error converting LastProposedBlockNumber to hex value", "err", err)
-			return err
+			log.Error("ValidateShutdown - error parsing LastProposedBlockNumber hex value to int value", "err", err)
+			return isSigner, err
 		}
 		if curBlockNum-proposed > totalSigners {
 			nodesDown++
@@ -168,7 +168,8 @@ func (c *CliqueConsensus) ValidateShutdown() error {
 		errMsg := fmt.Sprintf("clique consensus check - the number of nodes currently down has reached threshold, numOfNodesThatCanBeDown:%d numNodesDown:%d", allowedDownNodes, nodesDown)
 		// current node cannot go down. return error
 		log.Error(errMsg)
-		return errors.New(errMsg)
+		return isSigner, errors.New(errMsg)
 	}
-	return nil
+
+	return isSigner, nil
 }

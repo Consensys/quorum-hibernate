@@ -62,25 +62,28 @@ func (c *CliqueConsensus) getConsensusStatus() (*CliqueStatus, error) {
 	return &respResult.Result, respResult.Error
 }
 
-func (c *CliqueConsensus) ValidateShutdown() error {
+func (c *CliqueConsensus) ValidateShutdown() (bool, error) {
+	isSigner := false
 	// get the signing status of the network
 	status, err := c.getConsensusStatus()
 	if err != nil {
 		log.Error("failed to get the signing status for the network", "err", err)
-		return err
+		return isSigner, err
 	}
 
 	coinbase, err := c.getCoinBaseAccount()
 	if err != nil {
 		log.Error("failed to read the coinbase account")
-		return err
+		return isSigner, err
 	}
 
 	// check if the coinbase account is one of the signer accounts.
 	// if not return nil
 	if _, ok := status.SealerActivity[coinbase]; !ok {
-		return nil
+		return isSigner, nil
 	}
+
+	isSigner = true
 
 	// the node account is a signer account and hence need to check if it can go down
 	totalSealers := len(status.SealerActivity)
@@ -97,7 +100,7 @@ func (c *CliqueConsensus) ValidateShutdown() error {
 		errMsg := fmt.Sprintf("clique consensus check - the number of nodes currently down has reached threshold, numOfNodesThatCanBeDown:%d numNodesDown:%d", maxDownNodesAllowed, potentialDownNodes)
 		// current node cannot go down. return error
 		log.Error(errMsg)
-		return errors.New(errMsg)
+		return isSigner, errors.New(errMsg)
 	}
-	return nil
+	return isSigner, nil
 }

@@ -186,7 +186,7 @@ func (n *NodeControl) checkUpStatus() (bool, bool) {
 // IsNodeBusy returns error if the node is busy with shutdown/startup
 func (n *NodeControl) IsNodeBusy() error {
 	switch n.nodeStatus {
-	case types.ShutdownInprogress, types.ShutdownInitiated:
+	case types.ShutdownInprogress, types.WaitingPeerConfirmation:
 		return errors.New(core.NodeIsBeingShutdown)
 	case types.StartupInprogress, types.StartupInitiated:
 		return errors.New(core.NodeIsBeingStarted)
@@ -309,35 +309,29 @@ func (n *NodeControl) StopNode() bool {
 	var peersStatus []nodeman.NodeStatusInfo
 	var err error
 
-	// 1st check if hibernating node will break the consensus model
-	if err := n.checkAndValidateConsensus(); err != nil {
-		log.Error("StopNode - consensus validation failed", "err", err)
+	consensusNode, err := n.checkAndValidateConsensus()
+	if err != nil {
+		log.Info("StopNode - consensus check failed, node cannot be shutdown", "err", err)
 		return false
 	}
 	log.Debug("StopNode - consensus check passed, node can be shutdown")
 
-	// consensus is ok. check with network to prevent multiple nodes
-	// going down at the same time
-	retryCount := 1
-	for retryCount <= core.Peer2PeerValidationRetryLimit {
+	if consensusNode {
+		// consensus is ok. check with network to prevent multiple nodes
+		// going down at the same time
+		n.SetNodeStatus(types.WaitingPeerConfirmation)
+		//for retryCount <= core.Peer2PeerValidationRetryLimit {
 		w := core.GetRandomRetryWaitTime(10, 1000)
 		log.Info("StopNode - waiting for p2p validation try", "wait time in seconds", w)
 		time.Sleep(time.Duration(w) * time.Millisecond)
-		peersStatus, err = n.nm.ValidatePeers()
-		if err == nil {
-			log.Info("StopNode - p2p validation passed")
-			break
+
+		if peersStatus, err = n.nm.ValidatePeers(); err != nil {
+			n.SetNodeStatus(types.Up)
+			log.Error("StopNode - node cannot be shutdown, p2p validation failed after retrying")
+			return false
 		}
-		log.Error("StopNode - p2p validation failed", "retryLimit", core.Peer2PeerValidationRetryLimit, "retryCount", retryCount, "err", err, "peersStatus", peersStatus)
-		retryCount++
 	}
-
-	if retryCount > core.Peer2PeerValidationRetryLimit {
-		log.Error("StopNode - node cannot be shutdown, p2p validation failed after retrying")
-		return false
-	}
-
-	n.SetNodeStatus(types.ShutdownInitiated)
+	log.Debug("StopNode - all checks passed for shutdown", "peerStatus", peersStatus)
 
 	n.SetNodeStatus(types.ShutdownInprogress)
 
@@ -350,12 +344,12 @@ func (n *NodeControl) StopNode() bool {
 	return bcStatus && pmStatus
 }
 
-func (n *NodeControl) checkAndValidateConsensus() error {
+func (n *NodeControl) checkAndValidateConsensus() (bool, error) {
 	// validate if the consensus passed in config is correct.
 	// for besu bypass this check as it does not provide any rpc api to confirm consensus
-	if !n.consValid && !n.config.BasicConfig.IsBesuClient() {
+	if !n.consValid && n.config.BasicConfig.IsQuorumClient() {
 		if err := n.config.IsConsensusValid(); err != nil {
-			return err
+			return false, err
 		}
 		n.consValid = true
 	}

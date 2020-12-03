@@ -33,7 +33,7 @@ type IstanbulConsensus struct {
 }
 
 const (
-	validatorDownSealDiff = 3
+	validatorDownSealDiff = 2
 
 	// Istanbul RPC APIs
 	IstanbulStatusReq      = `{"jsonrpc":"2.0", "method":"istanbul_status", "params":[], "id":67}`
@@ -62,29 +62,29 @@ func (i *IstanbulConsensus) getIstanbulIsValidator() (bool, error) {
 
 // TODO - if the number of validators are more than 64 this will not work as expected as signers return data for last 64 blocks only
 // ValidateShutdown implements Consensus.ValidateShutdown
-func (i *IstanbulConsensus) ValidateShutdown() error {
+func (i *IstanbulConsensus) ValidateShutdown() (bool, error) {
 	isValidator, err := i.getIstanbulIsValidator()
 	if err != nil {
 		log.Error("ValidateShutdown - istanbul isValidator check failed", "err", err)
-		return err
+		return isValidator, err
 	}
 
 	if !isValidator {
 		log.Info("ValidateShutdown - istanbul non-validator node, ok to shutdown")
-		return nil
+		return isValidator, nil
 	}
 
 	activity, err := i.getIstanbulSealerActivity()
 	if err != nil {
 		log.Error("ValidateShutdown - istanbul status check failed", "err", err)
-		return err
+		return isValidator, err
 	}
 
 	totalValidators := len(activity.SealerActivity)
 	maxSealBlocks := activity.NumBlocks / totalValidators
 
 	if activity.NumBlocks == 0 {
-		return errors.New("istanbul consensus check failed - block minting not started at network")
+		return isValidator, errors.New("istanbul consensus check failed - block minting not started at network")
 	}
 
 	var numNodesDown = 0
@@ -102,8 +102,8 @@ func (i *IstanbulConsensus) ValidateShutdown() error {
 	if numNodesDown >= numOfNodesThatCanBeDown {
 		errMsg := fmt.Sprintf("istanbul consensus check - the number of nodes currently down has reached threshold, numOfNodesThatCanBeDown:%d numNodesDown:%d", numOfNodesThatCanBeDown, numNodesDown)
 		log.Error(errMsg)
-		return errors.New(errMsg)
+		return isValidator, errors.New(errMsg)
 	}
 
-	return nil
+	return isValidator, nil
 }
