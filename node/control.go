@@ -340,18 +340,16 @@ func (n *NodeControl) StopNode() bool {
 }
 
 func (n *NodeControl) checkAndValidateConsensus() error {
-	// validate if the consensus passed in config is correct
-	if !n.consValid {
+	// validate if the consensus passed in config is correct.
+	// for besu bypass this check as it does not provide any rpc api to confirm consensus
+	if !n.consValid && !n.config.BasicConfig.IsBesuClient() {
 		if err := n.config.IsConsensusValid(); err != nil {
 			return err
 		}
 		n.consValid = true
 	}
 	// perform consensus level validations for node hibernation
-	if err := n.consensus.ValidateShutdown(); err != nil {
-		return err
-	}
-	return nil
+	return n.consensus.ValidateShutdown()
 }
 
 // stopProcesses stops blockchain client and privacy manager processes in parallel
