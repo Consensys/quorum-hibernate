@@ -86,7 +86,8 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 	if node.config.BasicConfig.IsQuorumClient() {
 		node.txh = privatetx.NewQuorumTxHandler(node.config)
 	} // TODO add tx handler for Besu
-	updateInactivityTimeWithRandomBuff(node)
+	node.config.BasicConfig.InactivityTime += getRandomBufferTime(node.config.BasicConfig.InactivityTime)
+	log.Debug("Node config - inactivity time after random buffer", "InactivityTime", node.config.BasicConfig.InactivityTime)
 	return node
 }
 
@@ -94,16 +95,14 @@ func (n *NodeControl) WithPrivMan() bool {
 	return n.withPrivMan
 }
 
-func updateInactivityTimeWithRandomBuff(n *NodeControl) {
+func getRandomBufferTime(inactivityTime int) int {
 	// introduce random delay of 2% of inactivity time that should
 	// be added on top of inactivity time
-	delay := (2 * n.config.BasicConfig.InactivityTime) / 100
+	delay := (2 * inactivityTime) / 100
 	if delay < 10 {
 		delay = 10
 	}
-	oldv := n.config.BasicConfig.InactivityTime
-	n.config.BasicConfig.InactivityTime += core.GetRandomRetryWaitTime(1, delay)
-	log.Info("updateInactivityTimeWithRandomBuff - updated inactive time", "old", oldv, "new", n.config.BasicConfig.InactivityTime)
+	return core.GetRandomRetryWaitTime(1, delay)
 }
 
 func populateConsensusHandler(n *NodeControl) {
@@ -321,7 +320,7 @@ func (n *NodeControl) StopNode() bool {
 	// going down at the same time
 	retryCount := 1
 	for retryCount <= core.Peer2PeerValidationRetryLimit {
-		w := core.GetRandomRetryWaitTime()
+		w := core.GetRandomRetryWaitTime(10, 1000)
 		log.Info("StopNode - waiting for p2p validation try", "wait time in seconds", w)
 		time.Sleep(time.Duration(w) * time.Millisecond)
 		peersStatus, err = n.nm.ValidatePeers()
