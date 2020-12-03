@@ -55,7 +55,7 @@ func (nm *NodeManager) ValidatePeerPrivateTxStatus(participantKeys []string) (bo
 			break
 		}
 	}
-	log.Info("ValidatePeerPrivateTxStatus completed", "final status", finalStatus, "statusArr", statusArr)
+	log.Debug("ValidatePeerPrivateTxStatus completed", "final status", finalStatus, "statusArr", statusArr)
 	return finalStatus, nil
 }
 
@@ -124,7 +124,7 @@ func (nm *NodeManager) peerPrivateTxStatus(participantKeys []string) []bool {
 	}
 	wg.Wait()
 	<-resDoneCh
-	log.Info("peerPrivateTxStatus - completed", "status", statusArr)
+	log.Debug("peerPrivateTxStatus - completed", "status", statusArr)
 	return statusArr
 }
 
@@ -139,7 +139,7 @@ func (nm *NodeManager) ValidatePeers() ([]NodeStatusInfo, error) {
 
 	shutdownInProgress := false
 	for _, n := range statusArr {
-		if n.Status == types.ShutdownInprogress || n.Status == types.WaitingPeerConfirmation {
+		if n.Status == types.ShutdownInprogress {
 			shutdownInProgress = true
 			break
 		}
@@ -211,10 +211,10 @@ func (nm *NodeManager) peerStatus() (int, []NodeStatusInfo) {
 			defer wg.Done()
 			var res = NodeManagerNodeStatusResult{}
 			if err := core.CallRPC(nmc.RpcUrl, nodeStatusReq, &res); err != nil {
-				log.Error("peerStatus - NodeStatus - failed", "err", err)
+				log.Error("peerStatus - ClientStatus - failed", "err", err)
 			}
 			if res.Error != nil {
-				log.Error("peerStatus - NodeStatus - response failed", "err", res.Error)
+				log.Error("peerStatus - ClientStatus - response failed", "err", res.Error)
 			}
 			log.Debug("peerStatus", "res", res, "cfg", n)
 			resCh <- res
@@ -222,6 +222,6 @@ func (nm *NodeManager) peerStatus() (int, []NodeStatusInfo) {
 	}
 	wg.Wait()
 	<-resDoneCh
-	log.Debug("peerStatus - completed", "status", statusArr)
+	log.Info("peerStatus - completed", "status", statusArr)
 	return expResCnt, statusArr
 }

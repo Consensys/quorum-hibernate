@@ -87,7 +87,7 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if w.ps.nodeCtrl.PrepareNode() {
+	if w.ps.nodeCtrl.PrepareClient() {
 		log.Info("ServeHTTP-WS - node prepared to accept request")
 	} else {
 		log.Error("ServeHTTP-WS - failed to start node")
@@ -240,7 +240,7 @@ func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc c
 				return
 			}
 			w.ps.nodeCtrl.ResetInactiveTime()
-			if w.ps.nodeCtrl.PrepareNode() {
+			if w.ps.nodeCtrl.PrepareClient() {
 				log.Info("replicateWebsocketConn - prepared to accept request")
 			} else {
 				log.Error("replicateWebsocketConn - prepare node failed")

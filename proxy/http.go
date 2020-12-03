@@ -34,7 +34,7 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 
 			log.Info("httpHandler - request", "path", req.RequestURI)
 
-			if ps.nodeCtrl.PrepareNode() {
+			if ps.nodeCtrl.PrepareClient() {
 				log.Debug("httpHandler - prepared to accept request")
 			} else {
 				log.Error("httpHandler - prepare node failed")

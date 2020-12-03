@@ -55,9 +55,9 @@ func (nm *InactivityMonitor) processInactivity() {
 		// reset inactivity as node is busy, to prevent shutdown right after node start up
 		nm.ResetInactivity()
 	} else {
-		nm.nodeCtrl.RequestStopNode()
+		nm.nodeCtrl.RequestStopClient()
 		log.Info("processInactivity - requested node shutdown, waiting for shutdown complete")
-		status := nm.nodeCtrl.WaitStopNode()
+		status := nm.nodeCtrl.WaitStopClient()
 		log.Info("processInactivity - resuming inactivity time tracker", "shutdown status", status)
 		nm.ResetInactivity()
 	}
