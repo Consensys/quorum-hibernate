@@ -34,7 +34,7 @@ type NodeControl struct {
 	txh                 privatetx.TxHandler  // Transaction handler
 	withPrivMan         bool                 // indicates if the node is running with a privacy manage
 	consValid           bool                 // indicates if network level consensus is valid
-	clntStatus          types.ClientStatus   // combined status of blockchain client and privacy manager processes
+	clientStatus        types.ClientStatus   // combined status of blockchain client and privacy manager processes
 	nodeStatus          types.NodeStatus     // status of node manager
 	inactivityResetCh   chan bool            // channel to reset inactivity
 	stopClntCh          chan bool            // channel to request stop node
@@ -46,6 +46,10 @@ type NodeControl struct {
 	startStopMux        sync.Mutex           // lock for starting and stopping node
 	clntStatusMux       sync.Mutex           // lock for setting the client status
 	nodeStatusMux       sync.Mutex           // lock for setting the node status
+}
+
+func (n *NodeControl) ClientStatus() types.ClientStatus {
+	return n.clientStatus
 }
 
 func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
@@ -148,7 +152,7 @@ func (n *NodeControl) GetTxHandler() privatetx.TxHandler {
 func (n *NodeControl) SetClntStatus(ns types.ClientStatus) {
 	defer n.clntStatusMux.Unlock()
 	n.clntStatusMux.Lock()
-	n.clntStatus = ns
+	n.clientStatus = ns
 }
 
 func (n *NodeControl) SetNodeStatus(ns types.NodeStatus) {
@@ -160,14 +164,17 @@ func (n *NodeControl) SetNodeStatus(ns types.NodeStatus) {
 // IsClientUp performs up check for blockchain client and privacy manager and returns the combined status
 // if both blockchain client and privacy manager are up, the node status is up(true) else down(false)
 func (n *NodeControl) IsClientUp() bool {
-	bcclntStatus, pmStatus := n.checkUpStatus()
-	log.Debug("IsClientUp", "blockchain client", bcclntStatus, "privacy manager", pmStatus)
-	if bcclntStatus && pmStatus {
-		n.SetClntStatus(types.Up)
-	} else {
-		n.SetClntStatus(types.Down)
+	if n.ClientStatus() != types.Down {
+		bcclntStatus, pmStatus := n.checkUpStatus()
+		log.Debug("IsClientUp", "blockchain client", bcclntStatus, "privacy manager", pmStatus)
+		if bcclntStatus && pmStatus {
+			n.SetClntStatus(types.Up)
+		} else {
+			n.SetClntStatus(types.Down)
+		}
+		return bcclntStatus && pmStatus
 	}
-	return bcclntStatus && pmStatus
+	return false
 }
 
 // checkUpStatus checks up status of blockchain client and privacy manager in parallel
@@ -294,7 +301,7 @@ func (n *NodeControl) WaitStopClient() bool {
 
 // TODO handle error if node failed to start
 func (n *NodeControl) PrepareClient() bool {
-	if n.clntStatus == types.Up {
+	if n.clientStatus == types.Up {
 		log.Debug("PrepareClient - node is up")
 		return true
 	} else {
@@ -308,7 +315,7 @@ func (n *NodeControl) StopClient() bool {
 	defer n.startStopMux.Unlock()
 	n.startStopMux.Lock()
 
-	if n.clntStatus == types.Down {
+	if n.clientStatus == types.Down {
 		log.Debug("StopClient - node is already down")
 		return true
 	}
@@ -392,7 +399,7 @@ func (n *NodeControl) stopProcesses() (bool, bool) {
 func (n *NodeControl) StartClient() bool {
 	defer n.startStopMux.Unlock()
 	n.startStopMux.Lock()
-	if n.clntStatus == types.Up {
+	if n.clientStatus == types.Up {
 		log.Debug("StartClient - node is already up")
 		return true
 	}
