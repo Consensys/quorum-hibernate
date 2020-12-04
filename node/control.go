@@ -152,8 +152,8 @@ func (n *NodeControl) SetClntStatus(ns types.ClientStatus) {
 }
 
 func (n *NodeControl) SetNodeStatus(ns types.NodeStatus) {
-	defer n.clntStatusMux.Unlock()
-	n.clntStatusMux.Lock()
+	defer n.nodeStatusMux.Unlock()
+	n.nodeStatusMux.Lock()
 	n.nodeStatus = ns
 }
 
@@ -295,7 +295,7 @@ func (n *NodeControl) WaitStopClient() bool {
 // TODO handle error if node failed to start
 func (n *NodeControl) PrepareClient() bool {
 	if n.clntStatus == types.Up {
-		log.Info("PrepareClient - node is up")
+		log.Debug("PrepareClient - node is up")
 		return true
 	} else {
 		status := n.StartClient()
@@ -309,7 +309,7 @@ func (n *NodeControl) StopClient() bool {
 	n.startStopMux.Lock()
 
 	if n.clntStatus == types.Down {
-		log.Info("StopClient - node is already down")
+		log.Debug("StopClient - node is already down")
 		return true
 	}
 	if err := n.IsNodeBusy(); err != nil {

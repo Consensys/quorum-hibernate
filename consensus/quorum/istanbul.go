@@ -97,7 +97,7 @@ func (i *IstanbulConsensus) ValidateShutdown() (bool, error) {
 
 	numOfNodesThatCanBeDown := (totalValidators - 1) / 3
 
-	log.Info("ValidateShutdown - istanbul consensus check", "numOfNodesThatCanBeDown", numOfNodesThatCanBeDown, "numNodesDown", numNodesDown, "activityMap", activity, "isvalidator", isValidator)
+	log.Debug("ValidateShutdown - istanbul consensus check", "numOfNodesThatCanBeDown", numOfNodesThatCanBeDown, "numNodesDown", numNodesDown, "activityMap", activity)
 
 	if numNodesDown >= numOfNodesThatCanBeDown {
 		errMsg := fmt.Sprintf("istanbul consensus check - the number of nodes currently down has reached threshold, numOfNodesThatCanBeDown:%d numNodesDown:%d", numOfNodesThatCanBeDown, numNodesDown)
