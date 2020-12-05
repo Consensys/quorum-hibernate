@@ -1,12 +1,13 @@
 package process
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net/http"
 	"os/exec"
+	"syscall"
 
 	"github.com/ConsenSysQuorum/node-manager/core"
-
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
@@ -35,22 +36,28 @@ const BlockNumberReq = `{"jsonrpc":"2.0", "method":"eth_blockNumber", "params":[
 
 var httpClnt = core.NewHttpClient()
 
-// TODO when blockchain client is started by Node Manager it starts and runs ok. but when nodeManager is shutdown, blockchain client gets shutdown
-func ExecuteShellCommand(desc string, cmdArr []string) error {
-	log.Debug("ExecuteShellCommand", "desc", desc, "command", cmdArr)
+func ExecuteShellCommand(cmdArr []string) error {
+	log.Debug("ExecuteShellCommand", "cmd", cmdArr)
 	var cmd *exec.Cmd
 	if len(cmdArr) == 1 {
 		cmd = exec.Command(cmdArr[0])
 	} else {
 		cmd = exec.Command(cmdArr[0], cmdArr[1:]...)
-
 	}
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: true, // SIGINT interrupts the entire process group - to prevent SIGINT of node-manager killing this child process, give the child its own process group
+	}
+
+	errOut := &bytes.Buffer{}
+	cmd.Stderr = errOut
+
 	err := cmd.Run()
 	if err != nil {
-		log.Error("ExecuteShellCommand - cmd failed", "desc", desc, "err", err)
+		log.Error("ExecuteShellCommand failed", "cmd", cmdArr, "out", string(errOut.Bytes()), "err", err)
 		return err
 	}
-	log.Debug("ExecuteShellCommand - cmd success", "desc", desc)
+	log.Debug("ExecuteShellCommand success", "cmd", cmdArr)
 	return nil
 }
 
