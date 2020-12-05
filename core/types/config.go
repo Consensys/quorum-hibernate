@@ -329,7 +329,7 @@ func (c BasicConfig) IsValid() error {
 	}
 
 	if c.UpchkPollingInterval <= 0 {
-		return errors.New("up check polling interval must be greater than zero")
+		return errors.New("upcheckPollingInterval must be greater than zero")
 	}
 
 	if c.BcClntProcess == nil {
@@ -396,10 +396,10 @@ func (c BasicConfig) isConsensusValid() error {
 
 func (c BasicConfig) IsClientTypeValid() error {
 	if c.ClientType == "" {
-		return errors.New("client type is empty")
+		return errors.New("clientType is empty")
 	}
 	if !c.IsQuorumClient() && !c.IsBesuClient() {
-		return errors.New("invalid client type. supports only quorum or besu")
+		return errors.New("invalid clientType. supports only quorum or besu")
 	}
 	return nil
 }

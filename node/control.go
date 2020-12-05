@@ -305,6 +305,7 @@ func (n *NodeControl) PrepareClient() bool {
 		log.Debug("PrepareClient - node is up")
 		return true
 	} else {
+		log.Debug("PrepareClient - starting node")
 		status := n.StartClient()
 		log.Debug("PrepareClient - node start completed", "status", status)
 		return status

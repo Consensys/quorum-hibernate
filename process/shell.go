@@ -44,7 +44,7 @@ func (sp *ShellProcessControl) IsUp() bool {
 		s, err = IsBlockchainClientUp(sp.bcclntRpcUrl)
 		if err != nil {
 			sp.setStatus(false)
-			log.Error("IsUp - blockchain client is down", "err", err)
+			log.Info("IsUp - blockchain client is down", "err", err)
 		} else {
 			sp.setStatus(s)
 		}
@@ -52,7 +52,7 @@ func (sp *ShellProcessControl) IsUp() bool {
 		s, err = IsPrivacyManagerUp(sp.privManUpchkUrl)
 		if err != nil {
 			sp.setStatus(false)
-			log.Error("IsUp - privacy manager is down", "err", err)
+			log.Info("IsUp - privacy manager is down", "err", err)
 		} else {
 			sp.setStatus(s)
 		}

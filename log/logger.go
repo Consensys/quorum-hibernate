@@ -15,7 +15,7 @@ const (
 )
 
 func init() {
-	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, ForceColors: true})
+	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
 	logrus.SetLevel(logrus.InfoLevel)
 	logrus.SetOutput(os.Stdout)
 }

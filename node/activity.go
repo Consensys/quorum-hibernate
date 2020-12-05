@@ -35,7 +35,7 @@ func (nm *InactivityMonitor) trackInactivity() {
 			if nm.inactiveTimeCount == nm.nodeCtrl.config.BasicConfig.InactivityTime {
 				nm.processInactivity()
 			} else {
-				log.Debug("trackInactivity - inactivity ticking", "inactive seconds", nm.inactiveTimeCount)
+				log.Trace("trackInactivity - inactivity ticking", "inactive seconds", nm.inactiveTimeCount)
 				nm.inactiveTimeCount++
 			}
 		case <-nm.nodeCtrl.inactivityResetCh:
