@@ -12,6 +12,11 @@ import (
 	"github.com/naoina/toml"
 )
 
+const (
+	STRICT_MODE = "STRICT"
+	NORMAL_MODE = "NORMAL"
+)
+
 // namedValidationError provides additional context to an error, useful for providing context when there is a validation error with an element in an array
 type namedValidationError struct {
 	name, errMsg string
@@ -154,6 +159,7 @@ func (c RPCServerConfig) IsValid() error {
 
 type BasicConfig struct {
 	Name                  string           `toml:"name"`                   // name of this node manager
+	RunMode               string           `toml:"runMode"`                // can be strict or normal. strict mode keeps consensus nodes alive always
 	BcClntRpcUrl          string           `toml:"bcClntRpcUrl"`           // RPC url of blockchain client managed by this node manager
 	PrivManUpcheckUrl     string           `toml:"privManUpcheckUrl"`      // Upcheck url of privacy manager managed by this node manager
 	PrivManKey            string           `toml:"privManKey"`             // public key of privacy manager managed by this node manager
@@ -207,6 +213,11 @@ func ReadNodeConfig(configFile string) (NodeConfig, error) {
 	// validate config rules
 	if err = input.BasicConfig.IsValid(); err != nil {
 		return NodeConfig{}, err
+	}
+
+	// default populate the run mode to strict
+	if input.BasicConfig.RunMode == "" {
+		input.BasicConfig.RunMode = STRICT_MODE
 	}
 
 	return input, nil
@@ -316,6 +327,10 @@ func (c BasicConfig) IsValid() error {
 
 	if c.NodeManagerConfigFile == "" {
 		return errors.New("nodeManagerConfigFile is empty")
+	}
+
+	if c.RunMode != "" && (c.RunMode != STRICT_MODE && c.RunMode != NORMAL_MODE) {
+		return errors.New("invalid value given for runMode")
 	}
 
 	err := c.isConsensusValid()

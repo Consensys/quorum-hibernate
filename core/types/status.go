@@ -14,5 +14,6 @@ type NodeStatus uint8
 const (
 	ShutdownInprogress NodeStatus = iota // indicates that node manager is shutting down both blockchain client and privacy manager
 	StartupInprogress                    // indicates that node manager is starting up both blockchain client and privacy manager
-	OK                                   // default status of node manager when its not doing anything
+	ConsensusWait
+	OK // default status of node manager when its not doing anything
 )

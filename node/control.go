@@ -18,6 +18,8 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
+const CONSENSUS_WAIT_TIME = 60
+
 // NodeControl represents a node manager controller.
 // It tracks blockchain client/privacyManager processes' inactivity and it allows inactivity to be reset when
 // there is some activity.
@@ -335,7 +337,7 @@ func (n *NodeControl) StopClient() bool {
 	}
 	log.Info("StopClient - consensus check passed, node can be shutdown")
 
-	if consensusNode {
+	if consensusNode && n.config.BasicConfig.RunMode != types.STRICT_MODE {
 		// consensus is ok. check with network to prevent multiple nodes
 		// going down at the same time
 		w := core.GetRandomRetryWaitTime(10, 5000)
@@ -354,7 +356,15 @@ func (n *NodeControl) StopClient() bool {
 	bcStatus, pmStatus := n.stopProcesses()
 	if bcStatus && pmStatus {
 		n.SetClntStatus(types.Down)
+
+		// for IBFT and Clique, since we rely on block signed data
+		// do not want to mark the QNM status as OK immediately
+		// want to allow enough sleep period so that the consensus
+		// engine can mint enough new blocks before another node hibernates
+		n.SetNodeStatus(types.ConsensusWait)
+		time.Sleep(CONSENSUS_WAIT_TIME * time.Second)
 		n.SetNodeStatus(types.OK)
+
 	}
 	// if stopping of blockchain client or privacy manager fails Status will remain as ShutdownInprogress and node manager will not process any requests from clients
 	// it will need some manual intervention to set it to the correct status
