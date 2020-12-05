@@ -237,16 +237,21 @@ func (n *NodeControl) ResetInactiveTime() {
 
 func (n *NodeControl) startClientStatusMonitor() {
 	go func() {
-		timer := time.NewTicker(time.Duration(n.config.BasicConfig.UpchkPollingInterval) * time.Second)
+		var (
+			isClientUp bool
+			timer      = time.NewTicker(time.Duration(n.config.BasicConfig.UpchkPollingInterval) * time.Second)
+		)
 		defer timer.Stop()
-		log.Info("NodeStatusMonitor - node status monitor started")
+
+		log.Info("clientStatusMonitor started")
 		for {
+			isClientUp = n.IsClientUp()
+			log.Debug("clientStatusMonitor", "isClientUp", isClientUp)
 			select {
 			case <-timer.C:
-				status := n.IsClientUp()
-				log.Debug("startClientStatusMonitor", "status", status)
+				continue
 			case <-n.clntStatMonStopCh:
-				log.Info("startClientStatusMonitor - node status monitor stopped")
+				log.Info("clientStatusMonitor stopped")
 				return
 			}
 		}
