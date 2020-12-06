@@ -36,6 +36,7 @@ const (
 	validatorDownSealDiff = 2
 
 	// Istanbul RPC APIs
+	//TODO(cjh) deterministic rpc request ids - check other rpc requests too
 	IstanbulStatusReq      = `{"jsonrpc":"2.0", "method":"istanbul_status", "params":[], "id":67}`
 	IstanbulIsValidatorReq = `{"jsonrpc":"2.0", "method":"istanbul_isValidator", "params":[], "id":67}`
 )
@@ -81,6 +82,11 @@ func (i *IstanbulConsensus) ValidateShutdown() (bool, error) {
 	}
 
 	totalValidators := len(activity.SealerActivity)
+
+	if totalValidators == 0 {
+		return isValidator, errors.New("istanbul consensus check failed - no signers")
+	}
+
 	maxSealBlocks := activity.NumBlocks / totalValidators
 
 	if activity.NumBlocks == 0 {

@@ -11,7 +11,7 @@ import (
 )
 
 func TestRaftConsensus_ValidateShutdown_Minter_Invalid(t *testing.T) {
-	mockServer := startMockServer(t, `{"result": "minter"}`, "")
+	mockServer := startMockRaftServer(t, `{"result": "minter"}`, "")
 	defer mockServer.Close()
 
 	raft := NewRaftConsensus(&types.NodeConfig{
@@ -26,7 +26,7 @@ func TestRaftConsensus_ValidateShutdown_Minter_Invalid(t *testing.T) {
 }
 
 func TestRaftConsensus_ValidateShutdown_Learner_Valid(t *testing.T) {
-	mockServer := startMockServer(t, `{"result": "learner"}`, "")
+	mockServer := startMockRaftServer(t, `{"result": "learner"}`, "")
 	defer mockServer.Close()
 
 	raft := NewRaftConsensus(&types.NodeConfig{
@@ -46,7 +46,7 @@ func TestRaftConsensus_ValidateShutdown_Verifier_NotEnoughActivePeers_Invalid(t 
 		wantErrMsg                          string
 	}{
 		{
-			name:            "notEnoughActivePeers",
+			name:            "notEnoughPeers",
 			raftRoleResp:    `{"result": "verifier"}`,
 			raftClusterResp: `{"result": [{"NodeActive":true},{"NodeActive":true}]}`,
 			wantErrMsg:      "raft quorum failed, activeNodes=2 minimumActiveNodesRequired=2 cannot be shutdown",
@@ -67,7 +67,7 @@ func TestRaftConsensus_ValidateShutdown_Verifier_NotEnoughActivePeers_Invalid(t 
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockServer := startMockServer(t, tt.raftRoleResp, tt.raftClusterResp)
+			mockServer := startMockRaftServer(t, tt.raftRoleResp, tt.raftClusterResp)
 			defer mockServer.Close()
 
 			raft := NewRaftConsensus(&types.NodeConfig{
@@ -87,7 +87,7 @@ func TestRaftConsensus_ValidateShutdown_Verifier_NotEnoughActivePeers_Invalid(t 
 	}
 }
 
-func startMockServer(t *testing.T, raftRoleResp, raftClusterResp string) *httptest.Server {
+func startMockRaftServer(t *testing.T, raftRoleResp, raftClusterResp string) *httptest.Server {
 	serverMux := http.NewServeMux()
 	serverMux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		type rpcRequest struct {
