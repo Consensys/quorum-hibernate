@@ -45,7 +45,7 @@ func (n *NodeRPCAPIs) PrepareForPrivateTx(_ *http.Request, from *string, reply *
 	if err := n.qn.IsNodeBusy(); err != nil {
 		*reply = PrivateTxPrepReply{Status: false}
 	} else {
-		if n.qn.clientStatus == types.Down {
+		if n.qn.ClientStatus() == types.Down {
 			// send the response immediately and run prepare node in the background
 			*reply = PrivateTxPrepReply{Status: false}
 			go func() {

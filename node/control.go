@@ -51,6 +51,8 @@ type NodeControl struct {
 }
 
 func (n *NodeControl) ClientStatus() types.ClientStatus {
+	n.clntStatusMux.Lock()
+	defer n.clntStatusMux.Unlock()
 	return n.clientStatus
 }
 
@@ -237,16 +239,21 @@ func (n *NodeControl) ResetInactiveTime() {
 
 func (n *NodeControl) startClientStatusMonitor() {
 	go func() {
-		timer := time.NewTicker(time.Duration(n.config.BasicConfig.UpchkPollingInterval) * time.Second)
+		var (
+			isClientUp bool
+			timer      = time.NewTicker(time.Duration(n.config.BasicConfig.UpchkPollingInterval) * time.Second)
+		)
 		defer timer.Stop()
-		log.Info("NodeStatusMonitor - node status monitor started")
+
+		log.Info("clientStatusMonitor started")
 		for {
+			isClientUp = n.IsClientUp()
+			log.Debug("clientStatusMonitor", "isClientUp", isClientUp)
 			select {
 			case <-timer.C:
-				status := n.IsClientUp()
-				log.Debug("startClientStatusMonitor", "status", status)
+				continue
 			case <-n.clntStatMonStopCh:
-				log.Info("startClientStatusMonitor - node status monitor stopped")
+				log.Info("clientStatusMonitor stopped")
 				return
 			}
 		}
@@ -303,7 +310,7 @@ func (n *NodeControl) WaitStopClient() bool {
 
 // TODO handle error if node failed to start
 func (n *NodeControl) PrepareClient() bool {
-	if n.clientStatus == types.Up {
+	if n.ClientStatus() == types.Up {
 		log.Debug("PrepareClient - node is up")
 		return true
 	} else {
@@ -318,7 +325,7 @@ func (n *NodeControl) StopClient() bool {
 	defer n.startStopMux.Unlock()
 	n.startStopMux.Lock()
 
-	if n.clientStatus == types.Down {
+	if n.ClientStatus() == types.Down {
 		log.Debug("StopClient - node is already down")
 		return true
 	}
@@ -410,7 +417,7 @@ func (n *NodeControl) stopProcesses() (bool, bool) {
 func (n *NodeControl) StartClient() bool {
 	defer n.startStopMux.Unlock()
 	n.startStopMux.Lock()
-	if n.clientStatus == types.Up {
+	if n.ClientStatus() == types.Up {
 		log.Debug("StartClient - node is already up")
 		return true
 	}
