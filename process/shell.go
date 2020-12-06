@@ -69,7 +69,7 @@ func (sp *ShellProcessControl) Stop() error {
 		log.Debug("Stop - process is already down", "name", sp.cfg.Name)
 		return nil
 	}
-	if err := ExecuteShellCommand("Stop - "+sp.cfg.Name, sp.cfg.StopCommand); err == nil {
+	if err := ExecuteShellCommand(sp.cfg.StopCommand); err == nil {
 		if sp.WaitToBeDown() {
 			sp.setStatus(false)
 			log.Debug("Stop - stopped", "process", sp.cfg.Name, "status", sp.status)
@@ -94,7 +94,7 @@ func (sp *ShellProcessControl) Start() error {
 		log.Info("Start - process is already up", "name", sp.cfg.Name)
 		return nil
 	}
-	if err := ExecuteShellCommand("start privacy manager node", sp.cfg.StartCommand); err == nil {
+	if err := ExecuteShellCommand(sp.cfg.StartCommand); err == nil {
 		//wait for process to come up
 		if sp.WaitToComeUp() {
 			sp.setStatus(true)
