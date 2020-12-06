@@ -68,27 +68,29 @@ func (r *RaftConsensus) getRaftClusterInfo(rpcUrl string) ([]RaftClusterEntry, e
 
 // ValidateShutdown implements Consensus.ValidateShutdown
 func (r *RaftConsensus) ValidateShutdown() (bool, error) {
-	isPeer := false
+	var isConsensusNode bool
+
 	role, err := r.getRole(r.cfg.BasicConfig.BcClntRpcUrl)
 	if err != nil {
 		log.Error("ValidateShutdown - raft role failed", "err", err)
-		return isPeer, err
+		return isConsensusNode, err
 	}
 
-	if role != LEARNER {
-		isPeer = true
-		if role == MINTER {
-			return isPeer, errors.New("ValidateShutdown - minter node, cannot be shutdown")
-		}
-	} else {
+	if role == LEARNER {
 		log.Debug("ValidateShutdown - raft consensus check - role:learner, ok to shutdown")
-		return isPeer, nil
+		return isConsensusNode, nil
+	}
+
+	isConsensusNode = true
+
+	if role == MINTER {
+		return isConsensusNode, errors.New("minter node, cannot be shutdown")
 	}
 
 	cluster, err := r.getRaftClusterInfo(r.cfg.BasicConfig.BcClntRpcUrl)
 	if err != nil {
 		log.Error("ValidateShutdown - raft cluster failed", "err", err)
-		return isPeer, err
+		return isConsensusNode, err
 	}
 
 	activeNodes := 0
@@ -98,11 +100,11 @@ func (r *RaftConsensus) ValidateShutdown() (bool, error) {
 			activeNodes++
 		}
 	}
-	minActiveNodes := (totalNodes / 2) + 1
+	minActiveNodes := (totalNodes / 2) + 1 //TODO(cjh) need floor or ceil?
 	log.Info("ValidateShutdown - raft consensus check", "role", role, "minActiveNodes", minActiveNodes, "totalNodes", totalNodes, "ActiveNodes", activeNodes)
 
 	if activeNodes <= minActiveNodes {
-		return isPeer, fmt.Errorf("ValidateShutdown - raft quorum failed, activeNodes=%d minimmumActiveNodesRequired=%d cannot be shutdown", activeNodes, minActiveNodes)
+		return isConsensusNode, fmt.Errorf("raft quorum failed, activeNodes=%d minimumActiveNodesRequired=%d cannot be shutdown", activeNodes, minActiveNodes)
 	}
-	return isPeer, nil
+	return isConsensusNode, nil
 }
