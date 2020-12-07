@@ -239,7 +239,7 @@ func (w *WebsocketProxy) replicateWebsocketConn(dst, src *websocket.Conn, errc c
 				w.closeConnWithError(dst, err)
 				return
 			}
-			w.ps.nodeCtrl.ResetInactiveTime()
+			w.ps.nodeCtrl.ResetInactiveSyncTime()
 			if w.ps.nodeCtrl.PrepareClient() {
 				log.Info("replicateWebsocketConn - prepared to accept request")
 			} else {

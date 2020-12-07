@@ -168,6 +168,7 @@ type BasicConfig struct {
 	UpchkPollingInterval  int              `toml:"upcheckPollingInterval"` // up check polling interval in seconds for the node
 	NodeManagerConfigFile string           `toml:"nodeManagerConfigFile"`  // node manager config file path
 	InactivityTime        int              `toml:"inactivityTime"`         // inactivity time for blockchain client and privacy manager
+	ResyncTime            int              `toml:"resyncTime"`             // time after which
 	Server                *RPCServerConfig `toml:"server"`                 // RPC server config of this node manager
 	BcClntProcess         *ProcessConfig   `toml:"bcClntProcess"`          // blockchain client process managed by this node manager
 	PrivManProcess        *ProcessConfig   `toml:"privManProcess"`         // privacy manager process managed by this node manager
