@@ -360,6 +360,10 @@ func (c BasicConfig) IsValid() error {
 		return errors.New("inactivityTime must be greater than or equal to 60 (seconds)")
 	}
 
+	if c.ResyncTime != 0 && c.ResyncTime < c.InactivityTime {
+		return errors.New("resyncTime must be reasonably greater than or inactivityTime")
+	}
+
 	if c.Server == nil {
 		return errors.New("server is empty")
 	}

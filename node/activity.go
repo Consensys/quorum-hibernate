@@ -51,6 +51,10 @@ func (nm *InactivityMonitor) trackInactivity() {
 // timer to bring up the node after certain period of hibernation to
 // resync with the network
 func (nm *InactivityMonitor) trackResyncTimer() {
+	if nm.nodeCtrl.config.BasicConfig.ResyncTime == 0 {
+		// resyncing feature not enabled. return
+		return
+	}
 	resyncTime := time.Duration(nm.nodeCtrl.config.BasicConfig.ResyncTime) * time.Second
 	timer := time.NewTimer(resyncTime)
 	defer timer.Stop()
