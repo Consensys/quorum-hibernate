@@ -27,7 +27,7 @@ func NewNodeRPCAPIs(qn *NodeControl) *NodeRPCAPIs {
 // IsNodeUp checks if the node is up and returns the node's up status
 func (n *NodeRPCAPIs) IsNodeUp(_ *http.Request, from *string, reply *NodeUpReply) error {
 	log.Debug("IsNodeUp - rpc call isNodeUp", "from", *from)
-	if !n.qn.IsClientUp() {
+	if !n.qn.IsClientUp(false) {
 		reply.Status = false
 		log.Debug("IsNodeUp - node not up")
 		return nil
