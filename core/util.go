@@ -49,6 +49,8 @@ func CallRPC(rpcUrl string, rpcReq []byte, resData interface{}) error {
 	if err != nil {
 		return fmt.Errorf("CallRPC - do req failed err=%v", err)
 	}
+
+	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
 		log.Debug("CallRPC - response Body:", string(body))
