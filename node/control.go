@@ -165,8 +165,11 @@ func (n *NodeControl) SetNodeStatus(ns types.NodeStatus) {
 
 // IsClientUp performs up check for blockchain client and privacy manager and returns the combined status
 // if both blockchain client and privacy manager are up, the node status is up(true) else down(false)
-func (n *NodeControl) IsClientUp() bool {
-	if n.ClientStatus() != types.Down {
+func (n *NodeControl) IsClientUp(connectToClient bool) bool {
+	// it is possible that QNM status of the node is down and the node was brought up
+	// in such cases, with forceMode true, a direct call to client is done to get the
+	// real status
+	if n.ClientStatus() != types.Down || connectToClient {
 		bcclntStatus, pmStatus := n.checkUpStatus()
 		log.Debug("IsClientUp", "blockchain client", bcclntStatus, "privacy manager", pmStatus)
 		if bcclntStatus && pmStatus {
@@ -246,7 +249,7 @@ func (n *NodeControl) startClientStatusMonitor() {
 
 		log.Info("clientStatusMonitor started")
 		for {
-			isClientUp = n.IsClientUp()
+			isClientUp = n.IsClientUp(false)
 			log.Debug("clientStatusMonitor", "isClientUp", isClientUp)
 			select {
 			case <-timer.C:
@@ -292,15 +295,10 @@ func (n *NodeControl) WaitStopClient() bool {
 
 // TODO handle error if node failed to start
 func (n *NodeControl) PrepareClient() bool {
-	if n.ClientStatus() == types.Up {
-		log.Debug("PrepareClient - node is up")
-		return true
-	} else {
-		log.Debug("PrepareClient - starting node")
-		status := n.StartClient()
-		log.Debug("PrepareClient - node start completed", "status", status)
-		return status
-	}
+	log.Debug("PrepareClient - starting node")
+	status := n.StartClient()
+	log.Debug("PrepareClient - node start completed", "status", status)
+	return status
 }
 
 func (n *NodeControl) StopClient() bool {
@@ -403,7 +401,10 @@ func (n *NodeControl) stopProcesses() (bool, bool) {
 func (n *NodeControl) StartClient() bool {
 	defer n.startStopMux.Unlock()
 	n.startStopMux.Lock()
-	if n.ClientStatus() == types.Up {
+	// if the node status is down, enfornce client check to get the true client status
+	// before initiating start up. This is to handle scenarios where the node was
+	// brought up in the backend bypassing QNM
+	if n.ClientStatus() == types.Up || (n.ClientStatus() == types.Down && n.IsClientUp(true)) {
 		log.Debug("StartClient - node is already up")
 		return true
 	}
