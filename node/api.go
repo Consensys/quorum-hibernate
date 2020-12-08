@@ -5,7 +5,7 @@ import (
 
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
-	"github.com/ConsenSysQuorum/node-manager/nodeman"
+	"github.com/ConsenSysQuorum/node-manager/p2p"
 )
 
 type NodeRPCAPIs struct {
@@ -63,11 +63,11 @@ func (n *NodeRPCAPIs) PrepareForPrivateTx(_ *http.Request, from *string, reply *
 }
 
 // NodeStatus returns current status of this node
-func (n *NodeRPCAPIs) NodeStatus(_ *http.Request, from *string, reply *nodeman.NodeStatusInfo) error {
+func (n *NodeRPCAPIs) NodeStatus(_ *http.Request, from *string, reply *p2p.NodeStatusInfo) error {
 	status := n.qn.GetNodeStatus()
 	inactiveTimeLimit := n.qn.config.BasicConfig.InactivityTime
 	curInactiveTimeCount := n.qn.im.GetInactivityTimeCount()
-	*reply = nodeman.NodeStatusInfo{Status: status, InactiveTimeLimit: inactiveTimeLimit, InactiveTime: curInactiveTimeCount, TimeToShutdown: inactiveTimeLimit - curInactiveTimeCount}
+	*reply = p2p.NodeStatusInfo{Status: status, InactiveTimeLimit: inactiveTimeLimit, InactiveTime: curInactiveTimeCount, TimeToShutdown: inactiveTimeLimit - curInactiveTimeCount}
 	log.Info("ClientStatus - rpc call", "from", *from, "status", status)
 	return nil
 }
