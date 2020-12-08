@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func Test_GetRandomRetryWaitTime(t *testing.T) {
+func Test_RandomInt(t *testing.T) {
 	c := 1
 	for c <= 1000 {
 		w := RandomInt(100, 1000)

@@ -40,7 +40,7 @@ func NewRPCService(qn *node.NodeControl, config *types.RPCServerConfig, backendE
 }
 
 func (r *RPCService) Start() error {
-	log.Info("Starting Node JSON-RPC server")
+	log.Info("Starting node manager JSON-RPC server")
 
 	jsonrpcServer := rpc.NewServer()
 	jsonrpcServer.RegisterCodec(json.NewCodec(), "application/json")
@@ -61,9 +61,9 @@ func (r *RPCService) Start() error {
 	r.shutdownWg.Add(1)
 	go func() {
 		defer r.shutdownWg.Done()
-		log.Info("Started JSON-RPC server", "Addr", r.httpAddress)
+		log.Info("Started node manager JSON-RPC server", "Addr", r.httpAddress)
 		if err := r.httpServer.ListenAndServe(); err != http.ErrServerClosed {
-			log.Error("Unable to start JSON-RPC server", "err", err)
+			log.Error("Unable to start node manager JSON-RPC server", "err", err)
 			r.errCh <- err
 		}
 	}()
@@ -73,13 +73,13 @@ func (r *RPCService) Start() error {
 }
 
 func (r *RPCService) Stop() {
-	log.Info("Stopping JSON-RPC server")
+	log.Info("Stopping node manager JSON-RPC server")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if r.httpServer != nil {
 		if err := r.httpServer.Shutdown(ctx); err != nil {
-			log.Error("JSON-RPC server shutdown failed", "err", err)
+			log.Error("node manager JSON-RPC server shutdown failed", "err", err)
 		}
 		r.shutdownWg.Wait()
 

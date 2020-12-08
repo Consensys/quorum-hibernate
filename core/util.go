@@ -40,33 +40,37 @@ func RandomInt(min int, max int) int {
 // If http request returns 200 OK, it returns response body decoded into resData
 // If resData is a RPC result then error in the result should be handled by the caller
 // It returns error if http request does not return 200 OK or json decoding of response fails
-func CallRPC(rpcUrl string, rpcReq []byte, resData interface{}) error {
+// if returnRaw is true it returns the response as string
+func CallRPC(rpcUrl string, method string, rpcReq []byte, resData interface{}, returnRaw bool) (string, error) {
 	client := NewHttpClient()
 	log.Debug("CallRPC - making rpc call", "req", string(rpcReq))
-	req, err := http.NewRequest("POST", rpcUrl, bytes.NewBuffer(rpcReq))
+	req, err := http.NewRequest(method, rpcUrl, bytes.NewBuffer(rpcReq))
 	if err != nil {
-		return fmt.Errorf("CallRPC - creating request failed err=%v", err)
+		return "", fmt.Errorf("CallRPC - creating request failed err=%v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("CallRPC - do req failed err=%v", err)
+		return "", fmt.Errorf("CallRPC - do req failed err=%v", err)
 	}
 
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		log.Debug("CallRPC - response Body:", string(body))
+		log.Debug("CallRPC - response", "body", string(body))
+		if returnRaw {
+			return string(body), nil
+		}
 		err := json.Unmarshal(body, resData)
 		if err == nil {
 			log.Debug("CallRPC - response OK", "from", rpcUrl, "result", resData)
 		} else {
 			log.Error("CallRPC - response json decode failed", "err", err)
-			return err
+			return "", err
 		}
 	} else {
 		log.Error("CallRPC - response status failed, not OK", "status", resp.Status)
-		return fmt.Errorf("CallRPC - response status failed, not OK, status=%s", resp.Status)
+		return "", fmt.Errorf("CallRPC - response status failed, not OK, status=%s", resp.Status)
 	}
-	return nil
+	return "", nil
 }

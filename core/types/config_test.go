@@ -60,15 +60,14 @@ func TestReadNodeConfig(t *testing.T) {
 name = "node1"
 #blockchain client RPC URL
 bcClntRpcUrl = "http://localhost:22000"
-privManUpcheckUrl = "http://localhost:9001/upcheck"
 privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
 consensus = "raft"
 clientType = "quorum"
 upcheckPollingInterval = 1
 nodeManagerConfigFile = "./test/shell/nm1.toml"
-
 #blockchain client/privacy manager inactivity timeout seconds
 inactivityTime = 60
+runMode = "STRICT"
 
 #blockchain client's http/ws services and privacy manager's http that need to be exposed as proxy services
 proxies = [
@@ -91,6 +90,7 @@ name = "bcclnt"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"]
+upcheckCfg = { upcheckUrl = "http://localhost:22000", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
 
 #privacy manager process control config
 [basicConfig.privManProcess]
@@ -98,6 +98,7 @@ name = "privman"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"]
+upcheckCfg = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", body = "", returnType = "string", expected = "I'm up!"}
 `
 
 	f, err := ioutil.TempFile("", "qnmconfig")
@@ -114,13 +115,13 @@ startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/start
 		BasicConfig: &BasicConfig{
 			Name:                  "node1",
 			BcClntRpcUrl:          "http://localhost:22000",
-			PrivManUpcheckUrl:     "http://localhost:9001/upcheck",
 			PrivManKey:            "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
 			Consensus:             "raft",
 			ClientType:            "quorum",
 			UpchkPollingInterval:  1,
 			NodeManagerConfigFile: "./test/shell/nm1.toml",
 			InactivityTime:        60,
+			RunMode:               "STRICT",
 			Server: &RPCServerConfig{
 				RpcAddr:     "localhost:8081",
 				RPCCorsList: []string{"*"},
@@ -132,6 +133,12 @@ startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/start
 				ContainerId:  "",
 				StopCommand:  []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"},
 				StartCommand: []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"},
+				UpcheckCfg: UpcheckConfig{
+					UpcheckUrl: "http://localhost:22000",
+					Method:     "POST",
+					Body:       "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",
+					ReturnType: "rpcresult",
+				},
 			},
 			PrivManProcess: &ProcessConfig{
 				Name:         "privman",
@@ -139,6 +146,13 @@ startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/start
 				ContainerId:  "",
 				StopCommand:  []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"},
 				StartCommand: []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"},
+				UpcheckCfg: UpcheckConfig{
+					UpcheckUrl: "http://localhost:9001/upcheck",
+					Method:     "GET",
+					Body:       "",
+					ReturnType: "string",
+					Expected:   "I'm up!",
+				},
 			},
 			Proxies: []*ProxyConfig{
 				{

@@ -14,15 +14,13 @@ import (
 
 // DockerControl represents process control for a docker container
 type DockerControl struct {
-	cfg             *types.ProcessConfig
-	bcClntRpcUrl    string
-	privManUpchkUrl string
-	status          bool
-	muxLock         sync.Mutex
+	cfg     *types.ProcessConfig
+	status  bool
+	muxLock sync.Mutex
 }
 
-func NewDockerProcess(p *types.ProcessConfig, bcRpcUrl string, pmUpchkUrl string, s bool) Process {
-	sp := &DockerControl{p, bcRpcUrl, pmUpchkUrl, s, sync.Mutex{}}
+func NewDockerProcess(p *types.ProcessConfig, s bool) Process {
+	sp := &DockerControl{p, s, sync.Mutex{}}
 	sp.IsUp()
 	log.Debug("docker process created", "name", sp.cfg.Name)
 	return sp
@@ -42,22 +40,12 @@ func (dp *DockerControl) Status() bool {
 func (dp *DockerControl) IsUp() bool {
 	s := false
 	var err error
-	if dp.cfg.IsBcClient() {
-		s, err = IsBlockchainClientUp(dp.bcClntRpcUrl)
-		if err != nil {
-			dp.setStatus(false)
-			log.Error("IsUp - blockchain client is down", "err", err)
-		} else {
-			dp.setStatus(s)
-		}
-	} else if dp.cfg.IsPrivacyManager() {
-		s, err = IsPrivacyManagerUp(dp.privManUpchkUrl)
-		if err != nil {
-			dp.setStatus(false)
-			log.Error("IsUp - privacy manager is down", "err", err)
-		} else {
-			dp.setStatus(s)
-		}
+	s, err = IsProcessUp(dp.cfg.UpcheckCfg)
+	if err != nil {
+		dp.setStatus(false)
+		log.Error("IsUp - blockchain client is down", "err", err)
+	} else {
+		dp.setStatus(s)
 	}
 	log.Debug("IsUp", "name", dp.cfg.Name, "return", dp.status)
 	return dp.status

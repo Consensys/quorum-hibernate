@@ -84,16 +84,16 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 	}
 
 	if cfg.BasicConfig.BcClntProcess.IsShell() {
-		node.bcclnt = proc.NewShellProcess(cfg.BasicConfig.BcClntProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+		node.bcclnt = proc.NewShellProcess(cfg.BasicConfig.BcClntProcess, true)
 	} else if cfg.BasicConfig.BcClntProcess.IsDocker() {
-		node.bcclnt = proc.NewDockerProcess(cfg.BasicConfig.BcClntProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+		node.bcclnt = proc.NewDockerProcess(cfg.BasicConfig.BcClntProcess, true)
 	}
 
 	if node.WithPrivMan() {
 		if cfg.BasicConfig.PrivManProcess.IsShell() {
-			node.pmclnt = proc.NewShellProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+			node.pmclnt = proc.NewShellProcess(cfg.BasicConfig.PrivManProcess, true)
 		} else if cfg.BasicConfig.PrivManProcess.IsDocker() {
-			node.pmclnt = proc.NewDockerProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+			node.pmclnt = proc.NewDockerProcess(cfg.BasicConfig.PrivManProcess, true)
 		}
 	}
 	node.im = NewInactivityResyncMonitor(node)
