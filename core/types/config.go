@@ -168,6 +168,7 @@ type BasicConfig struct {
 	UpchkPollingInterval  int              `toml:"upcheckPollingInterval"` // up check polling interval in seconds for the node
 	NodeManagerConfigFile string           `toml:"nodeManagerConfigFile"`  // node manager config file path
 	InactivityTime        int              `toml:"inactivityTime"`         // inactivity time for blockchain client and privacy manager
+	ResyncTime            int              `toml:"resyncTime"`             // time after which client should be started to sync up with network
 	Server                *RPCServerConfig `toml:"server"`                 // RPC server config of this node manager
 	BcClntProcess         *ProcessConfig   `toml:"bcClntProcess"`          // blockchain client process managed by this node manager
 	PrivManProcess        *ProcessConfig   `toml:"privManProcess"`         // privacy manager process managed by this node manager
@@ -357,6 +358,10 @@ func (c BasicConfig) IsValid() error {
 
 	if c.InactivityTime < 60 {
 		return errors.New("inactivityTime must be greater than or equal to 60 (seconds)")
+	}
+
+	if c.ResyncTime != 0 && c.ResyncTime < c.InactivityTime {
+		return errors.New("resyncTime must be reasonably greater than or inactivityTime")
 	}
 
 	if c.Server == nil {

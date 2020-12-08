@@ -40,7 +40,7 @@ func (n *NodeRPCAPIs) IsNodeUp(_ *http.Request, from *string, reply *NodeUpReply
 // it returns status as true if preparing the node is successful else it returns status as false
 func (n *NodeRPCAPIs) PrepareForPrivateTx(_ *http.Request, from *string, reply *PrivateTxPrepReply) error {
 	log.Debug("PrepareForPrivateTx - rpc call - request received to prepare node", "from", *from)
-	n.qn.ResetInactiveTime()
+	n.qn.ResetInactiveSyncTime()
 	var status bool
 	if err := n.qn.IsNodeBusy(); err != nil {
 		*reply = PrivateTxPrepReply{Status: false}

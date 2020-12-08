@@ -27,27 +27,28 @@ const CONSENSUS_WAIT_TIME = 60
 // It starts blockchain client/privacyManager processes when there is a activity.
 // It takes care of managing combined status of blockchain client & privacyManager.
 type NodeControl struct {
-	config              *types.NodeConfig   // config of this node
-	im                  *InactivityMonitor  // inactivity monitor
-	nm                  *p2p.PeerManager    // node manager to communicate with other node manager
-	bcclnt              proc.Process        // blockchain client process controller
-	pmclnt              proc.Process        // privacy manager process controller
-	consensus           cons.Consensus      // consensus validator
-	txh                 privatetx.TxHandler // Transaction handler
-	withPrivMan         bool                // indicates if the node is running with a privacy manage
-	consValid           bool                // indicates if network level consensus is valid
-	clientStatus        types.ClientStatus  // combined status of blockchain client and privacy manager processes
-	nodeStatus          types.NodeStatus    // status of node manager
-	inactivityResetCh   chan bool           // channel to reset inactivity
-	stopClntCh          chan bool           // channel to request stop node
-	stopClntCompleteCh  chan bool           // channel to notify stop node action status
-	startClntCh         chan bool           // channel to request start node
-	startClntCompleteCh chan bool           // channel to notify start node action status
-	stopCh              chan bool           // channel to stop start/stop node monitor
-	clntStatMonStopCh   chan bool           // channel to stop node status monitor
-	startStopMux        sync.Mutex          // lock for starting and stopping node
-	clntStatusMux       sync.Mutex          // lock for setting the client status
-	nodeStatusMux       sync.Mutex          // lock for setting the node status
+	config              *types.NodeConfig        // config of this node
+	im                  *InactivityResyncMonitor // inactivity monitor
+	nm                  *p2p.PeerManager     // node manager to communicate with other node manager
+	bcclnt              proc.Process             // blockchain client process controller
+	pmclnt              proc.Process             // privacy manager process controller
+	consensus           cons.Consensus           // consensus validator
+	txh                 privatetx.TxHandler      // Transaction handler
+	withPrivMan         bool                     // indicates if the node is running with a privacy manage
+	consValid           bool                     // indicates if network level consensus is valid
+	clientStatus        types.ClientStatus       // combined status of blockchain client and privacy manager processes
+	nodeStatus          types.NodeStatus         // status of node manager
+	inactivityResetCh   chan bool                // channel to reset inactivity
+	syncResetCh         chan bool                // channel to reset sync timer
+	stopClntCh          chan bool                // channel to request stop node
+	stopClntCompleteCh  chan bool                // channel to notify stop node action status
+	startClntCh         chan bool                // channel to request start node
+	startClntCompleteCh chan bool                // channel to notify start node action status
+	stopCh              chan bool                // channel to stop start/stop node monitor
+	clntStatMonStopCh   chan bool                // channel to stop node status monitor
+	startStopMux        sync.Mutex               // lock for starting and stopping node
+	clntStatusMux       sync.Mutex               // lock for setting the client status
+	nodeStatusMux       sync.Mutex               // lock for setting the node status
 }
 
 func (n *NodeControl) ClientStatus() types.ClientStatus {
@@ -69,6 +70,7 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 		false,
 		types.Up,
 		types.OK,
+		make(chan bool, 1),
 		make(chan bool, 1),
 		make(chan bool, 1),
 		make(chan bool, 1),
@@ -223,8 +225,8 @@ func (n *NodeControl) IsNodeBusy() error {
 
 // Start starts blockchain client and privacy manager start/stop monitor and inactivity tracker
 func (n *NodeControl) Start() {
-	n.StartStopNodeMonitor()
-	n.im.StartInactivityTimer()
+	n.StartNodeMonitor()
+	n.im.StartInactivitySyncTimer()
 	n.startClientStatusMonitor()
 }
 
@@ -235,9 +237,10 @@ func (n *NodeControl) Stop() {
 	n.clntStatMonStopCh <- true
 }
 
-// ResetInactiveTime resets inactivity time of the tracker
-func (n *NodeControl) ResetInactiveTime() {
+// ResetInactiveSyncTime resets inactivity time of the tracker
+func (n *NodeControl) ResetInactiveSyncTime() {
 	n.inactivityResetCh <- true
+	n.syncResetCh <- true
 }
 
 func (n *NodeControl) startClientStatusMonitor() {
@@ -263,30 +266,31 @@ func (n *NodeControl) startClientStatusMonitor() {
 	}()
 }
 
-//StartStopNodeMonitor listens for requests to start/stop blockchain client and privacy manager
-func (n *NodeControl) StartStopNodeMonitor() {
+//StartNodeMonitor listens for requests to stop blockchain client and privacy manager and
+// stops blockchain client and privacy manager when a request is received
+func (n *NodeControl) StartNodeMonitor() {
 	go func() {
-		log.Info("StartStopNodeMonitor - node start/stop monitor started")
+		log.Info("StartNodeMonitor - node start/stop monitor started")
 		for {
 			select {
 			case <-n.stopClntCh:
-				log.Debug("StartStopNodeMonitor - request received to stop node")
+				log.Debug("StartNodeMonitor - request received to stop node")
 				if !n.StopClient() {
-					log.Error("StartStopNodeMonitor - stopping failed")
+					log.Error("StartNodeMonitor - stopping failed")
 					n.stopClntCompleteCh <- false
 				} else {
 					n.stopClntCompleteCh <- true
 				}
 			case <-n.startClntCh:
-				log.Debug("StartStopNodeMonitor - request received to start node")
+				log.Debug("StartNodeMonitor - request received to start node")
 				if !n.StartClient() {
-					log.Error("StartStopNodeMonitor - starting failed")
+					log.Error("StartNodeMonitor - starting failed")
 					n.startClntCompleteCh <- false
 				} else {
 					n.startClntCompleteCh <- true
 				}
 			case <-n.stopCh:
-				log.Info("StartStopNodeMonitor - stopped node start/stop monitor service")
+				log.Info("StartNodeMonitor - stopped node start/stop monitor service")
 				return
 			}
 		}
@@ -342,19 +346,23 @@ func (n *NodeControl) StopClient() bool {
 	}
 	log.Info("StopClient - consensus check passed, node can be shutdown")
 
-	if consensusNode && n.config.BasicConfig.RunMode != types.STRICT_MODE {
-		// consensus is ok. check with network to prevent multiple nodes
-		// going down at the same time
-		w := core.GetRandomRetryWaitTime(10, 5000)
-		log.Info("StopClient - waiting for p2p validation try", "wait time in seconds", w)
-		time.Sleep(time.Duration(w) * time.Millisecond)
-		n.SetNodeStatus(types.ShutdownInprogress)
+	if consensusNode && n.config.BasicConfig.RunMode == types.STRICT_MODE {
+		// consensus node running in strict mode. node cannot be brouwght down
+		log.Info("StopClient - node manager running in strict mode. consensus node cannot be shut down")
+		return false
+	}
 
-		if peersStatus, err = n.nm.ValidatePeers(); err != nil {
-			n.SetNodeStatus(types.OK)
-			log.Error("StopClient - node cannot be shutdown, p2p validation failed")
-			return false
-		}
+	// consensus is ok. check with network to prevent multiple nodes
+	// going down at the same time
+	w := core.GetRandomRetryWaitTime(10, 5000)
+	log.Info("StopClient - waiting for p2p validation try", "wait time in seconds", w)
+	time.Sleep(time.Duration(w) * time.Millisecond)
+	n.SetNodeStatus(types.ShutdownInprogress)
+
+	if peersStatus, err = n.nm.ValidatePeers(); err != nil {
+		n.SetNodeStatus(types.OK)
+		log.Error("StopClient - node cannot be shutdown, p2p validation failed")
+		return false
 	}
 	log.Info("StopClient - all checks passed for shutdown", "peerStatus", peersStatus)
 
