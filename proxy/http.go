@@ -30,7 +30,7 @@ func makeHttpHandler(ps *ProxyServer) (http.HandlerFunc, error) {
 
 		if !ps.CanIgnoreRequest(req.RequestURI) {
 			logRequestPayload(req, ps.proxyCfg.Name, ps.proxyCfg.UpstreamAddr, string(body))
-			ps.nodeCtrl.ResetInactiveTime()
+			ps.nodeCtrl.ResetInactiveSyncTime()
 
 			log.Info("httpHandler - request", "path", req.RequestURI)
 
