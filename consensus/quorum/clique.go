@@ -18,7 +18,7 @@ type CliqueConsensus struct {
 
 // CliqueStatus represents output of RPC clique_status
 type CliqueStatus struct {
-	InTurnPercent  int            `json:"inTurnPercent"`
+	InTurnPercent  float32        `json:"inTurnPercent"`
 	NumBlocks      int            `json:"numBlocks"`
 	SealerActivity map[string]int `json:"sealerActivity"`
 }
