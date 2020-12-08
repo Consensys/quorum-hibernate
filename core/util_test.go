@@ -196,3 +196,82 @@ func TestCallRPC_InvalidRespType(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, got)
 }
+
+func TestRpcError(t *testing.T) {
+	var (
+		rpcMethod = "app.DoSomething"
+		req       = fmt.Sprintf(`{"jsonrpc":2.0, "id":11, "method":"%v"}`, rpcMethod)
+		respCode  = 200
+		respBody  = `{"jsonrpc":"2.0","id":1,"error":{"code":100,"message":"someerrormessage", "data":{"field": "val"}}}`
+	)
+
+	serverMux := http.NewServeMux()
+	serverMux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+
+		require.Equal(t, req.Method, "POST")
+		require.Equal(t, req.Header["Content-Type"], []string{"application/json"})
+
+		type rpcRequest struct {
+			Method string
+		}
+
+		rpcReq := rpcRequest{}
+
+		err := json.NewDecoder(req.Body).Decode(&rpcReq)
+		require.NoError(t, err)
+		require.Equal(t, rpcMethod, rpcReq.Method)
+
+		w.WriteHeader(respCode)
+		_, err = w.Write([]byte(respBody))
+		require.NoError(t, err)
+	})
+
+	mockServer := httptest.NewServer(serverMux)
+
+	type resp struct {
+		Error RpcError `json:"error"`
+	}
+
+	var got resp
+
+	err := CallRPC(mockServer.URL, []byte(req), &got)
+	require.NoError(t, err)
+
+	want := resp{
+		Error: RpcError{
+			Code:    100,
+			Message: "someerrormessage",
+			Data:    map[string]interface{}{"field": "val"},
+		},
+	}
+
+	require.Equal(t, want, got)
+}
+
+func TestRpcError_Error(t *testing.T) {
+	type nestedErrData struct {
+		s string
+	}
+
+	type errData struct {
+		i int
+		s string
+		d nestedErrData
+	}
+
+	err := &RpcError{
+		Code:    100,
+		Message: "someerrormessage",
+		Data: errData{
+			i: 55,
+			s: "moreerrorstring",
+			d: nestedErrData{
+				s: "evenmorestring",
+			},
+		},
+	}
+
+	wantErrMsg := "code = 100, message = someerrormessage, data = {55 moreerrorstring {evenmorestring}}"
+
+	require.EqualError(t, err, wantErrMsg)
+}
