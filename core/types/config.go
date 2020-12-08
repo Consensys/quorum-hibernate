@@ -305,6 +305,10 @@ func (c BasicConfig) IsRaft() bool {
 	return strings.ToLower(c.Consensus) == "raft"
 }
 
+func (c BasicConfig) IsResyncSet() bool {
+	return c.ResyncTime != 0
+}
+
 func (c BasicConfig) IsIstanbul() bool {
 	return strings.ToLower(c.Consensus) == "istanbul"
 }
@@ -360,8 +364,8 @@ func (c BasicConfig) IsValid() error {
 		return errors.New("inactivityTime must be greater than or equal to 60 (seconds)")
 	}
 
-	if c.ResyncTime != 0 && c.ResyncTime < c.InactivityTime {
-		return errors.New("resyncTime must be reasonably greater than or inactivityTime")
+	if c.IsResyncSet() && c.ResyncTime < c.InactivityTime {
+		return errors.New("resyncTime must be reasonably greater than the inactivityTime")
 	}
 
 	if c.Server == nil {

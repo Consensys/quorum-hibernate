@@ -28,15 +28,18 @@ func NewHttpClient() *http.Client {
 	return netClient
 }
 
-// GetRandomRetryWaitTime returns a random wait time within a range of min to max
-func GetRandomRetryWaitTime(min int, max int) int {
+// RandomInt returns a random int within a range of min to max
+func RandomInt(min int, max int) int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(max-min+1) + min
 }
 
-// CallRPC makes a rpc call to rpcUrl. It makes http post req with rpcTeq as body.
+// CallRPC makes a rpc call to rpcUrl. It makes http post req with rpcReq as body.
 // The returned JSON result is decoded into resData.
 // resData must be a pointer.
+// If http request returns 200 OK, it returns response body decoded into resData
+// If resData is a RPC result then error in the result should be handled by the caller
+// It returns error if http request does not return 200 OK or json decoding of response fails
 func CallRPC(rpcUrl string, rpcReq []byte, resData interface{}) error {
 	client := NewHttpClient()
 	log.Debug("CallRPC - making rpc call", "req", string(rpcReq))
