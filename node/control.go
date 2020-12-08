@@ -199,7 +199,7 @@ func (n *NodeControl) checkUpStatus() (bool, bool) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		bcclntStatus = n.bcclnt.IsUp()
+		bcclntStatus = n.bcclnt.UpdateStatus()
 	}()
 
 	pmStatus := true
@@ -207,7 +207,7 @@ func (n *NodeControl) checkUpStatus() (bool, bool) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			pmStatus = n.pmclnt.IsUp()
+			pmStatus = n.pmclnt.UpdateStatus()
 		}()
 	}
 

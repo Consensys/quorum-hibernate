@@ -19,10 +19,9 @@ type Process interface {
 	Start() error
 	// Stop stops the process. it returns error if it fails.
 	Stop() error
-	// IsUp performs Up check for the process by trying to execute the http get / rpc call
-	// trying to connect to the process
-	IsUp() bool
-	// Status returns the cached status of last IsUp check
+	// UpdateStatus performs a status check of the process, and caches the result before returning
+	UpdateStatus() bool
+	// Status returns the cached status
 	Status() bool
 }
 

@@ -21,7 +21,7 @@ type DockerControl struct {
 
 func NewDockerProcess(p *types.ProcessConfig, s bool) Process {
 	sp := &DockerControl{p, s, sync.Mutex{}}
-	sp.IsUp()
+	sp.UpdateStatus()
 	log.Debug("docker process created", "name", sp.cfg.Name)
 	return sp
 }
@@ -36,18 +36,18 @@ func (dp *DockerControl) Status() bool {
 	return dp.status
 }
 
-// IsUp implements Process.IsUp
-func (dp *DockerControl) IsUp() bool {
+// UpdateStatus implements Process.UpdateStatus
+func (dp *DockerControl) UpdateStatus() bool {
 	s := false
 	var err error
 	s, err = IsProcessUp(dp.cfg.UpcheckCfg)
 	if err != nil {
 		dp.setStatus(false)
-		log.Error("IsUp - blockchain client is down", "err", err)
+		log.Error("Update status - docker process is down", "err", err)
 	} else {
 		dp.setStatus(s)
 	}
-	log.Debug("IsUp", "name", dp.cfg.Name, "return", dp.status)
+	log.Debug("UpdateStatus", "name", dp.cfg.Name, "return", dp.status)
 	return dp.status
 }
 
@@ -124,7 +124,7 @@ func (dp *DockerControl) WaitToComeUp() bool {
 	retryCount := 30
 	c := 1
 	for c <= retryCount {
-		if dp.IsUp() {
+		if dp.UpdateStatus() {
 			return true
 		}
 		time.Sleep(time.Second)
@@ -140,7 +140,7 @@ func (sp *DockerControl) WaitToBeDown() bool {
 	retryCount := 30
 	c := 1
 	for c <= retryCount {
-		if !sp.IsUp() {
+		if !sp.UpdateStatus() {
 			return true
 		}
 		time.Sleep(time.Second)
