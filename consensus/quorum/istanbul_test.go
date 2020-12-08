@@ -84,6 +84,50 @@ func TestIstanbulConsensus_ValidateShutdown_Validator(t *testing.T) {
 	}
 }
 
+func TestIstanbulConsensus_ValidateShutdown_IsValidatorRpcError(t *testing.T) {
+	var (
+		istanbulIsValidatorResp = `{"error": {"code":111,"message":"someerror","data":{"additional":"context"}}}`
+		istanbulStatusResp      = `{"result": {"numBlocks":10, "sealerActivity": {"minterone":10, "mintertwo":10, "minterthree":10, "minterfour":10}}}`
+		wantErrMsg              = "unable to check if istanbul validator: code = 111, message = someerror, data = map[additional:context]"
+	)
+
+	mockServer := startMockIstanbulServer(t, istanbulIsValidatorResp, istanbulStatusResp)
+	defer mockServer.Close()
+
+	istanbul := NewIstanbulConsensus(&types.NodeConfig{
+		BasicConfig: &types.BasicConfig{
+			BcClntRpcUrl: mockServer.URL,
+		},
+	})
+
+	isConsensusNode, err := istanbul.ValidateShutdown()
+
+	require.EqualError(t, err, wantErrMsg)
+	require.False(t, isConsensusNode)
+}
+
+func TestIstanbulConsensus_ValidateShutdown_SealerStatusRpcError(t *testing.T) {
+	var (
+		istanbulIsValidatorResp = `{"result": true}`
+		istanbulStatusResp      = `{"error": {"code":111,"message":"someerror","data":{"additional":"context"}}}`
+		wantErrMsg              = "unable to check istanbul sealer status: code = 111, message = someerror, data = map[additional:context]"
+	)
+
+	mockServer := startMockIstanbulServer(t, istanbulIsValidatorResp, istanbulStatusResp)
+	defer mockServer.Close()
+
+	istanbul := NewIstanbulConsensus(&types.NodeConfig{
+		BasicConfig: &types.BasicConfig{
+			BcClntRpcUrl: mockServer.URL,
+		},
+	})
+
+	isConsensusNode, err := istanbul.ValidateShutdown()
+
+	require.EqualError(t, err, wantErrMsg)
+	require.True(t, isConsensusNode)
+}
+
 func startMockIstanbulServer(t *testing.T, istanbulIsValidatorResp, istanbulStatusResp string) *httptest.Server {
 	serverMux := http.NewServeMux()
 	serverMux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {

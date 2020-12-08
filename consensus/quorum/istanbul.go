@@ -19,12 +19,12 @@ type IstanbulSealActivity struct {
 
 type IstanbulSealActivityResp struct {
 	Result IstanbulSealActivity `json:"result"`
-	Error  error                `json:"error"`
+	Error  *core.RpcError       `json:"error"`
 }
 
 type IstanbulIsValidatorResp struct {
-	Result bool  `json:"result"`
-	Error  error `json:"error"`
+	Result bool           `json:"result"`
+	Error  *core.RpcError `json:"error"`
 }
 
 type IstanbulConsensus struct {
@@ -50,7 +50,10 @@ func (i *IstanbulConsensus) getIstanbulSealerActivity() (*IstanbulSealActivity, 
 	if err := core.CallRPC(i.cfg.BasicConfig.BcClntRpcUrl, []byte(IstanbulStatusReq), &respResult); err != nil {
 		return nil, err
 	}
-	return &respResult.Result, respResult.Error
+	if respResult.Error != nil {
+		return nil, respResult.Error
+	}
+	return &respResult.Result, nil
 }
 
 func (i *IstanbulConsensus) getIstanbulIsValidator() (bool, error) {
@@ -58,7 +61,10 @@ func (i *IstanbulConsensus) getIstanbulIsValidator() (bool, error) {
 	if err := core.CallRPC(i.cfg.BasicConfig.BcClntRpcUrl, []byte(IstanbulIsValidatorReq), &respResult); err != nil {
 		return false, err
 	}
-	return respResult.Result, respResult.Error
+	if respResult.Error != nil {
+		return false, respResult.Error
+	}
+	return respResult.Result, nil
 }
 
 // TODO - if the number of validators are more than 64 this will not work as expected as signers return data for last 64 blocks only
@@ -67,7 +73,7 @@ func (i *IstanbulConsensus) ValidateShutdown() (bool, error) {
 	isValidator, err := i.getIstanbulIsValidator()
 	if err != nil {
 		log.Error("ValidateShutdown - istanbul isValidator check failed", "err", err)
-		return isValidator, err
+		return isValidator, fmt.Errorf("unable to check if istanbul validator: %v", err)
 	}
 
 	if !isValidator {
@@ -78,7 +84,7 @@ func (i *IstanbulConsensus) ValidateShutdown() (bool, error) {
 	activity, err := i.getIstanbulSealerActivity()
 	if err != nil {
 		log.Error("ValidateShutdown - istanbul status check failed", "err", err)
-		return isValidator, err
+		return isValidator, fmt.Errorf("unable to check istanbul sealer status: %v", err)
 	}
 
 	totalValidators := len(activity.SealerActivity)

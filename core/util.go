@@ -68,3 +68,13 @@ func CallRPC(rpcUrl string, rpcReq []byte, resData interface{}) error {
 	log.Debug("CallRPC - response OK", "from", rpcUrl, "result", resData)
 	return nil
 }
+
+type RpcError struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+}
+
+func (e *RpcError) Error() string {
+	return fmt.Sprintf("code = %v, message = %v, data = %v", e.Code, e.Message, e.Data)
+}

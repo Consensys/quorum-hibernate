@@ -87,6 +87,50 @@ func TestRaftConsensus_ValidateShutdown_Verifier_NotEnoughActivePeers_Invalid(t 
 	}
 }
 
+func TestRaftConsensus_ValidateShutdown_GetRoleRpcError(t *testing.T) {
+	var (
+		raftRoleResp    = `{"error": {"code":111,"message":"someerror","data":{"additional":"context"}}}`
+		raftClusterResp = `{"result": [{"NodeActive":true},{"NodeActive":true},{"NodeActive":true}]}`
+		wantErrMsg      = "unable to check raft role: code = 111, message = someerror, data = map[additional:context]"
+	)
+
+	mockServer := startMockRaftServer(t, raftRoleResp, raftClusterResp)
+	defer mockServer.Close()
+
+	raft := NewRaftConsensus(&types.NodeConfig{
+		BasicConfig: &types.BasicConfig{
+			BcClntRpcUrl: mockServer.URL,
+		},
+	})
+
+	isConsensusNode, err := raft.ValidateShutdown()
+
+	require.EqualError(t, err, wantErrMsg)
+	require.False(t, isConsensusNode)
+}
+
+func TestRaftConsensus_ValidateShutdown_GetClusterInfoRpcError(t *testing.T) {
+	var (
+		raftRoleResp    = `{"result": "verifier"}`
+		raftClusterResp = `{"error": {"code":111,"message":"someerror","data":{"additional":"context"}}}`
+		wantErrMsg      = "unable to check raft cluster info: code = 111, message = someerror, data = map[additional:context]"
+	)
+
+	mockServer := startMockRaftServer(t, raftRoleResp, raftClusterResp)
+	defer mockServer.Close()
+
+	raft := NewRaftConsensus(&types.NodeConfig{
+		BasicConfig: &types.BasicConfig{
+			BcClntRpcUrl: mockServer.URL,
+		},
+	})
+
+	isConsensusNode, err := raft.ValidateShutdown()
+
+	require.EqualError(t, err, wantErrMsg)
+	require.True(t, isConsensusNode)
+}
+
 func startMockRaftServer(t *testing.T, raftRoleResp, raftClusterResp string) *httptest.Server {
 	serverMux := http.NewServeMux()
 	serverMux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
