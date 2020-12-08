@@ -6,27 +6,28 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
-// InactivityMonitor tracks inactivity of the node
+// InactivityResyncMonitor tracks inactivity of the node and starts the blcokchain client and privacy manager based on resync timer
 // once inactivity reaches the threshold it requests node controller to stop blockchain client/privacy manager
 // it allows inactivity to be reset via NodeControl
-type InactivityMonitor struct {
+// once resync timer is up it starts the blcokchain client and privacy manager
+type InactivityResyncMonitor struct {
 	nodeCtrl          *NodeControl
 	inactiveTimeCount int
 	stopCh            chan bool
 }
 
-func NewInactivityMonitor(qn *NodeControl) *InactivityMonitor {
-	return &InactivityMonitor{qn, 0, make(chan bool)}
+func NewInactivityResyncMonitor(qn *NodeControl) *InactivityResyncMonitor {
+	return &InactivityResyncMonitor{qn, 0, make(chan bool)}
 }
 
-func (nm *InactivityMonitor) StartInactivitySyncTimer() {
+func (nm *InactivityResyncMonitor) StartInactivitySyncTimer() {
 	go nm.trackInactivity()
 	go nm.trackResyncTimer()
 }
 
 // trackInactivity tracks node's inactivity time in seconds.
 // when inactive time exceeds limit(as per config) it requests the node to be shutdown
-func (nm *InactivityMonitor) trackInactivity() {
+func (nm *InactivityResyncMonitor) trackInactivity() {
 	timer := time.NewTicker(time.Second)
 	defer timer.Stop()
 	log.Info("trackInactivity - node inactivity tracker started", "inactivityTime", nm.nodeCtrl.config.BasicConfig.InactivityTime)
@@ -48,9 +49,9 @@ func (nm *InactivityMonitor) trackInactivity() {
 	}
 }
 
-// timer to bring up the node after certain period of hibernation to
+// trackResyncTimer brings up the node after certain period of hibernation to
 // resync with the network
-func (nm *InactivityMonitor) trackResyncTimer() {
+func (nm *InactivityResyncMonitor) trackResyncTimer() {
 	if nm.nodeCtrl.config.BasicConfig.ResyncTime == 0 {
 		// resyncing feature not enabled. return
 		return
@@ -64,11 +65,7 @@ func (nm *InactivityMonitor) trackResyncTimer() {
 	for {
 		select {
 		case <-timer.C:
-			// restart node for sync. node shut down will happen based on inactivity
-			status := nm.nodeCtrl.StartClient()
-			if !status {
-				log.Info("trackResyncTimer - failed to start the node for resync")
-			}
+			nm.processResyncRequest()
 
 		case <-nm.nodeCtrl.syncResetCh:
 			timer.Reset(resyncTime)
@@ -81,8 +78,21 @@ func (nm *InactivityMonitor) trackResyncTimer() {
 
 }
 
+func (nm *InactivityResyncMonitor) processResyncRequest() {
+	if err := nm.nodeCtrl.IsNodeBusy(); err == nil {
+		nm.ResetInactivity()
+		// restart node for sync. node shut down will happen based on inactivity
+		nm.nodeCtrl.RequestStartClient()
+		log.Info("trackResyncTimer - requested node start, waiting for start complete")
+		status := nm.nodeCtrl.WaitStartClient()
+		log.Info("trackResyncTimer - resuming resync timer", "start status", status)
+	} else {
+		log.Warn("trackResyncTimer - failed to start node", "err", err)
+	}
+}
+
 // processInactivity requests the node to be stopped if the node  is not busy.
-func (nm *InactivityMonitor) processInactivity() {
+func (nm *InactivityResyncMonitor) processInactivity() {
 	log.Info("processInactivity - going to try stop node as it has been inactive", "inactivetime", nm.nodeCtrl.config.BasicConfig.InactivityTime)
 	if err := nm.nodeCtrl.IsNodeBusy(); err != nil {
 		log.Info("processInactivity - node is busy", "msg", err.Error())
@@ -97,16 +107,16 @@ func (nm *InactivityMonitor) processInactivity() {
 	}
 }
 
-func (nm *InactivityMonitor) ResetInactivity() {
+func (nm *InactivityResyncMonitor) ResetInactivity() {
 	wasInactive := nm.inactiveTimeCount
 	nm.inactiveTimeCount = 0
 	log.Info("ResetInactivity - inactivity reset", "was inactive for (seconds)", wasInactive)
 }
 
-func (nm *InactivityMonitor) Stop() {
-	nm.stopCh <- true
+func (nm *InactivityResyncMonitor) Stop() {
+	close(nm.stopCh)
 }
 
-func (nm *InactivityMonitor) GetInactivityTimeCount() int {
+func (nm *InactivityResyncMonitor) GetInactivityTimeCount() int {
 	return nm.inactiveTimeCount
 }
