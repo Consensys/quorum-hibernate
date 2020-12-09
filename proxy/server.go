@@ -62,12 +62,22 @@ func NewProxyServer(qn *node.NodeControl, pc *types.ProxyConfig, errc chan error
 		WriteTimeout: time.Duration(ps.proxyCfg.WriteTimeout) * time.Second,
 		ReadTimeout:  time.Duration(ps.proxyCfg.ReadTimeout) * time.Second,
 	}
+	if pc.ServerTLSConfig != nil {
+		ps.srv.TLSConfig = pc.ServerTLSConfig.Convert()
+	}
 	log.Info("ProxyServer - created proxy server for config", "cfg", *pc)
 	return ps, nil
 }
 
 func initHttpHandler(ps *ProxyServer, url *url.URL) error {
 	ps.rp = httputil.NewSingleHostReverseProxy(url)
+
+	if ps.proxyCfg.ClientTLSConfig != nil {
+		transport := http.DefaultTransport.(*http.Transport).Clone()
+		transport.TLSClientConfig = ps.proxyCfg.ClientTLSConfig.Convert() //TODO(cjh) may not work, may have to set rpTransport.DialTLSContext
+		ps.rp.Transport = transport
+	}
+
 	ps.rp.ModifyResponse = func(res *http.Response) error {
 		respStatus := res.Status
 		log.Debug("initHttpHandler - response status", "status", respStatus, "code", res.StatusCode)
@@ -85,6 +95,7 @@ func initHttpHandler(ps *ProxyServer, url *url.URL) error {
 }
 
 func initWSHandler(ps *ProxyServer) error {
+	//TODO(cjh) support TLS
 	var err error
 	if ps.wp, err = WSProxyHandler(ps, ps.proxyCfg.UpstreamAddr); err != nil {
 		return err
@@ -102,7 +113,17 @@ func (ps ProxyServer) Start() {
 	go func() {
 		defer ps.shutdownWg.Done()
 		log.Info("Start - ListenAndServe started", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstream", ps.proxyCfg.UpstreamAddr)
-		err := ps.srv.ListenAndServe()
+
+		var err error
+
+		if ps.proxyCfg.ServerTLSConfig != nil {
+			log.Debug("Starting TLS-enabled proxy server", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstream", ps.proxyCfg.UpstreamAddr)
+			err = ps.srv.ListenAndServeTLS("", "")
+		} else {
+			log.Debug("Starting proxy server", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstream", ps.proxyCfg.UpstreamAddr)
+			err = ps.srv.ListenAndServe()
+		}
+
 		if err != nil {
 			log.Error("Start - ListenAndServe failed", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstream", ps.proxyCfg.UpstreamAddr, "err", err)
 			ps.errCh <- err
