@@ -4,13 +4,13 @@ name = "node3"
 
 #blockchain client RPC URL
 bcClntRpcUrl = "http://localhost:22002"
-privManUpcheckUrl = "http://localhost:9003/upcheck"
 privManKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg="
 consensus = "istanbul"
 clientType = "quorum"
 nodeManagerConfigFile = "./nm1.toml"
 upcheckPollingInterval = 1
 inactivityTime = 60
+runMode="NORMAL"
 
 proxies = [
     { name = "geth-rpc", type = "http", proxyAddr = "localhost:9093", upstreamAddr = "http://localhost:22002", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
@@ -30,12 +30,14 @@ name = "bcclnt"
 controlType = "shell"
 stopCommand = ["bash", "/Users/saiv/quorum-projects/scripts/stopNode.sh", "22002"]
 startCommand = ["bash", "/Users/saiv/quorum-projects/scripts/startNode.sh", "3"]
+upcheckCfg = { upcheckUrl = "http://localhost:22002", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
 
 [basicConfig.privManProcess]
 name = "privman"
 controlType = "shell"
 stopCommand = ["bash", "/Users/saiv/quorum-projects/scripts/stopTessera.sh", "3"]
 startCommand = ["bash", "/Users/saiv/quorum-projects/scripts/startTessera.sh", "3"]
+upcheckCfg = { upcheckUrl = "http://localhost:9003/upcheck", method = "GET", body = "", returnType = "string", expected = "I'm up!"}
 
 
 

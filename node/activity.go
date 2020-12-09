@@ -20,7 +20,7 @@ func NewInactivityResyncMonitor(qn *NodeControl) *InactivityResyncMonitor {
 	return &InactivityResyncMonitor{qn, 0, make(chan bool)}
 }
 
-func (nm *InactivityResyncMonitor) StartInactivitySyncTimer() {
+func (nm *InactivityResyncMonitor) Start() {
 	go nm.trackInactivity()
 	go nm.trackResyncTimer()
 }
@@ -52,7 +52,7 @@ func (nm *InactivityResyncMonitor) trackInactivity() {
 // trackResyncTimer brings up the node after certain period of hibernation to
 // resync with the network
 func (nm *InactivityResyncMonitor) trackResyncTimer() {
-	if nm.nodeCtrl.config.BasicConfig.ResyncTime == 0 {
+	if !nm.nodeCtrl.config.BasicConfig.IsResyncTimerSet() {
 		// resyncing feature not enabled. return
 		return
 	}

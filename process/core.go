@@ -2,8 +2,7 @@ package process
 
 import (
 	"bytes"
-	"io/ioutil"
-	"net/http"
+	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"os/exec"
 	"syscall"
 
@@ -27,14 +26,10 @@ type Process interface {
 	Status() bool
 }
 
-type BlockNumberResp struct {
-	Result string `json:"result"`
-	Error  error  `json:"error"`
+type UpcheckResponse struct {
+	Result interface{} `json:"result"`
+	Error  error       `json:"error"`
 }
-
-const BlockNumberReq = `{"jsonrpc":"2.0", "method":"eth_blockNumber", "params":[], "id":67}`
-
-var httpClnt = core.NewHttpClient()
 
 func ExecuteShellCommand(cmdArr []string) error {
 	log.Debug("ExecuteShellCommand", "cmd", cmdArr)
@@ -61,37 +56,26 @@ func ExecuteShellCommand(cmdArr []string) error {
 	return nil
 }
 
-// TODO - what is the right way to check if blockchain client is up?
-func IsBlockchainClientUp(rpcUrl string) (bool, error) {
-	var resp BlockNumberResp
-	if err := core.CallRPC(rpcUrl, []byte(BlockNumberReq), &resp); err != nil {
-		log.Info("IsBlockchainClientUp - failed", "err", err)
+func IsProcessUp(cfg types.UpcheckConfig) (bool, error) {
+	if cfg.IsRpcResult() {
+		var resp UpcheckResponse
+		if err := core.CallRPC(cfg.UpcheckUrl, []byte(cfg.Body), &resp); err != nil || resp.Error != nil {
+			log.Info("IsProcessUp - failed", "err", err, "resp", resp)
+			return false, core.ErrNodeDown
+		}
+	} else if cfg.IsStringResult() {
+		if resp, err := core.CallREST(cfg.UpcheckUrl, cfg.Method, []byte(cfg.Body)); err != nil {
+			log.Info("IsProcessUp - failed", "err", err, "resp", resp)
+			return false, core.ErrNodeDown
+		} else {
+			if resp == cfg.Expected {
+				log.Debug("IsProcessUp - privacy manager is up, replied to upcheck call", "reply", resp)
+				return true, nil
+			}
+		}
 		return false, core.ErrNodeDown
+	} else {
+		log.Error("IsProcessUp - unsupported return type")
 	}
 	return true, nil
-}
-
-func IsPrivacyManagerUp(upcheckUrl string) (bool, error) {
-
-	req, err := http.NewRequest("GET", upcheckUrl, nil)
-	if err != nil {
-		log.Error("IsPrivacyManagerUp - get req failed", "err", err)
-		return false, err
-	}
-
-	resp, err := httpClnt.Do(req)
-	if err != nil {
-		log.Info("IsPrivacyManagerUp - client do req failed", "err", err)
-		return false, err
-	}
-	defer resp.Body.Close()
-
-	log.Debug("IsPrivacyManagerUp check response Status", "status", resp.Status)
-	body, _ := ioutil.ReadAll(resp.Body)
-	log.Debug("IsPrivacyManagerUp - up check response Body:", string(body))
-	if resp.StatusCode == http.StatusOK && string(body) == "I'm up!" {
-		log.Debug("IsPrivacyManagerUp - privacy manager is up, replied to upcheck call", "reply", string(body))
-		return true, nil
-	}
-	return false, core.ErrNodeDown
 }
