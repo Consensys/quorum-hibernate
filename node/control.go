@@ -461,3 +461,7 @@ func (n *NodeControl) StartClient() bool {
 func (n *NodeControl) PrepareNodeManagerForPrivateTx(privateFor []string) (bool, error) {
 	return n.nm.ValidatePeerPrivateTxStatus(privateFor)
 }
+
+func (n *NodeControl) GetInactivityTimeCount() int {
+	return n.im.GetInactivityTimeCount()
+}

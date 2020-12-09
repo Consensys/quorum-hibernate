@@ -1,14 +1,27 @@
 package node
 
 import (
+	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"net/http"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/p2p"
 )
 
+// TODO(cjh) for testing so methods can be mocked
+type ControllerApiService interface {
+	CheckClientUpStatus(connectToClient bool) bool
+	IsClientUp() bool
+	ResetInactiveSyncTime()
+	IsNodeBusy() error
+	PrepareClient() bool
+	GetNodeStatus() types.NodeStatus
+	GetInactivityTimeCount() int
+}
+
 type NodeRPCAPIs struct {
-	qn *NodeControl
+	service ControllerApiService
+	conf    *types.NodeConfig
 }
 
 type NodeUpReply struct {
@@ -19,14 +32,17 @@ type PrivateTxPrepReply struct {
 	Status bool
 }
 
-func NewNodeRPCAPIs(qn *NodeControl) *NodeRPCAPIs {
-	return &NodeRPCAPIs{qn: qn}
+func NewNodeRPCAPIs(qn ControllerApiService, conf *types.NodeConfig) *NodeRPCAPIs {
+	return &NodeRPCAPIs{
+		service: qn,
+		conf:    conf,
+	}
 }
 
 // IsNodeUp checks if the node is up and returns the node's up status
 func (n *NodeRPCAPIs) IsNodeUp(_ *http.Request, from *string, reply *NodeUpReply) error {
 	log.Debug("IsNodeUp - rpc call isNodeUp", "from", *from)
-	if !n.qn.CheckClientUpStatus(false) {
+	if !n.service.CheckClientUpStatus(false) {
 		reply.Status = false
 		log.Debug("IsNodeUp - node not up")
 		return nil
@@ -39,21 +55,21 @@ func (n *NodeRPCAPIs) IsNodeUp(_ *http.Request, from *string, reply *NodeUpReply
 // it returns status as true if preparing the node is successful else it returns status as false
 func (n *NodeRPCAPIs) PrepareForPrivateTx(_ *http.Request, from *string, reply *PrivateTxPrepReply) error {
 	log.Debug("PrepareForPrivateTx - rpc call - request received to prepare node", "from", *from)
-	n.qn.ResetInactiveSyncTime()
+	n.service.ResetInactiveSyncTime()
 	var status bool
-	if err := n.qn.IsNodeBusy(); err != nil {
+	if err := n.service.IsNodeBusy(); err != nil {
 		*reply = PrivateTxPrepReply{Status: false}
 	} else {
-		if !n.qn.IsClientUp() {
+		if !n.service.IsClientUp() {
 			// send the response immediately and run prepare node in the background
 			*reply = PrivateTxPrepReply{Status: false}
 			go func() {
 				log.Info("PrepareForPrivateTx - rpc call - prepareNode triggered")
-				s := n.qn.PrepareClient()
+				s := n.service.PrepareClient()
 				log.Info("PrepareForPrivateTx - rpc call - prepareNode triggered completed", "status", s)
 			}()
 		} else {
-			status = n.qn.PrepareClient()
+			status = n.service.PrepareClient()
 			*reply = PrivateTxPrepReply{Status: status}
 		}
 	}
@@ -63,9 +79,9 @@ func (n *NodeRPCAPIs) PrepareForPrivateTx(_ *http.Request, from *string, reply *
 
 // NodeStatus returns current status of this node
 func (n *NodeRPCAPIs) NodeStatus(_ *http.Request, from *string, reply *p2p.NodeStatusInfo) error {
-	status := n.qn.GetNodeStatus()
-	inactiveTimeLimit := n.qn.config.BasicConfig.InactivityTime
-	curInactiveTimeCount := n.qn.im.GetInactivityTimeCount()
+	status := n.service.GetNodeStatus()
+	inactiveTimeLimit := n.conf.BasicConfig.InactivityTime
+	curInactiveTimeCount := n.service.GetInactivityTimeCount()
 	*reply = p2p.NodeStatusInfo{Status: status, InactiveTimeLimit: inactiveTimeLimit, InactiveTime: curInactiveTimeCount, TimeToShutdown: inactiveTimeLimit - curInactiveTimeCount}
 	log.Info("ClientStatus - rpc call", "from", *from, "status", status)
 	return nil
