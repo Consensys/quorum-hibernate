@@ -62,28 +62,38 @@ func httpRequest(rpcUrl string, method string, rpcReq []byte, resData interface{
 		return "", fmt.Errorf("CallRPC - creating request failed err=%v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("CallRPC - do req failed err=%v", err)
 	}
-
 	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
-		log.Debug("CallRPC - response", "body", string(body))
-		if returnRaw {
-			return string(body), nil
-		}
-		err := json.Unmarshal(body, resData)
-		if err == nil {
-			log.Debug("CallRPC - response OK", "from", rpcUrl, "result", resData)
-		} else {
-			log.Error("CallRPC - response json decode failed", "err", err)
-			return "", err
-		}
-	} else {
+
+	if resp.StatusCode != http.StatusOK {
 		log.Error("CallRPC - response status failed, not OK", "status", resp.Status)
 		return "", fmt.Errorf("CallRPC - response status failed, not OK, status=%s", resp.Status)
 	}
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	log.Debug("CallRPC - response", "body", string(body))
+	if returnRaw {
+		return string(body), nil
+	}
+	if err := json.Unmarshal(body, resData); err != nil {
+		log.Error("CallRPC - response json decode failed", "err", err)
+		return "", err
+	}
+
+	log.Debug("CallRPC - response OK", "from", rpcUrl, "result", resData)
 	return "", nil
+}
+
+type RpcError struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+}
+
+func (e *RpcError) Error() string {
+	return fmt.Sprintf("code = %v, message = %v, data = %v", e.Code, e.Message, e.Data)
 }

@@ -19,13 +19,13 @@ type CliqueConsensus struct {
 
 //
 type BlockNumberResp struct {
-	Result string `json:"result"`
-	Error  error  `json:"error"`
+	Result string         `json:"result"`
+	Error  *core.RpcError `json:"error"`
 }
 
 type CliqueSignersResp struct {
-	Result []string `json:"result"`
-	Error  error    `json:"error"`
+	Result []string       `json:"result"`
+	Error  *core.RpcError `json:"error"`
 }
 
 // clique seal status represents output of RPC clique_getSignerMetrics
@@ -37,12 +37,12 @@ type CliqueStatus struct {
 
 type CliqueStatusResp struct {
 	Result []CliqueStatus `json:"result"`
-	Error  error          `json:"error"`
+	Error  *core.RpcError `json:"error"`
 }
 
 type CoinBaseResp struct {
-	CoinBaseAccount string `json:"result"`
-	Error           error  `json:"error"`
+	CoinBaseAccount string         `json:"result"`
+	Error           *core.RpcError `json:"error"`
 }
 
 const (
@@ -62,6 +62,9 @@ func (c *CliqueConsensus) getCurrentBlockNumber() (int64, error) {
 	if err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, []byte(BlockNumberReq), &result); err != nil {
 		return 0, err
 	}
+	if result.Error != nil {
+		return 0, result.Error
+	}
 	blockNumber, err := strconv.ParseInt(result.Result[2:], 16, 64)
 	if err != nil {
 		return 0, err
@@ -74,6 +77,9 @@ func (c *CliqueConsensus) getSigners() ([]string, error) {
 	if err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, []byte(CLiqueSigners), &result); err != nil {
 		return nil, err
 	}
+	if result.Error != nil {
+		return nil, result.Error
+	}
 
 	return result.Result, nil
 }
@@ -84,6 +90,9 @@ func (c *CliqueConsensus) getCoinBaseAccount() (string, error) {
 	if err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, []byte(CoinBaseReq), &result); err != nil {
 		return "", err
 	}
+	if result.Error != nil {
+		return "", result.Error
+	}
 	return result.CoinBaseAccount, nil
 }
 
@@ -92,7 +101,10 @@ func (c *CliqueConsensus) getConsensusStatus() (*[]CliqueStatus, error) {
 	if err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, []byte(CliqueStatusReq), &respResult); err != nil {
 		return nil, err
 	}
-	return &respResult.Result, respResult.Error
+	if respResult.Error != nil {
+		return nil, respResult.Error
+	}
+	return &respResult.Result, nil
 }
 
 // ValidateShutdown implements Consensus.ValidateShutdown

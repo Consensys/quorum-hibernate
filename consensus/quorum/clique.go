@@ -24,13 +24,13 @@ type CliqueStatus struct {
 }
 
 type CliqueStatusResp struct {
-	Result CliqueStatus `json:"result"`
-	Error  error        `json:"error"`
+	Result CliqueStatus   `json:"result"`
+	Error  *core.RpcError `json:"error"`
 }
 
 type CoinBaseResp struct {
-	CoinBaseAccount string `json:"result"`
-	Error           error  `json:"error"`
+	CoinBaseAccount string         `json:"result"`
+	Error           *core.RpcError `json:"error"`
 }
 
 const (
@@ -51,6 +51,9 @@ func (c *CliqueConsensus) getCoinBaseAccount() (string, error) {
 	if err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, []byte(CoinBaseReq), &result); err != nil {
 		return "", err
 	}
+	if result.Error != nil {
+		return "", result.Error
+	}
 	return result.CoinBaseAccount, nil
 }
 
@@ -59,7 +62,10 @@ func (c *CliqueConsensus) getConsensusStatus() (*CliqueStatus, error) {
 	if err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, []byte(CliqueStatusReq), &respResult); err != nil {
 		return nil, err
 	}
-	return &respResult.Result, respResult.Error
+	if respResult.Error != nil {
+		return nil, respResult.Error
+	}
+	return &respResult.Result, nil
 }
 
 func (c *CliqueConsensus) ValidateShutdown() (bool, error) {
