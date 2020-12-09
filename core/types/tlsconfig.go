@@ -3,8 +3,10 @@ package types
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"math"
 )
 
 //TODO(cjh) a lot of this is copied from quorum-security-plugin-enterprise config/config.go and tls/tls.go with some small alterations.
@@ -43,6 +45,14 @@ var (
 		"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
 		"TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
 	}
+
+	// harden the cipher strength by only using ciphers >=256bits
+	defaultCipherSuitesUint16 = []uint16{
+		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+	}
 )
 
 type serverTLSConfig struct {
@@ -51,11 +61,58 @@ type serverTLSConfig struct {
 	CipherSuites []string `toml:"cipherSuites"`
 }
 
-func (c *serverTLSConfig) Convert() *tls.Config {
-	// examples of converting config to tls.Config:
-	// 		SecurityPlugin/tls.go::NewHttpClient
-	// 		Quorum/plugin/security/gateway.go::transform
-	panic("implement me")
+func (c *serverTLSConfig) Convert() (*tls.Config, error) {
+	// copied from Quorum/plugin/security/gateway.go::transform
+
+	tlsConfig := &tls.Config{
+		// prioritize curve preferences from crypto/tls/common.go#defaultCurvePreferences
+		CurvePreferences: []tls.CurveID{
+			tls.CurveP521,
+			tls.CurveP384,
+			tls.CurveP256,
+			tls.X25519,
+		},
+		// Support only TLS1.2 & Above
+		MinVersion: tls.VersionTLS12,
+	}
+
+	suites, err := toUint16Array(c.CipherSuites)
+	if err != nil {
+		return nil, err
+	}
+	receivedCipherSuites := suites
+
+	cipherSuites := make([]uint16, len(receivedCipherSuites))
+	if len(receivedCipherSuites) > 0 {
+		for i, cs := range receivedCipherSuites {
+			if cs > math.MaxUint16 {
+				return nil, errors.New("cipher suite value overflow")
+			}
+			cipherSuites[i] = uint16(cs)
+		}
+	} else {
+		cipherSuites = defaultCipherSuitesUint16
+	}
+	tlsConfig.CipherSuites = cipherSuites
+	tlsConfig.PreferServerCipherSuites = true
+
+	certPem, err := ioutil.ReadFile(c.CertFile)
+	if err != nil {
+		return nil, err
+	}
+
+	keyPem, err := ioutil.ReadFile(c.KeyFile)
+	if err != nil {
+		return nil, err
+	}
+
+	cer, err := tls.X509KeyPair(certPem, keyPem)
+	if err != nil {
+		return nil, err
+	}
+	tlsConfig.Certificates = []tls.Certificate{cer}
+
+	return tlsConfig, nil
 }
 
 type clientTLSConfig struct {
