@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ConsenSysQuorum/node-manager/nodeman"
+	"github.com/ConsenSysQuorum/node-manager/p2p"
 	"github.com/ConsenSysQuorum/node-manager/privatetx"
 
 	cons "github.com/ConsenSysQuorum/node-manager/consensus"
@@ -29,7 +29,7 @@ const CONSENSUS_WAIT_TIME = 60
 type NodeControl struct {
 	config              *types.NodeConfig        // config of this node
 	im                  *InactivityResyncMonitor // inactivity monitor
-	nm                  *nodeman.NodeManager     // node manager to communicate with other node manager
+	nm                  *p2p.PeerManager         // node manager to communicate with other node manager
 	bcclnt              proc.Process             // blockchain client process controller
 	pmclnt              proc.Process             // privacy manager process controller
 	consensus           cons.Consensus           // consensus validator
@@ -61,7 +61,7 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 	node := &NodeControl{
 		cfg,
 		nil,
-		nodeman.NewNodeManager(cfg),
+		p2p.NewPeerManager(cfg),
 		nil,
 		nil,
 		nil,
@@ -84,18 +84,19 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 	}
 
 	if cfg.BasicConfig.BcClntProcess.IsShell() {
-		node.bcclnt = proc.NewShellProcess(cfg.BasicConfig.BcClntProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+		node.bcclnt = proc.NewShellProcess(cfg.BasicConfig.BcClntProcess, true)
 	} else if cfg.BasicConfig.BcClntProcess.IsDocker() {
-		node.bcclnt = proc.NewDockerProcess(cfg.BasicConfig.BcClntProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+		node.bcclnt = proc.NewDockerProcess(cfg.BasicConfig.BcClntProcess, true)
 	}
 
 	if node.WithPrivMan() {
 		if cfg.BasicConfig.PrivManProcess.IsShell() {
-			node.pmclnt = proc.NewShellProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+			node.pmclnt = proc.NewShellProcess(cfg.BasicConfig.PrivManProcess, true)
 		} else if cfg.BasicConfig.PrivManProcess.IsDocker() {
-			node.pmclnt = proc.NewDockerProcess(cfg.BasicConfig.PrivManProcess, cfg.BasicConfig.BcClntRpcUrl, cfg.BasicConfig.PrivManUpcheckUrl, true)
+			node.pmclnt = proc.NewDockerProcess(cfg.BasicConfig.PrivManProcess, true)
 		}
 	}
+	node.im = NewInactivityResyncMonitor(node)
 	populateConsensusHandler(node)
 	if node.config.BasicConfig.IsQuorumClient() {
 		node.txh = privatetx.NewQuorumTxHandler(node.config)
@@ -116,7 +117,7 @@ func getRandomBufferTime(inactivityTime int) int {
 	if delay < 10 {
 		delay = 10
 	}
-	return core.GetRandomRetryWaitTime(1, delay)
+	return core.RandomInt(1, delay)
 }
 
 func populateConsensusHandler(n *NodeControl) {
@@ -167,15 +168,20 @@ func (n *NodeControl) SetNodeStatus(ns types.NodeStatus) {
 	n.nodeStatus = ns
 }
 
-// IsClientUp performs up check for blockchain client and privacy manager and returns the combined status
-// if both blockchain client and privacy manager are up, the node status is up(true) else down(false)
-func (n *NodeControl) IsClientUp(connectToClient bool) bool {
+func (n *NodeControl) IsClientUp() bool {
+	return n.ClientStatus() == types.Up
+}
+
+// CheckClientUpStatus performs up check for blockchain client and privacy manager and returns the combined status
+// If both blockchain client and privacy manager are up, it returns true else returns false
+// If connectToClient is true it connects to client to check the actual status otherwise it returns the status based on check done by status monitor
+func (n *NodeControl) CheckClientUpStatus(connectToClient bool) bool {
 	// it is possible that QNM status of the node is down and the node was brought up
 	// in such cases, with forceMode true, a direct call to client is done to get the
 	// real status
-	if n.ClientStatus() != types.Down || connectToClient {
+	if n.IsClientUp() || connectToClient {
 		bcclntStatus, pmStatus := n.checkUpStatus()
-		log.Debug("IsClientUp", "blockchain client", bcclntStatus, "privacy manager", pmStatus)
+		log.Debug("CheckClientUpStatus", "blockchain client", bcclntStatus, "privacy manager", pmStatus)
 		if bcclntStatus && pmStatus {
 			n.SetClntStatus(types.Up)
 		} else {
@@ -225,9 +231,8 @@ func (n *NodeControl) IsNodeBusy() error {
 // Start starts blockchain client and privacy manager start/stop monitor and inactivity tracker
 func (n *NodeControl) Start() {
 	n.StartNodeMonitor()
-	n.im = NewInactivityResyncMonitor(n)
-	n.im.StartInactivitySyncTimer()
 	n.startClientStatusMonitor()
+	n.im.Start()
 }
 
 // Stop stops blockchain client and privacy manager start/stop monitor and inactivity tracker
@@ -240,7 +245,9 @@ func (n *NodeControl) Stop() {
 // ResetInactiveSyncTime resets inactivity time of the tracker
 func (n *NodeControl) ResetInactiveSyncTime() {
 	n.inactivityResetCh <- true
-	n.syncResetCh <- true
+	if n.config.BasicConfig.IsResyncTimerSet() {
+		n.syncResetCh <- true
+	}
 }
 
 func (n *NodeControl) startClientStatusMonitor() {
@@ -253,7 +260,7 @@ func (n *NodeControl) startClientStatusMonitor() {
 
 		log.Info("clientStatusMonitor started")
 		for {
-			isClientUp = n.IsClientUp(false)
+			isClientUp = n.CheckClientUpStatus(false)
 			log.Debug("clientStatusMonitor", "isClientUp", isClientUp)
 			select {
 			case <-timer.C:
@@ -315,7 +322,6 @@ func (n *NodeControl) WaitStopClient() bool {
 	return status
 }
 
-// TODO handle error if node failed to start
 func (n *NodeControl) PrepareClient() bool {
 	log.Debug("PrepareClient - starting node")
 	status := n.StartClient()
@@ -327,7 +333,7 @@ func (n *NodeControl) StopClient() bool {
 	defer n.startStopMux.Unlock()
 	n.startStopMux.Lock()
 
-	if n.ClientStatus() == types.Down {
+	if !n.IsClientUp() {
 		log.Debug("StopClient - node is already down")
 		return true
 	}
@@ -335,7 +341,7 @@ func (n *NodeControl) StopClient() bool {
 		log.Error("StopClient - cannot be shutdown", "err", err)
 		return false
 	}
-	var peersStatus []nodeman.NodeStatusInfo
+	var peersStatus []p2p.NodeStatusInfo
 	var err error
 
 	consensusNode, err := n.checkAndValidateConsensus()
@@ -354,7 +360,7 @@ func (n *NodeControl) StopClient() bool {
 
 	// consensus is ok. check with network to prevent multiple nodes
 	// going down at the same time
-	w := core.GetRandomRetryWaitTime(10, 5000)
+	w := core.RandomInt(10, 5000)
 	log.Info("StopClient - waiting for p2p validation try", "wait time in seconds", w)
 	time.Sleep(time.Duration(w) * time.Millisecond)
 	n.SetNodeStatus(types.ShutdownInprogress)
@@ -426,7 +432,7 @@ func (n *NodeControl) StartClient() bool {
 	// if the node status is down, enfornce client check to get the true client status
 	// before initiating start up. This is to handle scenarios where the node was
 	// brought up in the backend bypassing QNM
-	if n.ClientStatus() == types.Up || (n.ClientStatus() == types.Down && n.IsClientUp(true)) {
+	if n.IsClientUp() || (!n.IsClientUp() && n.CheckClientUpStatus(true)) {
 		log.Debug("StartClient - node is already up")
 		return true
 	}

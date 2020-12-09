@@ -3,15 +3,14 @@
 name = "node1"
 #blockchain client RPC URL
 bcClntRpcUrl = "http://localhost:22000"
-privManUpcheckUrl = "http://localhost:9001/upcheck"
 privManKey = "BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo="
-consensus = "istanbul"
+consensus = "raft"
 clientType = "quorum"
 upcheckPollingInterval = 1
 nodeManagerConfigFile = "./test/docker/nm1.toml"
-
+runMode="NORMAL"
 #geth/tessera inactivity timeout seconds
-inactivityTime = 6000
+inactivityTime = 60
 
 
 #geth's http/ws services that need to be exposed as proxy services
@@ -32,11 +31,13 @@ rpcvHosts = ["*"]
 #geth's process control config
 [basicConfig.bcClntProcess]
 name = "bcclnt"
-containerId = "bb27581b2753"
+containerId = "c2d5e37f0908"
 controlType = "docker"
+upcheckCfg = { upcheckUrl = "http://localhost:22000", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
 
 #tessera's process control config
 [basicConfig.privManProcess]
 name = "privman"
 controlType = "docker"
-containerId = "9c69322d83d8"
+containerId = "baa4aeffe806"
+upcheckCfg = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", body = "", returnType = "string", expected = "I'm up!"}

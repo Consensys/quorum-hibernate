@@ -102,11 +102,47 @@ func (c NodeManagerConfig) IsValid() error {
 }
 
 type ProcessConfig struct {
-	Name         string   `toml:"name"`         // name of process. should be bcclnt or privman
-	ControlType  string   `toml:"controlType"`  // control type supported. shell or docker
-	ContainerId  string   `toml:"containerId"`  // docker container id. required if controlType is docker
-	StopCommand  []string `toml:"stopCommand"`  // stop command. required if controlType is shell
-	StartCommand []string `toml:"startCommand"` // start command. required if controlType is shell
+	Name         string        `toml:"name"`         // name of process. should be bcclnt or privman
+	ControlType  string        `toml:"controlType"`  // control type supported. shell or docker
+	ContainerId  string        `toml:"containerId"`  // docker container id. required if controlType is docker
+	StopCommand  []string      `toml:"stopCommand"`  // stop command. required if controlType is shell
+	StartCommand []string      `toml:"startCommand"` // start command. required if controlType is shell
+	UpcheckCfg   UpcheckConfig `toml:"upcheckCfg"`   // Upcheck config
+}
+
+type UpcheckConfig struct {
+	UpcheckUrl string `toml:"upcheckUrl"` // http endpoint for up check
+	ReturnType string `toml:"returnType"` // type of returned data. RPCResult or string
+	Method     string `toml:"method"`     // GET or POST
+	Body       string `toml:"body"`       // Body of up check request
+	Expected   string `toml:"expected"`   // expected output string if return type is string
+}
+
+func (c UpcheckConfig) IsValid() error {
+	if c.UpcheckUrl == "" {
+		return errors.New("UpcheckConfig - upcheck url is empty")
+	}
+	c.ReturnType = strings.ToLower(c.ReturnType)
+	if !c.IsRpcResult() && !c.IsStringResult() {
+		return errors.New("UpcheckConfig - invalid returnType. it must be RPCResult or string")
+	}
+
+	c.Method = strings.ToUpper(c.Method)
+	if c.Method != "GET" && c.Method != "POST" {
+		return errors.New("UpcheckConfig - invalid Method. it must be POST or GET")
+	}
+	if c.IsStringResult() && c.Expected == "" {
+		return errors.New("UpcheckConfig - expected value is empty. It must be provided for returnType string")
+	}
+	return nil
+}
+
+func (c UpcheckConfig) IsRpcResult() bool {
+	return c.ReturnType == "rpcresult"
+}
+
+func (c UpcheckConfig) IsStringResult() bool {
+	return c.ReturnType == "string"
 }
 
 func (c ProcessConfig) IsShell() bool {
@@ -138,6 +174,9 @@ func (c ProcessConfig) IsValid() error {
 	if c.IsShell() && (len(c.StartCommand) == 0 || len(c.StopCommand) == 0) {
 		return errors.New("startCommand or stopCommand is empty for shell controlType")
 	}
+	if err := c.UpcheckCfg.IsValid(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -161,7 +200,6 @@ type BasicConfig struct {
 	Name                  string           `toml:"name"`                   // name of this node manager
 	RunMode               string           `toml:"runMode"`                // can be strict or normal. strict mode keeps consensus nodes alive always
 	BcClntRpcUrl          string           `toml:"bcClntRpcUrl"`           // RPC url of blockchain client managed by this node manager
-	PrivManUpcheckUrl     string           `toml:"privManUpcheckUrl"`      // Upcheck url of privacy manager managed by this node manager
 	PrivManKey            string           `toml:"privManKey"`             // public key of privacy manager managed by this node manager
 	Consensus             string           `toml:"consensus"`              // consensus used by blockchain client. ex: raft / istanbul / clique
 	ClientType            string           `toml:"clientType"`             // client used by this node manager. it should be quorum or besu
@@ -305,6 +343,10 @@ func (c BasicConfig) IsRaft() bool {
 	return strings.ToLower(c.Consensus) == "raft"
 }
 
+func (c BasicConfig) IsResyncTimerSet() bool {
+	return c.ResyncTime != 0
+}
+
 func (c BasicConfig) IsIstanbul() bool {
 	return strings.ToLower(c.Consensus) == "istanbul"
 }
@@ -360,8 +402,8 @@ func (c BasicConfig) IsValid() error {
 		return errors.New("inactivityTime must be greater than or equal to 60 (seconds)")
 	}
 
-	if c.ResyncTime != 0 && c.ResyncTime < c.InactivityTime {
-		return errors.New("resyncTime must be reasonably greater than or inactivityTime")
+	if c.IsResyncTimerSet() && c.ResyncTime < c.InactivityTime {
+		return errors.New("resyncTime must be reasonably greater than the inactivityTime")
 	}
 
 	if c.Server == nil {
@@ -373,9 +415,6 @@ func (c BasicConfig) IsValid() error {
 	}
 
 	if c.PrivManProcess != nil {
-		if c.PrivManUpcheckUrl == "" {
-			return errors.New("privManUpcheckUrl is empty")
-		}
 
 		if c.PrivManKey == "" {
 			return errors.New("privManKey is empty")

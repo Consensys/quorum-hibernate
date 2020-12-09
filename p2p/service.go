@@ -1,4 +1,4 @@
-package nodeman
+package p2p
 
 import (
 	"errors"
@@ -15,12 +15,12 @@ const (
 	PreparePvtTxMethod = `{"jsonrpc":"2.0", "method":"node.PrepareForPrivateTx", "params":["%s"], "id":77}`
 )
 
-func NewNodeManager(cfg *types.NodeConfig) *NodeManager {
-	return &NodeManager{cfg: cfg, client: core.NewHttpClient()}
+func NewPeerManager(cfg *types.NodeConfig) *PeerManager {
+	return &PeerManager{cfg: cfg, client: core.NewHttpClient()}
 }
 
-func (nm *NodeManager) getConfigByPrivManKey(key string) *types.NodeManagerConfig {
-	for _, n := range nm.getLatestConfig() {
+func (pm *PeerManager) getConfigByPrivManKey(key string) *types.NodeManagerConfig {
+	for _, n := range pm.getLatestConfig() {
 		if n.PrivManKey == key {
 			log.Debug("getConfigByPrivManKey - privacy manager key matched", "node", n)
 			return n
@@ -29,25 +29,25 @@ func (nm *NodeManager) getConfigByPrivManKey(key string) *types.NodeManagerConfi
 	return nil
 }
 
-func (nm *NodeManager) getLatestConfig() []*types.NodeManagerConfig {
-	newCfg, err := types.ReadNodeManagerConfig(nm.cfg.BasicConfig.NodeManagerConfigFile)
+func (pm *PeerManager) getLatestConfig() []*types.NodeManagerConfig {
+	newCfg, err := types.ReadNodeManagerConfig(pm.cfg.BasicConfig.NodeManagerConfigFile)
 	if err != nil {
-		log.Error("getLatestConfig - error updating node manager config. will use old config", "path", nm.cfg.BasicConfig.NodeManagerConfigFile, "err", err)
-		return nm.cfg.NodeManagers
+		log.Error("getLatestConfig - error updating node manager config. will use old config", "path", pm.cfg.BasicConfig.NodeManagerConfigFile, "err", err)
+		return pm.cfg.NodeManagers
 	}
 	log.Debug("getLatestConfig - loaded new config", "cfg", newCfg)
 	if len(newCfg) == 0 {
 		log.Warn("getLatestConfig - node manager list is empty after reload")
 	}
 	log.Debug("getLatestConfig - node manager config", "new cfg", newCfg)
-	nm.cfg.NodeManagers = newCfg
-	return nm.cfg.NodeManagers
+	pm.cfg.NodeManagers = newCfg
+	return pm.cfg.NodeManagers
 }
 
 // TODO if a node manager is down/not reachable should we mark it as down and proceed?
 // ValidatePeerPrivateTxStatus validates participants readiness status to process private tx
-func (nm *NodeManager) ValidatePeerPrivateTxStatus(participantKeys []string) (bool, error) {
-	statusArr := nm.peerPrivateTxStatus(participantKeys)
+func (pm *PeerManager) ValidatePeerPrivateTxStatus(participantKeys []string) (bool, error) {
+	statusArr := pm.peerPrivateTxStatus(participantKeys)
 	finalStatus := true
 	for _, s := range statusArr {
 		if !s {
@@ -59,10 +59,10 @@ func (nm *NodeManager) ValidatePeerPrivateTxStatus(participantKeys []string) (bo
 	return finalStatus, nil
 }
 
-func (nm *NodeManager) peersByParticipantKeyCount(participantKeys []string) int {
+func (pm *PeerManager) peersByParticipantKeyCount(participantKeys []string) int {
 	c := 0
 	for _, key := range participantKeys {
-		if nm.getConfigByPrivManKey(key) != nil {
+		if pm.getConfigByPrivManKey(key) != nil {
 			c++
 		}
 	}
@@ -70,12 +70,12 @@ func (nm *NodeManager) peersByParticipantKeyCount(participantKeys []string) int 
 }
 
 // peerPrivateTxStatus returns readiness status of peers to process private transaction
-func (nm *NodeManager) peerPrivateTxStatus(participantKeys []string) []bool {
+func (pm *PeerManager) peerPrivateTxStatus(participantKeys []string) []bool {
 	var wg = sync.WaitGroup{}
 	var resDoneCh = make(chan bool, 1)
-	var resCh = make(chan NodeManagerPrivateTxPrepResult, 1)
-	var expResCnt = nm.peersByParticipantKeyCount(participantKeys)
-	var preparePvtTxReq = []byte(fmt.Sprintf(PreparePvtTxMethod, nm.cfg.BasicConfig.Name))
+	var resCh = make(chan PeerPrivateTxPrepResult, 1)
+	var expResCnt = pm.peersByParticipantKeyCount(participantKeys)
+	var preparePvtTxReq = []byte(fmt.Sprintf(PreparePvtTxMethod, pm.cfg.BasicConfig.Name))
 	var statusArr []bool
 
 	if expResCnt == 0 {
@@ -102,13 +102,13 @@ func (nm *NodeManager) peerPrivateTxStatus(participantKeys []string) []bool {
 	}()
 
 	for _, key := range participantKeys {
-		nmCfg := nm.getConfigByPrivManKey(key)
+		nmCfg := pm.getConfigByPrivManKey(key)
 
 		if nmCfg != nil {
 			wg.Add(1)
 			go func(nmc *types.NodeManagerConfig) {
 				defer wg.Done()
-				result := NodeManagerPrivateTxPrepResult{}
+				result := PeerPrivateTxPrepResult{}
 				if err := core.CallRPC(nmc.RpcUrl, preparePvtTxReq, &result); err != nil {
 					log.Error("peerPrivateTxStatus rpc failed", "err", err)
 					result.Error = err
@@ -131,8 +131,8 @@ func (nm *NodeManager) peerPrivateTxStatus(participantKeys []string) []bool {
 // ValidatePeers checks the status of peer node managers.
 // if one of them returns error during rpc call or not reachable then it returns error.
 // if all of them responded and one of them in shutdown initiated or inprogress state it returns error
-func (nm *NodeManager) ValidatePeers() ([]NodeStatusInfo, error) {
-	nodeManagerCount, statusArr := nm.peerStatus()
+func (pm *PeerManager) ValidatePeers() ([]NodeStatusInfo, error) {
+	nodeManagerCount, statusArr := pm.peerStatus()
 	if len(statusArr) != nodeManagerCount {
 		return statusArr, errors.New("some node managers did not respond")
 	}
@@ -151,11 +151,11 @@ func (nm *NodeManager) ValidatePeers() ([]NodeStatusInfo, error) {
 	return statusArr, nil
 }
 
-func (nm *NodeManager) getConfigCount(nmCfgs []*types.NodeManagerConfig) int {
+func (pm *PeerManager) getConfigCount(nmCfgs []*types.NodeManagerConfig) int {
 	nodeManagerCount := 0
 	for _, n := range nmCfgs {
 		//skip self
-		if n.PrivManKey == nm.cfg.BasicConfig.PrivManKey {
+		if n.PrivManKey == pm.cfg.BasicConfig.PrivManKey {
 			continue
 		}
 		nodeManagerCount++
@@ -169,14 +169,14 @@ func (nm *NodeManager) getConfigCount(nmCfgs []*types.NodeManagerConfig) int {
 // It creates as many go routines as the number of peer node managers. It should not be an issue
 // as we would not have more than a few thousand peers.
 // Golang easily supports creating thousands of goroutines
-func (nm *NodeManager) peerStatus() (int, []NodeStatusInfo) {
-	var nodeStatusReq = []byte(fmt.Sprintf(NodeStatusMethod, nm.cfg.BasicConfig.Name))
+func (pm *PeerManager) peerStatus() (int, []NodeStatusInfo) {
+	var nodeStatusReq = []byte(fmt.Sprintf(NodeStatusMethod, pm.cfg.BasicConfig.Name))
 	var statusArr []NodeStatusInfo
 	var wg = sync.WaitGroup{}
 	var resDoneCh = make(chan bool, 1)
-	var resCh = make(chan NodeManagerNodeStatusResult, 1)
-	nmCfgs := nm.getLatestConfig()
-	expResCnt := nm.getConfigCount(nmCfgs)
+	var resCh = make(chan PeerNodeStatusResult, 1)
+	nmCfgs := pm.getLatestConfig()
+	expResCnt := pm.getConfigCount(nmCfgs)
 
 	if expResCnt == 0 {
 		return 0, nil
@@ -203,13 +203,13 @@ func (nm *NodeManager) peerStatus() (int, []NodeStatusInfo) {
 
 	for _, n := range nmCfgs {
 		//skip self
-		if n.PrivManKey == nm.cfg.BasicConfig.PrivManKey {
+		if n.PrivManKey == pm.cfg.BasicConfig.PrivManKey {
 			continue
 		}
 		wg.Add(1)
 		go func(nmc *types.NodeManagerConfig) {
 			defer wg.Done()
-			var res = NodeManagerNodeStatusResult{}
+			var res = PeerNodeStatusResult{}
 			if err := core.CallRPC(nmc.RpcUrl, nodeStatusReq, &res); err != nil {
 				log.Error("peerStatus - ClientStatus - failed", "err", err)
 			}

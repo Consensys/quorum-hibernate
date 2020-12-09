@@ -3,14 +3,14 @@
 name = "node7"
 #blockchain client RPC URL
 bcClntRpcUrl = "http://localhost:22006"
-privManUpcheckUrl = "http://localhost:9007/upcheck"
 privManKey = "ROAZBWtSacxXQrOe3FGAqJDyJjFePR5ce4TSIzmJ0Bc="
-consensus = "istanbul"
+consensus = "raft"
 clientType = "quorum"
 upcheckPollingInterval = 1
 nodeManagerConfigFile = "./test/docker/nm1.toml"
+runMode="NORMAL"
 
-inactivityTime = 6000
+inactivityTime = 60
 
 proxies = [
     { name = "geth-rpc", type = "http", proxyAddr = "localhost:9097", upstreamAddr = "http://localhost:22006", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
@@ -25,10 +25,13 @@ rpcvHosts = ["*"]
 
 [basicConfig.bcClntProcess]
 name = "bcclnt"
-containerId = "ea5a72c6de37"
+containerId = "6687fcf2e3f3"
 controlType = "docker"
+upcheckCfg = { upcheckUrl = "http://localhost:22006", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
+
 
 [basicConfig.privManProcess]
 name = "privman"
 controlType = "docker"
-containerId = "9cef6bfcd8e9"
+containerId = "49e52b6d65ec"
+upcheckCfg = { upcheckUrl = "http://localhost:9007/upcheck", method = "GET", body = "", returnType = "string", expected = "I'm up!"}

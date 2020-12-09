@@ -11,15 +11,13 @@ import (
 
 // ShellProcessControl represents process control for a shell process
 type ShellProcessControl struct {
-	cfg             *types.ProcessConfig
-	bcclntRpcUrl    string
-	privManUpchkUrl string
-	status          bool
-	muxLock         sync.Mutex
+	cfg     *types.ProcessConfig
+	status  bool
+	muxLock sync.Mutex
 }
 
-func NewShellProcess(p *types.ProcessConfig, bcRpcUrl string, pmUpChkUrl string, s bool) Process {
-	sp := &ShellProcessControl{p, bcRpcUrl, pmUpChkUrl, s, sync.Mutex{}}
+func NewShellProcess(p *types.ProcessConfig, s bool) Process {
+	sp := &ShellProcessControl{p, s, sync.Mutex{}}
 	sp.IsUp()
 	log.Debug("shell process created", "name", sp.cfg.Name)
 	return sp
@@ -37,25 +35,14 @@ func (sp *ShellProcessControl) Status() bool {
 
 // Status implements Process.IsUp
 func (sp *ShellProcessControl) IsUp() bool {
-
 	s := false
 	var err error
-	if sp.cfg.IsBcClient() {
-		s, err = IsBlockchainClientUp(sp.bcclntRpcUrl)
-		if err != nil {
-			sp.setStatus(false)
-			log.Info("IsUp - blockchain client is down", "err", err)
-		} else {
-			sp.setStatus(s)
-		}
-	} else if sp.cfg.IsPrivacyManager() {
-		s, err = IsPrivacyManagerUp(sp.privManUpchkUrl)
-		if err != nil {
-			sp.setStatus(false)
-			log.Info("IsUp - privacy manager is down", "err", err)
-		} else {
-			sp.setStatus(s)
-		}
+	s, err = IsProcessUp(sp.cfg.UpcheckCfg)
+	if err != nil {
+		sp.setStatus(false)
+		log.Error("IsUp - blockchain client is down", "err", err)
+	} else {
+		sp.setStatus(s)
 	}
 	log.Debug("IsUp", "name", sp.cfg.Name, "return", sp.status)
 	return sp.status

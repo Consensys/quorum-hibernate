@@ -3,9 +3,8 @@ package node
 import (
 	"net/http"
 
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
-	"github.com/ConsenSysQuorum/node-manager/nodeman"
+	"github.com/ConsenSysQuorum/node-manager/p2p"
 )
 
 type NodeRPCAPIs struct {
@@ -27,7 +26,7 @@ func NewNodeRPCAPIs(qn *NodeControl) *NodeRPCAPIs {
 // IsNodeUp checks if the node is up and returns the node's up status
 func (n *NodeRPCAPIs) IsNodeUp(_ *http.Request, from *string, reply *NodeUpReply) error {
 	log.Debug("IsNodeUp - rpc call isNodeUp", "from", *from)
-	if !n.qn.IsClientUp(false) {
+	if !n.qn.CheckClientUpStatus(false) {
 		reply.Status = false
 		log.Debug("IsNodeUp - node not up")
 		return nil
@@ -45,7 +44,7 @@ func (n *NodeRPCAPIs) PrepareForPrivateTx(_ *http.Request, from *string, reply *
 	if err := n.qn.IsNodeBusy(); err != nil {
 		*reply = PrivateTxPrepReply{Status: false}
 	} else {
-		if n.qn.ClientStatus() == types.Down {
+		if !n.qn.IsClientUp() {
 			// send the response immediately and run prepare node in the background
 			*reply = PrivateTxPrepReply{Status: false}
 			go func() {
@@ -63,11 +62,11 @@ func (n *NodeRPCAPIs) PrepareForPrivateTx(_ *http.Request, from *string, reply *
 }
 
 // NodeStatus returns current status of this node
-func (n *NodeRPCAPIs) NodeStatus(_ *http.Request, from *string, reply *nodeman.NodeStatusInfo) error {
+func (n *NodeRPCAPIs) NodeStatus(_ *http.Request, from *string, reply *p2p.NodeStatusInfo) error {
 	status := n.qn.GetNodeStatus()
 	inactiveTimeLimit := n.qn.config.BasicConfig.InactivityTime
 	curInactiveTimeCount := n.qn.im.GetInactivityTimeCount()
-	*reply = nodeman.NodeStatusInfo{Status: status, InactiveTimeLimit: inactiveTimeLimit, InactiveTime: curInactiveTimeCount, TimeToShutdown: inactiveTimeLimit - curInactiveTimeCount}
+	*reply = p2p.NodeStatusInfo{Status: status, InactiveTimeLimit: inactiveTimeLimit, InactiveTime: curInactiveTimeCount, TimeToShutdown: inactiveTimeLimit - curInactiveTimeCount}
 	log.Info("ClientStatus - rpc call", "from", *from, "status", status)
 	return nil
 }
