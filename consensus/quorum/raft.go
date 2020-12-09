@@ -52,7 +52,7 @@ func NewRaftConsensus(qn *types.NodeConfig) consensus.Consensus {
 
 func (r *RaftConsensus) getRole(rpcUrl string) (string, error) {
 	var respResult RaftRoleResp
-	if _, err := core.CallRPC(rpcUrl, "POST", []byte(RaftRoleReq), &respResult, false); err != nil {
+	if _, err := core.CallRPC(rpcUrl, "POST", []byte(RaftRoleReq), &respResult); err != nil {
 		return "", err
 	}
 	return respResult.Result, respResult.Error
@@ -60,7 +60,7 @@ func (r *RaftConsensus) getRole(rpcUrl string) (string, error) {
 
 func (r *RaftConsensus) getRaftClusterInfo(rpcUrl string) ([]RaftClusterEntry, error) {
 	var respResult RaftClusterResp
-	if _, err := core.CallRPC(rpcUrl, "POST", []byte(RaftClusterReq), &respResult, false); err != nil {
+	if _, err := core.CallRPC(rpcUrl, "POST", []byte(RaftClusterReq), &respResult); err != nil {
 		return nil, err
 	}
 	return respResult.Result, respResult.Error

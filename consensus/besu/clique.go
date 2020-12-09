@@ -59,7 +59,7 @@ func NewCliqueConsensus(qn *types.NodeConfig) consensus.Consensus {
 
 func (c *CliqueConsensus) getCurrentBlockNumber() (int64, error) {
 	var result BlockNumberResp
-	if _, err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, "POST", []byte(BlockNumberReq), &result, false); err != nil {
+	if _, err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, "POST", []byte(BlockNumberReq), &result); err != nil {
 		return 0, err
 	}
 	blockNumber, err := strconv.ParseInt(result.Result[2:], 16, 64)
@@ -71,7 +71,7 @@ func (c *CliqueConsensus) getCurrentBlockNumber() (int64, error) {
 
 func (c *CliqueConsensus) getSigners() ([]string, error) {
 	var result CliqueSignersResp
-	if _, err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, "POST", []byte(CLiqueSigners), &result, false); err != nil {
+	if _, err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, "POST", []byte(CLiqueSigners), &result); err != nil {
 		return nil, err
 	}
 
@@ -81,7 +81,7 @@ func (c *CliqueConsensus) getSigners() ([]string, error) {
 // returns true if the coinbase account of the node is one of the signer accounts
 func (c *CliqueConsensus) getCoinBaseAccount() (string, error) {
 	var result CoinBaseResp
-	if _, err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, "POST", []byte(CoinBaseReq), &result, false); err != nil {
+	if _, err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, "POST", []byte(CoinBaseReq), &result); err != nil {
 		return "", err
 	}
 	return result.CoinBaseAccount, nil
@@ -89,7 +89,7 @@ func (c *CliqueConsensus) getCoinBaseAccount() (string, error) {
 
 func (c *CliqueConsensus) getConsensusStatus() (*[]CliqueStatus, error) {
 	var respResult CliqueStatusResp
-	if _, err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, "POST", []byte(CliqueStatusReq), &respResult, false); err != nil {
+	if _, err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, "POST", []byte(CliqueStatusReq), &respResult); err != nil {
 		return nil, err
 	}
 	return &respResult.Result, respResult.Error

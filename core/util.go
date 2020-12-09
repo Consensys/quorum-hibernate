@@ -34,6 +34,14 @@ func RandomInt(min int, max int) int {
 	return rand.Intn(max-min+1) + min
 }
 
+func CallRPC(rpcUrl string, method string, rpcReq []byte, resData interface{}) (string, error) {
+	return callRPC(rpcUrl, method, rpcReq, resData, false)
+}
+
+func RawCallRPC(rpcUrl string, method string, rpcReq []byte, resData interface{}) (string, error) {
+	return callRPC(rpcUrl, method, rpcReq, resData, true)
+}
+
 // CallRPC makes a rpc call to rpcUrl. It makes http post req with rpcReq as body.
 // The returned JSON result is decoded into resData.
 // resData must be a pointer.
@@ -41,7 +49,7 @@ func RandomInt(min int, max int) int {
 // If resData is a RPC result then error in the result should be handled by the caller
 // It returns error if http request does not return 200 OK or json decoding of response fails
 // if returnRaw is true it returns the response as string
-func CallRPC(rpcUrl string, method string, rpcReq []byte, resData interface{}, returnRaw bool) (string, error) {
+func callRPC(rpcUrl string, method string, rpcReq []byte, resData interface{}, returnRaw bool) (string, error) {
 	client := NewHttpClient()
 	log.Debug("CallRPC - making rpc call", "req", string(rpcReq))
 	req, err := http.NewRequest(method, rpcUrl, bytes.NewBuffer(rpcReq))
