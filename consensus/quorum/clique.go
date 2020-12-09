@@ -48,7 +48,7 @@ func NewCliqueConsensus(qn *types.NodeConfig) consensus.Consensus {
 // returns true if the coinbase account of the node is one of the signer accounts
 func (c *CliqueConsensus) getCoinBaseAccount() (string, error) {
 	var result CoinBaseResp
-	if _, err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, "POST", []byte(CoinBaseReq), &result); err != nil {
+	if err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, []byte(CoinBaseReq), &result); err != nil {
 		return "", err
 	}
 	return result.CoinBaseAccount, nil
@@ -56,7 +56,7 @@ func (c *CliqueConsensus) getCoinBaseAccount() (string, error) {
 
 func (c *CliqueConsensus) getConsensusStatus() (*CliqueStatus, error) {
 	var respResult CliqueStatusResp
-	if _, err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, "POST", []byte(CliqueStatusReq), &respResult); err != nil {
+	if err := core.CallRPC(c.cfg.BasicConfig.BcClntRpcUrl, []byte(CliqueStatusReq), &respResult); err != nil {
 		return nil, err
 	}
 	return &respResult.Result, respResult.Error

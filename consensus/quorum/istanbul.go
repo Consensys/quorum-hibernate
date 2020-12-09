@@ -46,7 +46,7 @@ func NewIstanbulConsensus(qn *types.NodeConfig) consensus.Consensus {
 
 func (i *IstanbulConsensus) getIstanbulSealerActivity() (*IstanbulSealActivity, error) {
 	var respResult IstanbulSealActivityResp
-	if _, err := core.CallRPC(i.cfg.BasicConfig.BcClntRpcUrl, "POST", []byte(IstanbulStatusReq), &respResult); err != nil {
+	if err := core.CallRPC(i.cfg.BasicConfig.BcClntRpcUrl, []byte(IstanbulStatusReq), &respResult); err != nil {
 		return nil, err
 	}
 	return &respResult.Result, respResult.Error
@@ -54,7 +54,7 @@ func (i *IstanbulConsensus) getIstanbulSealerActivity() (*IstanbulSealActivity, 
 
 func (i *IstanbulConsensus) getIstanbulIsValidator() (bool, error) {
 	var respResult IstanbulIsValidatorResp
-	if _, err := core.CallRPC(i.cfg.BasicConfig.BcClntRpcUrl, "POST", []byte(IstanbulIsValidatorReq), &respResult); err != nil {
+	if err := core.CallRPC(i.cfg.BasicConfig.BcClntRpcUrl, []byte(IstanbulIsValidatorReq), &respResult); err != nil {
 		return false, err
 	}
 	return respResult.Result, respResult.Error

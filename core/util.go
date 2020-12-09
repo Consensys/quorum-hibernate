@@ -13,6 +13,12 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
+var client *http.Client
+
+func init() {
+	client = NewHttpClient()
+}
+
 // NewHttpClient returns a new customized http client
 func NewHttpClient() *http.Client {
 	var netTransport = &http.Transport{
@@ -34,23 +40,22 @@ func RandomInt(min int, max int) int {
 	return rand.Intn(max-min+1) + min
 }
 
-func CallRPC(rpcUrl string, method string, rpcReq []byte, resData interface{}) (string, error) {
-	return callRPC(rpcUrl, method, rpcReq, resData, false)
+func CallRPC(rpcUrl string, rpcReq []byte, resData interface{}) error {
+	_, err := httpRequest(rpcUrl, "POST", rpcReq, resData, false)
+	return err
 }
 
-func RawCallRPC(rpcUrl string, method string, rpcReq []byte, resData interface{}) (string, error) {
-	return callRPC(rpcUrl, method, rpcReq, resData, true)
+func CallREST(rpcUrl string, method string, rpcReq []byte) (string, error) {
+	return httpRequest(rpcUrl, method, rpcReq, nil, true)
 }
 
-// CallRPC makes a rpc call to rpcUrl. It makes http post req with rpcReq as body.
+// httpRequest makes a http request to rpcUrl. It makes http req with rpcReq as body.
 // The returned JSON result is decoded into resData.
 // resData must be a pointer.
 // If http request returns 200 OK, it returns response body decoded into resData
-// If resData is a RPC result then error in the result should be handled by the caller
 // It returns error if http request does not return 200 OK or json decoding of response fails
-// if returnRaw is true it returns the response as string
-func callRPC(rpcUrl string, method string, rpcReq []byte, resData interface{}, returnRaw bool) (string, error) {
-	client := NewHttpClient()
+// if returnRaw is true it returns the response as string and does not set resData
+func httpRequest(rpcUrl string, method string, rpcReq []byte, resData interface{}, returnRaw bool) (string, error) {
 	log.Debug("CallRPC - making rpc call", "req", string(rpcReq))
 	req, err := http.NewRequest(method, rpcUrl, bytes.NewBuffer(rpcReq))
 	if err != nil {

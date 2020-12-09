@@ -277,7 +277,7 @@ func (c NodeConfig) IsConsensusValid() error {
 	}
 
 	var resp map[string]interface{}
-	if _, err := core.CallRPC(c.BasicConfig.BcClntRpcUrl, "POST", []byte(adminInfoReq), &resp); err == nil {
+	if err := core.CallRPC(c.BasicConfig.BcClntRpcUrl, []byte(adminInfoReq), &resp); err == nil {
 		resMap := resp["result"].(map[string]interface{})
 		log.Debug("IsConsensusValid - response", "map", resMap)
 

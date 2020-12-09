@@ -109,7 +109,7 @@ func (pm *PeerManager) peerPrivateTxStatus(participantKeys []string) []bool {
 			go func(nmc *types.NodeManagerConfig) {
 				defer wg.Done()
 				result := PeerPrivateTxPrepResult{}
-				if _, err := core.CallRPC(nmc.RpcUrl, "POST", preparePvtTxReq, &result); err != nil {
+				if err := core.CallRPC(nmc.RpcUrl, preparePvtTxReq, &result); err != nil {
 					log.Error("peerPrivateTxStatus rpc failed", "err", err)
 					result.Error = err
 				} else if result.Error != nil {
@@ -210,7 +210,7 @@ func (pm *PeerManager) peerStatus() (int, []NodeStatusInfo) {
 		go func(nmc *types.NodeManagerConfig) {
 			defer wg.Done()
 			var res = PeerNodeStatusResult{}
-			if _, err := core.CallRPC(nmc.RpcUrl, "POST", nodeStatusReq, &res); err != nil {
+			if err := core.CallRPC(nmc.RpcUrl, nodeStatusReq, &res); err != nil {
 				log.Error("peerStatus - ClientStatus - failed", "err", err)
 			}
 			if res.Error != nil {

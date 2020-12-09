@@ -59,12 +59,12 @@ func ExecuteShellCommand(cmdArr []string) error {
 func IsProcessUp(cfg types.UpcheckConfig) (bool, error) {
 	if cfg.IsRpcResult() {
 		var resp UpcheckResponse
-		if _, err := core.CallRPC(cfg.UpcheckUrl, cfg.Method, []byte(cfg.Body), &resp); err != nil || resp.Error != nil {
+		if err := core.CallRPC(cfg.UpcheckUrl, []byte(cfg.Body), &resp); err != nil || resp.Error != nil {
 			log.Info("IsProcessUp - failed", "err", err, "resp", resp)
 			return false, core.ErrNodeDown
 		}
 	} else if cfg.IsStringResult() {
-		if resp, err := core.RawCallRPC(cfg.UpcheckUrl, cfg.Method, []byte(cfg.Body), nil); err != nil {
+		if resp, err := core.CallREST(cfg.UpcheckUrl, cfg.Method, []byte(cfg.Body)); err != nil {
 			log.Info("IsProcessUp - failed", "err", err, "resp", resp)
 			return false, core.ErrNodeDown
 		} else {
