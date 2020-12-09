@@ -1,0 +1,29 @@
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '*.md'
+      - '*.sample.toml'
+  pull_request:
+    paths-ignore:
+      - '*.md'
+      - '*.sample.toml'
+name: Tests
+jobs:
+  unit-tests:
+    name: Go 1.15 unit tests in ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.15
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Run unit tests
+        run: go test ./...
