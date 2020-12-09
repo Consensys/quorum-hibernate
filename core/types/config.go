@@ -1,7 +1,6 @@
 package types
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/url"
@@ -79,31 +78,6 @@ func (c ProxyConfig) IsValid() error {
 		return namedValidationError{name: c.Name, errMsg: "writeTimeout is zero"}
 	}
 	return nil
-}
-
-type serverTLSConfig struct {
-	KeyFile      string   `toml:"keyFile"`
-	CertFile     string   `toml:"certFile"`
-	CipherSuites []string `toml:"cipherSuites"`
-}
-
-func (c *serverTLSConfig) Convert() *tls.Config {
-	// examples of converting config to tls.Config:
-	// 		SecurityPlugin/tls.go::NewHttpClient
-	// 		Quorum/plugin/security/gateway.go::transform
-	panic("implement me")
-}
-
-type clientTLSConfig struct {
-	CACertFile   string   `toml:"caCertFile"`
-	CipherSuites []string `toml:"cipherSuites"`
-}
-
-func (c *clientTLSConfig) Convert() *tls.Config {
-	// examples of converting config to tls.Config:
-	// 		SecurityPlugin/tls.go::NewHttpClient
-	// 		Quorum/plugin/security/gateway.go::transform
-	panic("implement me")
 }
 
 type NodeManagerConfig struct {
