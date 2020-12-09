@@ -33,7 +33,6 @@ type IstanbulConsensus struct {
 }
 
 const (
-	validatorDownSealDiff = 2
 
 	// Istanbul RPC APIs
 	IstanbulStatusReq      = `{"jsonrpc":"2.0", "method":"istanbul_status", "params":[], "id":67}`
@@ -80,17 +79,23 @@ func (i *IstanbulConsensus) ValidateShutdown() (bool, error) {
 		return isValidator, err
 	}
 
-	totalValidators := len(activity.SealerActivity)
-	maxSealBlocks := activity.NumBlocks / totalValidators
-
 	if activity.NumBlocks == 0 {
 		return isValidator, errors.New("istanbul consensus check failed - block minting not started at network")
 	}
 
+	// first identify the max number of blocks sealed by any of the validators
+	maxBlockSealed := 0
+	for _, numBlocks := range activity.SealerActivity {
+		if numBlocks > maxBlockSealed {
+			maxBlockSealed = numBlocks
+		}
+	}
+
+	// check how many validators have sealed less blocks and potentially down
+	totalValidators := len(activity.SealerActivity)
 	var numNodesDown = 0
 	for _, numBlocks := range activity.SealerActivity {
-		sealDiff := maxSealBlocks - numBlocks
-		if sealDiff >= validatorDownSealDiff {
+		if maxBlockSealed-numBlocks > 1 {
 			numNodesDown++
 		}
 	}
