@@ -245,7 +245,7 @@ func (n *NodeControl) Stop() {
 // ResetInactiveSyncTime resets inactivity time of the tracker
 func (n *NodeControl) ResetInactiveSyncTime() {
 	n.inactivityResetCh <- true
-	if n.config.BasicConfig.IsResyncSet() {
+	if n.config.BasicConfig.IsResyncTimerSet() {
 		n.syncResetCh <- true
 	}
 }
