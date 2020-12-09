@@ -179,21 +179,25 @@ func (n *NodeControl) CheckClientUpStatus(connectToClient bool) bool {
 	// it is possible that QNM status of the node is down and the node was brought up
 	// in such cases, with forceMode true, a direct call to client is done to get the
 	// real status
-	if n.IsClientUp() || connectToClient {
-		bcclntStatus, pmStatus := n.checkUpStatus()
-		log.Debug("CheckClientUpStatus", "blockchain client", bcclntStatus, "privacy manager", pmStatus)
-		if bcclntStatus && pmStatus {
-			n.SetClntStatus(types.Up)
-		} else {
-			n.SetClntStatus(types.Down)
-		}
-		return bcclntStatus && pmStatus
+	if !n.IsClientUp() && !connectToClient {
+		return false
 	}
-	return false
+
+	bcclntStatus, pmStatus := n.fetchCurrentClientStatuses()
+	log.Debug("CheckClientUpStatus", "blockchain client", bcclntStatus, "privacy manager", pmStatus)
+
+	areClientsUp := bcclntStatus && pmStatus
+
+	if areClientsUp {
+		n.SetClntStatus(types.Up)
+	} else {
+		n.SetClntStatus(types.Down)
+	}
+	return areClientsUp
 }
 
-// checkUpStatus checks up status of blockchain client and privacy manager in parallel
-func (n *NodeControl) checkUpStatus() (bool, bool) {
+// fetchCurrentClientStatuses gets the current statuses of the blockchain client and privacy manager in parallel
+func (n *NodeControl) fetchCurrentClientStatuses() (bool, bool) {
 	var bcclntStatus bool
 	var wg = sync.WaitGroup{}
 	wg.Add(1)
