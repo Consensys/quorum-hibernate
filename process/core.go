@@ -27,8 +27,8 @@ type Process interface {
 }
 
 type UpcheckResponse struct {
-	Result interface{} `json:"result"`
-	Error  error       `json:"error"`
+	Result interface{}    `json:"result"`
+	Error  *core.RpcError `json:"error"`
 }
 
 func ExecuteShellCommand(cmdArr []string) error {
@@ -60,7 +60,7 @@ func IsProcessUp(cfg types.UpcheckConfig) (bool, error) {
 	if cfg.IsRpcResult() {
 		var resp UpcheckResponse
 		if err := core.CallRPC(cfg.UpcheckUrl, []byte(cfg.Body), &resp); err != nil || resp.Error != nil {
-			log.Info("IsProcessUp - failed", "err", err, "resp", resp)
+			log.Info("IsProcessUp - failed", "err", err, "resp.err", resp.Error, "resp", resp)
 			return false, core.ErrNodeDown
 		}
 	} else if cfg.IsStringResult() {
