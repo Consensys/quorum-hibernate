@@ -108,6 +108,8 @@ func (nm *InactivityResyncMonitor) processInactivity() {
 			log.Info("processInactivity - requested node shutdown, waiting for shutdown complete")
 			status := nm.nodeCtrl.WaitStopClient()
 			log.Info("processInactivity - resuming inactivity time tracker", "shutdown status", status)
+		} else {
+			log.Info("processInactivity - node is already down")
 		}
 		nm.ResetInactivity()
 	}
