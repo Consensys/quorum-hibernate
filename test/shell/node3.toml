@@ -29,7 +29,7 @@ rpcvHosts = ["*"]
 name = "bcclnt"
 controlType = "shell"
 stopCommand = ["bash", "/Users/saiv/quorum-projects/scripts/stopNode.sh", "22002"]
-startCommand = ["bash", "/Users/saiv/quorum-projects/scripts/istanbul/startNode.sh", "3"]
+startCommand = ["bash", "/Users/saiv/quorum-projects/scripts/startNode.sh", "3"]
 upcheckCfg = { upcheckUrl = "http://localhost:22002", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
 
 [basicConfig.privManProcess]
