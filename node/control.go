@@ -253,9 +253,8 @@ func (n *NodeControl) ResetInactiveSyncTime() {
 func (n *NodeControl) startClientStatusMonitor() {
 	go func() {
 		var (
-			isClientUp  bool
-			timer       = time.NewTicker(time.Duration(n.config.BasicConfig.UpchkPollingInterval) * time.Second)
-			tickerCount = 0
+			isClientUp bool
+			timer      = time.NewTicker(time.Duration(n.config.BasicConfig.UpchkPollingInterval) * time.Second)
 		)
 		defer timer.Stop()
 
@@ -263,16 +262,7 @@ func (n *NodeControl) startClientStatusMonitor() {
 		for {
 			select {
 			case <-timer.C:
-				tickerCount++
-				if tickerCount == n.config.BasicConfig.InactivityTime {
-					// at the end of inactivity period force status check with
-					// client. This is to handle scenarios where in the node was
-					// brought up in the backend bypassing node manager
-					isClientUp = n.CheckClientUpStatus(true)
-					tickerCount = 0
-				} else {
-					isClientUp = n.CheckClientUpStatus(false)
-				}
+				isClientUp = n.CheckClientUpStatus(false)
 				log.Debug("clientStatusMonitor", "isClientUp", isClientUp)
 				continue
 			case <-n.clntStatMonStopCh:
