@@ -31,12 +31,6 @@ func TestIstanbulConsensus_ValidateShutdown_Validator(t *testing.T) {
 		wantErrMsg                                        string
 	}{
 		{
-			name:                    "noSealerActivity",
-			istanbulIsValidatorResp: `{"result": true}`,
-			istanbulStatusResp:      `{"result": {"numBlocks":0}}`,
-			wantErrMsg:              "istanbul consensus check failed - no signers",
-		},
-		{
 			name:                    "mintingNotStarted",
 			istanbulIsValidatorResp: `{"result": true}`,
 			istanbulStatusResp:      `{"result": {"numBlocks":0, "sealerActivity": {"somesigner":1}}}`,

@@ -260,10 +260,10 @@ func (n *NodeControl) startClientStatusMonitor() {
 
 		log.Info("clientStatusMonitor started")
 		for {
-			isClientUp = n.CheckClientUpStatus(false)
-			log.Debug("clientStatusMonitor", "isClientUp", isClientUp)
 			select {
 			case <-timer.C:
+				isClientUp = n.CheckClientUpStatus(false)
+				log.Debug("clientStatusMonitor", "isClientUp", isClientUp)
 				continue
 			case <-n.clntStatMonStopCh:
 				log.Info("clientStatusMonitor stopped")
