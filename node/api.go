@@ -1,23 +1,13 @@
 package node
 
 import (
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"net/http"
+
+	"github.com/ConsenSysQuorum/node-manager/core/types"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/p2p"
 )
-
-// TODO(cjh) for testing so methods can be mocked
-type ControllerApiService interface {
-	CheckClientUpStatus(connectToClient bool) bool
-	IsClientUp() bool
-	ResetInactiveSyncTime()
-	IsNodeBusy() error
-	PrepareClient() bool
-	GetNodeStatus() types.NodeStatus
-	GetInactivityTimeCount() int
-}
 
 type NodeRPCAPIs struct {
 	service ControllerApiService

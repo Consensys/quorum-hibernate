@@ -26,37 +26,37 @@ func NewDockerProcess(p *types.ProcessConfig, s bool) Process {
 	return sp
 }
 
-func (dp *DockerControl) setStatus(s bool) {
-	dp.status = s
-	log.Debug("setStatus - process "+dp.cfg.Name, "status", dp.status)
+func (dc *DockerControl) setStatus(s bool) {
+	dc.status = s
+	log.Debug("setStatus - process "+dc.cfg.Name, "status", dc.status)
 }
 
 // Status implements Process.Status
-func (dp *DockerControl) Status() bool {
-	return dp.status
+func (dc *DockerControl) Status() bool {
+	return dc.status
 }
 
 // UpdateStatus implements Process.UpdateStatus
-func (dp *DockerControl) UpdateStatus() bool {
+func (dc *DockerControl) UpdateStatus() bool {
 	s := false
 	var err error
-	s, err = IsProcessUp(dp.cfg.UpcheckCfg)
+	s, err = IsProcessUp(dc.cfg.UpcheckCfg)
 	if err != nil {
-		dp.setStatus(false)
+		dc.setStatus(false)
 		log.Error("Update status - docker process is down", "err", err)
 	} else {
-		dp.setStatus(s)
+		dc.setStatus(s)
 	}
-	log.Debug("UpdateStatus", "name", dp.cfg.Name, "return", dp.status)
-	return dp.status
+	log.Debug("UpdateStatus", "name", dc.cfg.Name, "return", dc.status)
+	return dc.status
 }
 
 // Stop implements Process.Stop
-func (dp *DockerControl) Stop() error {
-	defer dp.muxLock.Unlock()
-	dp.muxLock.Lock()
-	if !dp.status {
-		log.Info("Stop - process is already down", "name", dp.cfg.Name)
+func (dc *DockerControl) Stop() error {
+	defer dc.muxLock.Unlock()
+	dc.muxLock.Lock()
+	if !dc.status {
+		log.Info("Stop - process is already down", "name", dc.cfg.Name)
 		return nil
 	}
 
@@ -66,19 +66,19 @@ func (dp *DockerControl) Stop() error {
 		return err
 	}
 
-	if err := cli.ContainerStop(context.Background(), dp.cfg.ContainerId, nil); err == nil {
-		log.Info("Stop - docker container stopped", "name", dp.cfg.Name, "id", dp.cfg.ContainerId)
-		if dp.WaitToBeDown() {
-			dp.setStatus(false)
-			log.Debug("Stop - is down", "process", dp.cfg.Name, "status", dp.status)
+	if err := cli.ContainerStop(context.Background(), dc.cfg.ContainerId, nil); err == nil {
+		log.Info("Stop - docker container stopped", "name", dc.cfg.Name, "id", dc.cfg.ContainerId)
+		if dc.WaitToBeDown() {
+			dc.setStatus(false)
+			log.Debug("Stop - is down", "process", dc.cfg.Name, "status", dc.status)
 		} else {
-			dp.setStatus(true)
-			log.Error("failed to stop " + dp.cfg.Name)
-			return fmt.Errorf("%s failed to stop", dp.cfg.Name)
+			dc.setStatus(true)
+			log.Error("failed to stop " + dc.cfg.Name)
+			return fmt.Errorf("%s failed to stop", dc.cfg.Name)
 		}
 	} else {
-		log.Error("Stop - docker container stop failed", "name", dp.cfg.Name, "id", dp.cfg.ContainerId, "err", err)
-		dp.setStatus(false)
+		log.Error("Stop - docker container stop failed", "name", dc.cfg.Name, "id", dc.cfg.ContainerId, "err", err)
+		dc.setStatus(false)
 		return err
 	}
 
@@ -86,11 +86,11 @@ func (dp *DockerControl) Stop() error {
 }
 
 // Stop implements Process.Stop
-func (dp *DockerControl) Start() error {
-	defer dp.muxLock.Unlock()
-	dp.muxLock.Lock()
-	if dp.status {
-		log.Info("Start - process is already up", "name", dp.cfg.Name)
+func (dc *DockerControl) Start() error {
+	defer dc.muxLock.Unlock()
+	dc.muxLock.Lock()
+	if dc.status {
+		log.Info("Start - process is already up", "name", dc.cfg.Name)
 		return nil
 	}
 
@@ -100,19 +100,19 @@ func (dp *DockerControl) Start() error {
 		return err
 	}
 
-	if err := cli.ContainerStart(context.Background(), dp.cfg.ContainerId, dtypes.ContainerStartOptions{}); err == nil {
-		log.Info("Start - docker container started", "name", dp.cfg.Name, "id", dp.cfg.ContainerId)
+	if err := cli.ContainerStart(context.Background(), dc.cfg.ContainerId, dtypes.ContainerStartOptions{}); err == nil {
+		log.Info("Start - docker container started", "name", dc.cfg.Name, "id", dc.cfg.ContainerId)
 		//wait for process to come up
-		if dp.WaitToComeUp() {
-			dp.setStatus(true)
-			log.Debug("Start - is up", "process", dp.cfg.Name, "status", dp.status)
+		if dc.WaitToComeUp() {
+			dc.setStatus(true)
+			log.Debug("Start - is up", "process", dc.cfg.Name, "status", dc.status)
 		} else {
-			dp.setStatus(false)
-			log.Error("Start - failed to start " + dp.cfg.Name)
-			return fmt.Errorf("%s failed to start", dp.cfg.Name)
+			dc.setStatus(false)
+			log.Error("Start - failed to start " + dc.cfg.Name)
+			return fmt.Errorf("%s failed to start", dc.cfg.Name)
 		}
 	} else {
-		log.Error("Start - docker container start failed", "name", dp.cfg.Name, "id", dp.cfg.ContainerId, "err", err)
+		log.Error("Start - docker container start failed", "name", dc.cfg.Name, "id", dc.cfg.ContainerId, "err", err)
 		return err
 	}
 	return nil
@@ -120,15 +120,15 @@ func (dp *DockerControl) Start() error {
 
 // WaitToComeUp waits for the process status to be up by performing up check repeatedly
 // for a certain duration
-func (dp *DockerControl) WaitToComeUp() bool {
+func (dc *DockerControl) WaitToComeUp() bool {
 	retryCount := 30
 	c := 1
 	for c <= retryCount {
-		if dp.UpdateStatus() {
+		if dc.UpdateStatus() {
 			return true
 		}
 		time.Sleep(time.Second)
-		log.Debug("WaitToComeUp - wait for up "+dp.cfg.Name, "c", c)
+		log.Debug("WaitToComeUp - wait for up "+dc.cfg.Name, "c", c)
 		c++
 	}
 	return false
@@ -136,15 +136,15 @@ func (dp *DockerControl) WaitToComeUp() bool {
 
 // WaitToBeDown waits for the process status to be down by performing up check repeatedly
 // for a certain duration
-func (sp *DockerControl) WaitToBeDown() bool {
+func (dc *DockerControl) WaitToBeDown() bool {
 	retryCount := 30
 	c := 1
 	for c <= retryCount {
-		if !sp.UpdateStatus() {
+		if !dc.UpdateStatus() {
 			return true
 		}
 		time.Sleep(time.Second)
-		log.Debug("WaitToBeDown - wait for down "+sp.cfg.Name, "c", c)
+		log.Debug("WaitToBeDown - wait for down "+dc.cfg.Name, "c", c)
 		c++
 	}
 	return false

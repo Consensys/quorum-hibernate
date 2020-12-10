@@ -21,6 +21,7 @@ import (
 const CONSENSUS_WAIT_TIME = 60
 
 // NodeControl represents a node manager controller.
+// It implements ControllerApiService
 // It tracks blockchain client/privacyManager processes' inactivity and it allows inactivity to be reset when
 // there is some activity.
 // It accepts request to stop blockchain client/privacyManager when there is inactivity.
