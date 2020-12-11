@@ -447,9 +447,14 @@ func (c BasicConfig) isConsensusValid() error {
 		return errors.New("consensus is empty")
 	}
 
-	if !c.IsRaft() && !c.IsClique() && !c.IsIstanbul() {
+	if c.IsQuorumClient() && !c.IsRaft() && !c.IsClique() && !c.IsIstanbul() {
 		return errors.New("invalid consensus name. supports only raft or istanbul or clique")
 	}
+
+	if c.IsBesuClient() && !c.IsClique() {
+		return errors.New("invalid consensus name. supports only clique")
+	}
+
 	return nil
 }
 
