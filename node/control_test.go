@@ -65,10 +65,10 @@ func TestNodeControl_CheckClientUpStatus_IfCachedStatusIsDownThenOnlyUpdateCache
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			n := NodeControl{
-				clientStatus: initialClientStatus,
-				bcclnt:       tt.bcClient,
-				pmclnt:       tt.pmClient,
-				withPrivMan:  true,
+				clientStatus:  initialClientStatus,
+				bcclntProcess: tt.bcClient,
+				pmclntProcess: tt.pmClient,
+				withPrivMan:   true,
 			}
 
 			got := n.CheckClientUpStatus(tt.forceConnectToClient)
@@ -125,10 +125,10 @@ func TestNodeControl_CheckClientUpStatus_IfCachedStatusIsUpThenAlwaysUpdateCache
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			n := NodeControl{
-				clientStatus: initialClientStatus,
-				bcclnt:       tt.bcClient,
-				pmclnt:       tt.pmClient,
-				withPrivMan:  true,
+				clientStatus:  initialClientStatus,
+				bcclntProcess: tt.bcClient,
+				pmclntProcess: tt.pmClient,
+				withPrivMan:   true,
 			}
 
 			got := n.CheckClientUpStatus(forceConnectToClient)

@@ -58,6 +58,15 @@ func (r *RPCService) Start() error {
 		IdleTimeout:  IdleTimeout,
 	}
 
+	tlsCfg := r.qn.GetNodeConfig().BasicConfig.Server.TLSConfig
+	if tlsCfg != nil {
+		var err error
+		r.httpServer.TLSConfig, err = tlsCfg.TLSConfig()
+		if err != nil {
+			return err
+		}
+	}
+
 	r.shutdownWg.Add(1)
 	go func() {
 		defer r.shutdownWg.Done()

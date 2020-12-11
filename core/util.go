@@ -2,8 +2,10 @@ package core
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/net/http2"
 	"io/ioutil"
 	"math/rand"
 	"net"
@@ -13,23 +15,31 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
-var client *http.Client
+var defaultClient *http.Client
 
 func init() {
-	client = NewHttpClient()
+	defaultClient = NewHttpClient(nil)
 }
 
 // NewHttpClient returns a new customized http client
-func NewHttpClient() *http.Client {
-	var netTransport = &http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout: HttpClientRequestDialerTimeout,
-		}).DialContext,
-		TLSHandshakeTimeout: TLSHandshakeTimeout,
-	}
+func NewHttpClient(tls *tls.Config) *http.Client {
 	var netClient = &http.Client{
-		Timeout:   HttpClientRequestTimeout,
-		Transport: netTransport,
+		Timeout: HttpClientRequestTimeout,
+	}
+	if tls != nil {
+		// TODO (Amal) check how time out can be set
+		netClient.Transport = &http2.Transport{
+			TLSClientConfig:    tls,
+			DisableCompression: true,
+			AllowHTTP:          false,
+		}
+	} else {
+		netClient.Transport = &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout: HttpClientRequestDialerTimeout,
+			}).DialContext,
+			TLSHandshakeTimeout: TLSHandshakeTimeout,
+		}
 	}
 	return netClient
 }
@@ -40,13 +50,13 @@ func RandomInt(min int, max int) int {
 	return rand.Intn(max-min+1) + min
 }
 
-func CallRPC(rpcUrl string, rpcReq []byte, resData interface{}) error {
-	_, err := httpRequest(rpcUrl, "POST", rpcReq, resData, false)
+func CallRPC(client *http.Client, rpcUrl string, rpcReq []byte, resData interface{}) error {
+	_, err := httpRequest(client, rpcUrl, "POST", rpcReq, resData, false)
 	return err
 }
 
-func CallREST(rpcUrl string, method string, rpcReq []byte) (string, error) {
-	return httpRequest(rpcUrl, method, rpcReq, nil, true)
+func CallREST(client *http.Client, rpcUrl string, method string, rpcReq []byte) (string, error) {
+	return httpRequest(client, rpcUrl, method, rpcReq, nil, true)
 }
 
 // httpRequest makes a http request to rpcUrl. It makes http req with rpcReq as body.
@@ -55,7 +65,10 @@ func CallREST(rpcUrl string, method string, rpcReq []byte) (string, error) {
 // If http request returns 200 OK, it returns response body decoded into resData
 // It returns error if http request does not return 200 OK or json decoding of response fails
 // if returnRaw is true it returns the response as string and does not set resData
-func httpRequest(rpcUrl string, method string, rpcReq []byte, resData interface{}, returnRaw bool) (string, error) {
+func httpRequest(client *http.Client, rpcUrl string, method string, rpcReq []byte, resData interface{}, returnRaw bool) (string, error) {
+	if client == nil {
+		client = defaultClient
+	}
 	log.Debug("CallRPC - making rpc call", "req", string(rpcReq))
 	req, err := http.NewRequest(method, rpcUrl, bytes.NewBuffer(rpcReq))
 	if err != nil {
