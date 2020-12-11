@@ -21,6 +21,7 @@ import (
 const CONSENSUS_WAIT_TIME = 60
 
 // NodeControl represents a node manager controller.
+// It implements ControllerApiService
 // It tracks blockchain client/privacyManager processes' inactivity and it allows inactivity to be reset when
 // there is some activity.
 // It accepts request to stop blockchain client/privacyManager when there is inactivity.
@@ -179,27 +180,31 @@ func (n *NodeControl) CheckClientUpStatus(connectToClient bool) bool {
 	// it is possible that QNM status of the node is down and the node was brought up
 	// in such cases, with forceMode true, a direct call to client is done to get the
 	// real status
-	if n.IsClientUp() || connectToClient {
-		bcclntStatus, pmStatus := n.checkUpStatus()
-		log.Debug("CheckClientUpStatus", "blockchain client", bcclntStatus, "privacy manager", pmStatus)
-		if bcclntStatus && pmStatus {
-			n.SetClntStatus(types.Up)
-		} else {
-			n.SetClntStatus(types.Down)
-		}
-		return bcclntStatus && pmStatus
+	if !n.IsClientUp() && !connectToClient {
+		return false
 	}
-	return false
+
+	bcclntStatus, pmStatus := n.fetchCurrentClientStatuses()
+	log.Debug("CheckClientUpStatus", "blockchain client", bcclntStatus, "privacy manager", pmStatus)
+
+	areClientsUp := bcclntStatus && pmStatus
+
+	if areClientsUp {
+		n.SetClntStatus(types.Up)
+	} else {
+		n.SetClntStatus(types.Down)
+	}
+	return areClientsUp
 }
 
-// checkUpStatus checks up status of blockchain client and privacy manager in parallel
-func (n *NodeControl) checkUpStatus() (bool, bool) {
+// fetchCurrentClientStatuses gets the current statuses of the blockchain client and privacy manager in parallel
+func (n *NodeControl) fetchCurrentClientStatuses() (bool, bool) {
 	var bcclntStatus bool
 	var wg = sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		bcclntStatus = n.bcclnt.IsUp()
+		bcclntStatus = n.bcclnt.UpdateStatus()
 	}()
 
 	pmStatus := true
@@ -207,7 +212,7 @@ func (n *NodeControl) checkUpStatus() (bool, bool) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			pmStatus = n.pmclnt.IsUp()
+			pmStatus = n.pmclnt.UpdateStatus()
 		}()
 	}
 
@@ -456,4 +461,8 @@ func (n *NodeControl) StartClient() bool {
 
 func (n *NodeControl) PrepareNodeManagerForPrivateTx(privateFor []string) (bool, error) {
 	return n.nm.ValidatePeerPrivateTxStatus(privateFor)
+}
+
+func (n *NodeControl) GetInactivityTimeCount() int {
+	return n.im.GetInactivityTimeCount()
 }
