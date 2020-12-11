@@ -93,16 +93,24 @@ func (nm *InactivityResyncMonitor) processResyncRequest() {
 
 // processInactivity requests the node to be stopped if the node  is not busy.
 func (nm *InactivityResyncMonitor) processInactivity() {
+
 	log.Info("processInactivity - going to try stop node as it has been inactive", "inactivetime", nm.nodeCtrl.config.BasicConfig.InactivityTime)
 	if err := nm.nodeCtrl.IsNodeBusy(); err != nil {
 		log.Info("processInactivity - node is busy", "msg", err.Error())
 		// reset inactivity as node is busy, to prevent shutdown right after node start up
 		nm.ResetInactivity()
 	} else {
-		nm.nodeCtrl.RequestStopClient()
-		log.Info("processInactivity - requested node shutdown, waiting for shutdown complete")
-		status := nm.nodeCtrl.WaitStopClient()
-		log.Info("processInactivity - resuming inactivity time tracker", "shutdown status", status)
+		// at the end of inactivity period force status check with
+		// client. This is to handle scenarios where in the node was
+		// brought up in the backend bypassing node manager
+		if nm.nodeCtrl.CheckClientUpStatus(true) {
+			nm.nodeCtrl.RequestStopClient()
+			log.Info("processInactivity - requested node shutdown, waiting for shutdown complete")
+			status := nm.nodeCtrl.WaitStopClient()
+			log.Info("processInactivity - resuming inactivity time tracker", "shutdown status", status)
+		} else {
+			log.Info("processInactivity - node is already down")
+		}
 		nm.ResetInactivity()
 	}
 }
