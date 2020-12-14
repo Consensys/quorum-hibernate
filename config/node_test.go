@@ -49,10 +49,6 @@ func TestTomlNodeManagerReader_Read(t *testing.T) {
 			name: "toml",
 			config: `
 name = "node1"
-quorumClientRpcUrl = "http://localhost:22000"
-privacyManagerKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
-consensus = "raft"
-clientType = "quorum"
 upcheckPollingInterval = 1
 peersConfigFile = "./test/shell/nm1.toml"
 inactivityTime = 60
@@ -70,14 +66,22 @@ rpcAddress = "localhost:8081"
 rpcCorsList = ["*"]
 rpcvHosts = ["*"]
 
-[quorumClientProcess]
+[quorumClient]
+clientType = "quorum"
+consensus = "raft"
+quorumClientRpcUrl = "http://localhost:22000"
+
+[quorumClient.quorumClientProcess]
 name = "bcclnt"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"]
 upcheckConfig = { upcheckUrl = "http://localhost:22000", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
 
-[privacyManagerProcess]
+[privacyManager]
+privacyManagerKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
+
+[privacyManager.privacyManagerProcess]
 name = "privman"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"]
@@ -90,10 +94,6 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 			config: `
 {
 	"name": "node1",
-	"quorumClientRpcUrl": "http://localhost:22000",
-	"privacyManagerKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
-	"consensus": "raft",
-	"clientType": "quorum",
 	"upcheckPollingInterval": 1,
 	"peersConfigFile": "./test/shell/nm1.toml",
 	"inactivityTime": 60,
@@ -109,19 +109,27 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 		"rpcCorsList": ["*"],
 		"rpcvHosts": ["*"]
 	},
-	"quorumClientProcess": {
-		"name": "bcclnt",
-		"controlType": "shell",
-		"stopCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"],
-		"startCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"],
-		"upcheckConfig": { "upcheckUrl": "http://localhost:22000", "method": "POST", "body": "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}", "returnType": "rpcresult"}	
+	"quorumClient": {
+		"clientType": "quorum",
+		"consensus": "raft",
+		"quorumClientRpcUrl": "http://localhost:22000",
+		"quorumClientProcess": {
+			"name": "bcclnt",
+			"controlType": "shell",
+			"stopCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"],
+			"startCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"],
+			"upcheckConfig": { "upcheckUrl": "http://localhost:22000", "method": "POST", "body": "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}", "returnType": "rpcresult"}	
+		}
 	},
-	"privacyManagerProcess": {
-		"name": "privman",
-		"controlType": "shell",
-		"stopCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"],
-		"startCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"],
-		"upcheckConfig": { "upcheckUrl": "http://localhost:9001/upcheck", "method": "GET", "body": "", "returnType": "string", "expected": "I'm up!"}
+	"privacyManager": {
+		"privacyManagerKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
+		"privacyManagerProcess": {
+			"name": "privman",
+			"controlType": "shell",
+			"stopCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"],
+			"startCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"],
+			"upcheckConfig": { "upcheckUrl": "http://localhost:9001/upcheck", "method": "GET", "body": "", "returnType": "string", "expected": "I'm up!"}
+		}
 	}
 }
 `,
@@ -148,10 +156,6 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 
 			want := Basic{
 				Name:                 "node1",
-				BcClntRpcUrl:         "http://localhost:22000",
-				PrivManKey:           "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
-				Consensus:            "raft",
-				ClientType:           "quorum",
 				UpchkPollingInterval: 1,
 				PeersConfigFile:      "./test/shell/nm1.toml",
 				InactivityTime:       60,
@@ -161,31 +165,41 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 					RPCCorsList: []string{"*"},
 					RPCVHosts:   []string{"*"},
 				},
-				BcClntProcess: &Process{
-					Name:         "bcclnt",
-					ControlType:  "shell",
-					ContainerId:  "",
-					StopCommand:  []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"},
-					StartCommand: []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"},
-					UpcheckCfg: Upcheck{
-						UpcheckUrl: "http://localhost:22000",
-						Method:     "POST",
-						Body:       "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",
-						ReturnType: "rpcresult",
+				QuorumClient: &QuorumClient{
+					ClientType:   "quorum",
+					Consensus:    "raft",
+					BcClntRpcUrl: "http://localhost:22000",
+					//BcClntTLSConfig: nil,
+					BcClntProcess: &Process{
+						Name:         "bcclnt",
+						ControlType:  "shell",
+						ContainerId:  "",
+						StopCommand:  []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"},
+						StartCommand: []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"},
+						UpcheckCfg: Upcheck{
+							UpcheckUrl: "http://localhost:22000",
+							Method:     "POST",
+							Body:       "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",
+							ReturnType: "rpcresult",
+						},
 					},
 				},
-				PrivManProcess: &Process{
-					Name:         "privman",
-					ControlType:  "shell",
-					ContainerId:  "",
-					StopCommand:  []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"},
-					StartCommand: []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"},
-					UpcheckCfg: Upcheck{
-						UpcheckUrl: "http://localhost:9001/upcheck",
-						Method:     "GET",
-						Body:       "",
-						ReturnType: "string",
-						Expected:   "I'm up!",
+				PrivacyManager: &PrivacyManager{
+					PrivManKey: "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
+					//PrivManTLSConfig: nil,
+					PrivManProcess: &Process{
+						Name:         "privman",
+						ControlType:  "shell",
+						ContainerId:  "",
+						StopCommand:  []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"},
+						StartCommand: []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"},
+						UpcheckCfg: Upcheck{
+							UpcheckUrl: "http://localhost:9001/upcheck",
+							Method:     "GET",
+							Body:       "",
+							ReturnType: "string",
+							Expected:   "I'm up!",
+						},
 					},
 				},
 				Proxies: []*Proxy{

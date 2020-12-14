@@ -28,7 +28,7 @@ func (c Node) IsConsensusValid(client *http.Client) error {
 	}
 
 	var resp map[string]interface{}
-	if err := core.CallRPC(client, c.BasicConfig.BcClntRpcUrl, []byte(adminInfoReq), &resp); err == nil {
+	if err := core.CallRPC(client, c.BasicConfig.QuorumClient.BcClntRpcUrl, []byte(adminInfoReq), &resp); err == nil {
 		resMap := resp["result"].(map[string]interface{})
 		log.Debug("IsConsensusValid - response", "map", resMap)
 
@@ -51,10 +51,10 @@ func (c Node) IsConsensusValid(client *http.Client) error {
 		} else {
 			expected := eth[consensusKey].(string)
 			log.Debug("IsConsensusValid - consensus name", "name", expected)
-			if expected == c.BasicConfig.Consensus {
+			if expected == c.BasicConfig.QuorumClient.Consensus {
 				return nil
 			}
-			return fmt.Errorf("IsConsensusValid - consensus mismatch. expected:%s, have:%s", expected, c.BasicConfig.Consensus)
+			return fmt.Errorf("IsConsensusValid - consensus mismatch. expected:%s, have:%s", expected, c.BasicConfig.QuorumClient.Consensus)
 		}
 	}
 	return nil

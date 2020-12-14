@@ -16,7 +16,9 @@ func TestRaftConsensus_ValidateShutdown_Minter_Invalid(t *testing.T) {
 
 	raft := NewRaftConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			BcClntRpcUrl: mockServer.URL,
+			QuorumClient: &config.QuorumClient{
+				BcClntRpcUrl: mockServer.URL,
+			},
 		},
 	}, nil)
 
@@ -31,7 +33,9 @@ func TestRaftConsensus_ValidateShutdown_Learner_Valid(t *testing.T) {
 
 	raft := NewRaftConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			BcClntRpcUrl: mockServer.URL,
+			QuorumClient: &config.QuorumClient{
+				BcClntRpcUrl: mockServer.URL,
+			},
 		},
 	}, nil)
 
@@ -72,7 +76,9 @@ func TestRaftConsensus_ValidateShutdown_Verifier_NotEnoughActivePeers_Invalid(t 
 
 			raft := NewRaftConsensus(&config.Node{
 				BasicConfig: &config.Basic{
-					BcClntRpcUrl: mockServer.URL,
+					QuorumClient: &config.QuorumClient{
+						BcClntRpcUrl: mockServer.URL,
+					},
 				},
 			}, nil)
 
@@ -99,7 +105,9 @@ func TestRaftConsensus_ValidateShutdown_GetRoleRpcError(t *testing.T) {
 
 	raft := NewRaftConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			BcClntRpcUrl: mockServer.URL,
+			QuorumClient: &config.QuorumClient{
+				BcClntRpcUrl: mockServer.URL,
+			},
 		},
 	}, nil)
 
@@ -121,7 +129,9 @@ func TestRaftConsensus_ValidateShutdown_GetClusterInfoRpcError(t *testing.T) {
 
 	raft := NewRaftConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			BcClntRpcUrl: mockServer.URL,
+			QuorumClient: &config.QuorumClient{
+				BcClntRpcUrl: mockServer.URL,
+			},
 		},
 	}, nil)
 

@@ -65,7 +65,7 @@ func NewNodeControl(cfg *config.Node) *NodeControl {
 	node := &NodeControl{
 		config:              cfg,
 		nm:                  p2p.NewPeerManager(cfg),
-		withPrivMan:         cfg.BasicConfig.PrivManProcess != nil,
+		withPrivMan:         cfg.BasicConfig.PrivacyManager != nil,
 		nodeStatus:          core.OK,
 		inactivityResetCh:   make(chan bool, 1),
 		syncResetCh:         make(chan bool, 1),
@@ -79,17 +79,17 @@ func NewNodeControl(cfg *config.Node) *NodeControl {
 
 	setHttpClients(cfg, node)
 
-	if cfg.BasicConfig.BcClntProcess.IsShell() {
-		node.bcclntProcess = proc.NewShellProcess(node.bcclntHttpClient, cfg.BasicConfig.BcClntProcess, true)
-	} else if cfg.BasicConfig.BcClntProcess.IsDocker() {
-		node.bcclntProcess = proc.NewDockerProcess(node.bcclntHttpClient, cfg.BasicConfig.BcClntProcess, true)
+	if cfg.BasicConfig.QuorumClient.BcClntProcess.IsShell() {
+		node.bcclntProcess = proc.NewShellProcess(node.bcclntHttpClient, cfg.BasicConfig.QuorumClient.BcClntProcess, true)
+	} else if cfg.BasicConfig.QuorumClient.BcClntProcess.IsDocker() {
+		node.bcclntProcess = proc.NewDockerProcess(node.bcclntHttpClient, cfg.BasicConfig.QuorumClient.BcClntProcess, true)
 	}
 
 	if node.WithPrivMan() {
-		if cfg.BasicConfig.PrivManProcess.IsShell() {
-			node.pmclntProcess = proc.NewShellProcess(node.pmclntHttpClient, cfg.BasicConfig.PrivManProcess, true)
-		} else if cfg.BasicConfig.PrivManProcess.IsDocker() {
-			node.pmclntProcess = proc.NewDockerProcess(node.pmclntHttpClient, cfg.BasicConfig.PrivManProcess, true)
+		if cfg.BasicConfig.PrivacyManager.PrivManProcess.IsShell() {
+			node.pmclntProcess = proc.NewShellProcess(node.pmclntHttpClient, cfg.BasicConfig.PrivacyManager.PrivManProcess, true)
+		} else if cfg.BasicConfig.PrivacyManager.PrivManProcess.IsDocker() {
+			node.pmclntProcess = proc.NewDockerProcess(node.pmclntHttpClient, cfg.BasicConfig.PrivacyManager.PrivManProcess, true)
 		}
 	}
 	node.im = NewInactivityResyncMonitor(node)
@@ -103,14 +103,14 @@ func NewNodeControl(cfg *config.Node) *NodeControl {
 }
 
 func setHttpClients(cfg *config.Node, node *NodeControl) {
-	if cfg.BasicConfig.BcClntTLSConfig != nil {
-		node.bcclntHttpClient = core.NewHttpClient(cfg.BasicConfig.BcClntTLSConfig.TlsCfg)
+	if cfg.BasicConfig.QuorumClient.BcClntTLSConfig != nil {
+		node.bcclntHttpClient = core.NewHttpClient(cfg.BasicConfig.QuorumClient.BcClntTLSConfig.TlsCfg)
 	} else {
 		node.bcclntHttpClient = core.NewHttpClient(nil)
 	}
 
-	if cfg.BasicConfig.PrivManTLSConfig != nil {
-		node.pmclntHttpClient = core.NewHttpClient(cfg.BasicConfig.PrivManTLSConfig.TlsCfg)
+	if cfg.BasicConfig.PrivacyManager.PrivManTLSConfig != nil {
+		node.pmclntHttpClient = core.NewHttpClient(cfg.BasicConfig.PrivacyManager.PrivManTLSConfig.TlsCfg)
 	} else {
 		node.pmclntHttpClient = core.NewHttpClient(nil)
 	}

@@ -76,7 +76,7 @@ func (r *RaftConsensus) getRaftClusterInfo(rpcUrl string) ([]RaftClusterEntry, e
 func (r *RaftConsensus) ValidateShutdown() (bool, error) {
 	var isConsensusNode bool
 
-	role, err := r.getRole(r.cfg.BasicConfig.BcClntRpcUrl)
+	role, err := r.getRole(r.cfg.BasicConfig.QuorumClient.BcClntRpcUrl)
 	if err != nil {
 		log.Error("ValidateShutdown - raft role failed", "err", err)
 		return isConsensusNode, fmt.Errorf("unable to check raft role: %v", err)
@@ -93,7 +93,7 @@ func (r *RaftConsensus) ValidateShutdown() (bool, error) {
 		return isConsensusNode, errors.New("minter node, cannot be shutdown")
 	}
 
-	cluster, err := r.getRaftClusterInfo(r.cfg.BasicConfig.BcClntRpcUrl)
+	cluster, err := r.getRaftClusterInfo(r.cfg.BasicConfig.QuorumClient.BcClntRpcUrl)
 	if err != nil {
 		log.Error("ValidateShutdown - raft cluster failed", "err", err)
 		return isConsensusNode, fmt.Errorf("unable to check raft cluster info: %v", err)

@@ -16,7 +16,9 @@ func TestIstanbulConsensus_ValidateShutdown_NonValidator_Valid(t *testing.T) {
 
 	istanbul := NewIstanbulConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			BcClntRpcUrl: mockServer.URL,
+			QuorumClient: &config.QuorumClient{
+				BcClntRpcUrl: mockServer.URL,
+			},
 		},
 	}, nil)
 
@@ -63,7 +65,9 @@ func TestIstanbulConsensus_ValidateShutdown_Validator(t *testing.T) {
 
 			istanbul := NewIstanbulConsensus(&config.Node{
 				BasicConfig: &config.Basic{
-					BcClntRpcUrl: mockServer.URL,
+					QuorumClient: &config.QuorumClient{
+						BcClntRpcUrl: mockServer.URL,
+					},
 				},
 			}, nil)
 
@@ -90,7 +94,9 @@ func TestIstanbulConsensus_ValidateShutdown_IsValidatorRpcError(t *testing.T) {
 
 	istanbul := NewIstanbulConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			BcClntRpcUrl: mockServer.URL,
+			QuorumClient: &config.QuorumClient{
+				BcClntRpcUrl: mockServer.URL,
+			},
 		},
 	}, nil)
 
@@ -112,7 +118,9 @@ func TestIstanbulConsensus_ValidateShutdown_SealerStatusRpcError(t *testing.T) {
 
 	istanbul := NewIstanbulConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			BcClntRpcUrl: mockServer.URL,
+			QuorumClient: &config.QuorumClient{
+				BcClntRpcUrl: mockServer.URL,
+			},
 		},
 	}, nil)
 
