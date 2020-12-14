@@ -56,7 +56,7 @@ clientType = "quorum"
 upcheckPollingInterval = 1
 peersConfigFile = "./test/shell/nm1.toml"
 inactivityTime = 60
-runMode = "STRICT"
+disableStrictMode = true
 
 proxies = [
     { name = "geth-rpc", type = "http", proxyAddress = "localhost:9091", upstreamAddress = "http://localhost:22000", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
@@ -97,7 +97,7 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 	"upcheckPollingInterval": 1,
 	"peersConfigFile": "./test/shell/nm1.toml",
 	"inactivityTime": 60,
-	"runMode": "STRICT",
+	"disableStrictMode": true,
 	"proxies": [
 		{ "name": "geth-rpc", "type": "http", "proxyAddress": "localhost:9091", "upstreamAddress": "http://localhost:22000", "proxyPaths": ["/"], "readTimeout": 15, "writeTimeout": 15 },
 		{ "name": "geth-graphql", "type": "http", "proxyAddress": "localhost:9191", "upstreamAddress": "http://localhost:8547/graphql", "proxyPaths": ["/graphql"], "readTimeout": 15, "writeTimeout": 15 },
@@ -155,7 +155,7 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 				UpchkPollingInterval: 1,
 				PeersConfigFile:      "./test/shell/nm1.toml",
 				InactivityTime:       60,
-				RunMode:              "STRICT",
+				DisableStrictMode:    true,
 				Server: &RPCServer{
 					RpcAddr:     "localhost:8081",
 					RPCCorsList: []string{"*"},

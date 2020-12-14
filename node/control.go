@@ -366,8 +366,8 @@ func (n *NodeControl) StopClient() bool {
 	}
 	log.Info("StopClient - consensus check passed, node can be shutdown")
 
-	if consensusNode && n.config.BasicConfig.RunMode == config.STRICT_MODE {
-		// consensus node running in strict mode. node cannot be brouwght down
+	if consensusNode && !n.config.BasicConfig.DisableStrictMode {
+		// consensus node running in strict mode. node cannot be brought down
 		log.Info("StopClient - node manager running in strict mode. consensus node cannot be shut down")
 		return false
 	}

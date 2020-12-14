@@ -8,7 +8,7 @@ import (
 
 type Basic struct {
 	Name                 string     `toml:"name" json:"name"`                                       // name of this node manager
-	RunMode              string     `toml:"runMode" json:"runMode"`                                 // can be strict or normal. strict mode keeps consensus nodes alive always
+	DisableStrictMode    bool       `toml:"disableStrictMode" json:"disableStrictMode"`             // strict mode keeps consensus nodes alive always
 	BcClntRpcUrl         string     `toml:"quorumClientRpcUrl" json:"quorumClientRpcUrl"`           // RPC url of blockchain client managed by this node manager
 	BcClntTLSConfig      *ClientTLS `toml:"quorumClientTlsConfig" json:"quorumClientTlsConfig"`     // blockchain client TLS config
 	PrivManTLSConfig     *ClientTLS `toml:"privacyManagerTlsConfig" json:"privacyManagerTlsConfig"` // Privacy manager TLS config
@@ -56,10 +56,6 @@ func (c Basic) IsValid() error {
 
 	if c.PeersConfigFile == "" {
 		return errors.New("peersConfigFile is empty")
-	}
-
-	if c.RunMode != "" && (c.RunMode != STRICT_MODE && c.RunMode != NORMAL_MODE) {
-		return errors.New("invalid value given for runMode")
 	}
 
 	err := c.isConsensusValid()
