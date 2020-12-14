@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/net/http2"
 	"io/ioutil"
 	"math/rand"
 	"net"
@@ -23,23 +22,16 @@ func init() {
 
 // NewHttpClient returns a new customized http client
 func NewHttpClient(tls *tls.Config) *http.Client {
-	var netClient = &http.Client{
-		Timeout: HttpClientRequestTimeout,
+	var netTransport = &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout: HttpClientRequestDialerTimeout,
+		}).DialContext,
+		TLSHandshakeTimeout: TLSHandshakeTimeout,
+		TLSClientConfig:     tls,
 	}
-	if tls != nil {
-		// TODO (Amal) check how time out can be set
-		netClient.Transport = &http2.Transport{
-			TLSClientConfig:    tls,
-			DisableCompression: true,
-			AllowHTTP:          false,
-		}
-	} else {
-		netClient.Transport = &http.Transport{
-			DialContext: (&net.Dialer{
-				Timeout: HttpClientRequestDialerTimeout,
-			}).DialContext,
-			TLSHandshakeTimeout: TLSHandshakeTimeout,
-		}
+	var netClient = &http.Client{
+		Timeout:   HttpClientRequestTimeout,
+		Transport: netTransport,
 	}
 	return netClient
 }
@@ -75,7 +67,6 @@ func httpRequest(client *http.Client, rpcUrl string, method string, rpcReq []byt
 		return "", fmt.Errorf("CallRPC - creating request failed err=%v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("CallRPC - do req failed err=%v", err)
