@@ -49,7 +49,7 @@ func TestTomlNodeManagerReader_Read(t *testing.T) {
 			name: "toml",
 			config: `
 name = "node1"
-bcClientRpcUrl = "http://localhost:22000"
+quorumClientRpcUrl = "http://localhost:22000"
 privacyManagerKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
 consensus = "raft"
 clientType = "quorum"
@@ -70,7 +70,7 @@ rpcAddress = "localhost:8081"
 rpcCorsList = ["*"]
 rpcvHosts = ["*"]
 
-[bcClientProcess]
+[quorumClientProcess]
 name = "bcclnt"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
@@ -90,7 +90,7 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 			config: `
 {
 	"name": "node1",
-	"bcClientRpcUrl": "http://localhost:22000",
+	"quorumClientRpcUrl": "http://localhost:22000",
 	"privacyManagerKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
 	"consensus": "raft",
 	"clientType": "quorum",
@@ -109,7 +109,7 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 		"rpcCorsList": ["*"],
 		"rpcvHosts": ["*"]
 	},
-	"bcClientProcess": {
+	"quorumClientProcess": {
 		"name": "bcclnt",
 		"controlType": "shell",
 		"stopCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"],

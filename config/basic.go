@@ -9,8 +9,8 @@ import (
 type Basic struct {
 	Name                 string     `toml:"name" json:"name"`                                       // name of this node manager
 	RunMode              string     `toml:"runMode" json:"runMode"`                                 // can be strict or normal. strict mode keeps consensus nodes alive always
-	BcClntRpcUrl         string     `toml:"bcClientRpcUrl" json:"bcClientRpcUrl"`                   // RPC url of blockchain client managed by this node manager
-	BcClntTLSConfig      *ClientTLS `toml:"bcClientTlsConfig" json:"bcClientTlsConfig"`             // blockchain client TLS config
+	BcClntRpcUrl         string     `toml:"quorumClientRpcUrl" json:"quorumClientRpcUrl"`           // RPC url of blockchain client managed by this node manager
+	BcClntTLSConfig      *ClientTLS `toml:"quorumClientTlsConfig" json:"quorumClientTlsConfig"`     // blockchain client TLS config
 	PrivManTLSConfig     *ClientTLS `toml:"privacyManagerTlsConfig" json:"privacyManagerTlsConfig"` // Privacy manager TLS config
 	PrivManKey           string     `toml:"privacyManagerKey" json:"privacyManagerKey"`             // public key of privacy manager managed by this node manager
 	Consensus            string     `toml:"consensus" json:"consensus"`                             // consensus used by blockchain client. ex: raft / istanbul / clique
@@ -20,7 +20,7 @@ type Basic struct {
 	InactivityTime       int        `toml:"inactivityTime" json:"inactivityTime"`                   // inactivity time for blockchain client and privacy manager
 	ResyncTime           int        `toml:"resyncTime" json:"resyncTime"`                           // time after which client should be started to sync up with network
 	Server               *RPCServer `toml:"server" json:"server"`                                   // RPC server config of this node manager
-	BcClntProcess        *Process   `toml:"bcClientProcess" json:"bcClientProcess"`                 // blockchain client process managed by this node manager
+	BcClntProcess        *Process   `toml:"quorumClientProcess" json:"quorumClientProcess"`         // blockchain client process managed by this node manager
 	PrivManProcess       *Process   `toml:"privacyManagerProcess" json:"privacyManagerProcess"`     // privacy manager process managed by this node manager
 	Proxies              []*Proxy   `toml:"proxies" json:"proxies"`                                 // proxies managed by this node manager
 }
