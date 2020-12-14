@@ -9,7 +9,7 @@ import (
 )
 
 type NodeManagerReader interface {
-	Read() (Node, error)
+	Read() (Basic, error)
 }
 
 func NewNodeManagerReader(f string) (NodeManagerReader, error) {
@@ -25,15 +25,15 @@ type tomlNodeManagerReader struct {
 	file string
 }
 
-func (r tomlNodeManagerReader) Read() (Node, error) {
+func (r tomlNodeManagerReader) Read() (Basic, error) {
 	f, err := os.Open(r.file)
 	if err != nil {
-		return Node{}, err
+		return Basic{}, err
 	}
 	defer f.Close()
-	var input Node
+	var input Basic
 	if err = toml.NewDecoder(f).Decode(&input); err != nil {
-		return Node{}, err
+		return Basic{}, err
 	}
 
 	return input, nil
@@ -43,15 +43,15 @@ type jsonNodeManagerReader struct {
 	file string
 }
 
-func (r jsonNodeManagerReader) Read() (Node, error) {
+func (r jsonNodeManagerReader) Read() (Basic, error) {
 	f, err := os.Open(r.file)
 	if err != nil {
-		return Node{}, err
+		return Basic{}, err
 	}
 	defer f.Close()
-	var input Node
+	var input Basic
 	if err = json.NewDecoder(f).Decode(&input); err != nil {
-		return Node{}, err
+		return Basic{}, err
 	}
 
 	return input, nil

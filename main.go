@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"github.com/ConsenSysQuorum/node-manager/config"
 	"os"
@@ -105,22 +104,17 @@ func readNodeConfigFromFile(configFile string) (config.Node, error) {
 	}
 	log.Info("readNodeConfigFromFile - node config file read successfully")
 
-	// check if the config is valid
-	if nmConfig.BasicConfig == nil {
-		return config.Node{}, errors.New("invalid configuration passed")
-	}
-
 	// validate config rules
-	if err = nmConfig.BasicConfig.IsValid(); err != nil {
+	if err = nmConfig.IsValid(); err != nil {
 		return config.Node{}, err
 	}
 
 	// default populate the run mode to strict
-	if nmConfig.BasicConfig.RunMode == "" {
-		nmConfig.BasicConfig.RunMode = config.STRICT_MODE
+	if nmConfig.RunMode == "" {
+		nmConfig.RunMode = config.STRICT_MODE
 	}
 
-	peersReader, err := config.NewPeersReader(nmConfig.BasicConfig.PeersConfigFile)
+	peersReader, err := config.NewPeersReader(nmConfig.PeersConfigFile)
 	if err != nil {
 		return config.Node{}, err
 	}
@@ -136,9 +130,10 @@ func readNodeConfigFromFile(configFile string) (config.Node, error) {
 		return config.Node{}, err
 	}
 
-	nmConfig.Peers = peersConfig
-
-	return nmConfig, nil
+	return config.Node{
+		BasicConfig: &nmConfig,
+		Peers:       peersConfig,
+	}, nil
 }
 
 func Shutdown() {
