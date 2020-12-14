@@ -15,7 +15,7 @@ type PrivateTxPrepStatus struct {
 }
 
 type PeerManager struct {
-	cfg *config.NodeConfig
+	cfg *config.Node
 }
 
 type PeerNodeStatusResult struct {

@@ -15,13 +15,13 @@ import (
 
 // DockerControl represents process control for a docker container
 type DockerControl struct {
-	cfg     *config.ProcessConfig
+	cfg     *config.Process
 	status  bool
 	client  *http.Client
 	muxLock sync.Mutex
 }
 
-func NewDockerProcess(c *http.Client, p *config.ProcessConfig, s bool) Process {
+func NewDockerProcess(c *http.Client, p *config.Process, s bool) Process {
 	sp := &DockerControl{p, s, c, sync.Mutex{}}
 	sp.UpdateStatus()
 	log.Debug("docker process created", "name", sp.cfg.Name)

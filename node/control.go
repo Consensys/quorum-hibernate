@@ -29,7 +29,7 @@ const CONSENSUS_WAIT_TIME = 60
 // It starts blockchain client/privacyManager processes when there is a activity.
 // It takes care of managing combined status of blockchain client & privacyManager.
 type NodeControl struct {
-	config              *config2.NodeConfig      // config of this node
+	config              *config2.Node            // config of this node
 	im                  *InactivityResyncMonitor // inactivity monitor
 	nm                  *p2p.PeerManager         // node manager to communicate with other node manager
 	bcclntProcess       proc.Process             // blockchain client process controller
@@ -61,7 +61,7 @@ func (n *NodeControl) ClientStatus() core.ClientStatus {
 	return n.clientStatus
 }
 
-func NewNodeControl(cfg *config2.NodeConfig) *NodeControl {
+func NewNodeControl(cfg *config2.Node) *NodeControl {
 	node := &NodeControl{
 		config:              cfg,
 		nm:                  p2p.NewPeerManager(cfg),
@@ -102,7 +102,7 @@ func NewNodeControl(cfg *config2.NodeConfig) *NodeControl {
 	return node
 }
 
-func setHttpClients(cfg *config2.NodeConfig, node *NodeControl) {
+func setHttpClients(cfg *config2.Node, node *NodeControl) {
 	if cfg.BasicConfig.BcClntTLSConfig != nil {
 		node.bcclntHttpClient = core.NewHttpClient(cfg.BasicConfig.BcClntTLSConfig.TlsCfg)
 	} else {
@@ -146,11 +146,11 @@ func populateConsensusHandler(n *NodeControl) {
 	}
 }
 
-func (n *NodeControl) GetRPCConfig() *config2.RPCServerConfig {
+func (n *NodeControl) GetRPCConfig() *config2.RPCServer {
 	return n.config.BasicConfig.Server
 }
 
-func (n *NodeControl) GetNodeConfig() *config2.NodeConfig {
+func (n *NodeControl) GetNodeConfig() *config2.Node {
 	return n.config
 }
 
@@ -158,7 +158,7 @@ func (n *NodeControl) GetNodeStatus() core.NodeStatus {
 	return n.nodeStatus
 }
 
-func (n *NodeControl) GetProxyConfig() []*config2.ProxyConfig {
+func (n *NodeControl) GetProxyConfig() []*config2.Proxy {
 	return n.config.BasicConfig.Proxies
 }
 

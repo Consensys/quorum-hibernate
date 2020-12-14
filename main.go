@@ -45,7 +45,7 @@ func main() {
 	waitForShutdown(rpcBackendErrCh, proxyBackendErrCh)
 }
 
-func Start(nodeConfig config.NodeConfig, err error, proxyBackendErrCh chan error, rpcBackendErrCh chan error) bool {
+func Start(nodeConfig config.Node, err error, proxyBackendErrCh chan error, rpcBackendErrCh chan error) bool {
 	nmApp.node = node.NewNodeControl(&nodeConfig)
 	if nmApp.proxyServers, err = proxy.MakeProxyServices(nmApp.node, proxyBackendErrCh); err != nil {
 		log.Error("Start - creating proxies failed", "err", err)
@@ -91,17 +91,17 @@ func waitForShutdown(rpcBackendErrCh chan error, proxyBackendErrCh chan error) {
 	}
 }
 
-func readNodeConfigFromFile(configFile string) (config.NodeConfig, error) {
-	var nodeConfig config.NodeConfig
+func readNodeConfigFromFile(configFile string) (config.Node, error) {
+	var nodeConfig config.Node
 	var err error
 	if nodeConfig, err = config.ReadNodeConfig(configFile); err != nil {
 		log.Error("readNodeConfigFromFile - loading node config file failed", "configfile", configFile, "err", err)
-		return config.NodeConfig{}, err
+		return config.Node{}, err
 	}
 	log.Info("readNodeConfigFromFile - node config file read successfully")
 	if nodeConfig.NodeManagers, err = config.ReadNodeManagerConfig(nodeConfig.BasicConfig.NodeManagerConfigFile); err != nil {
 		log.Error("readNodeConfigFromFile - loading node manager config failed", "err", err)
-		return config.NodeConfig{}, err
+		return config.Node{}, err
 	}
 	log.Info("readNodeConfigFromFile - node manager config file read successfully")
 	return nodeConfig, nil

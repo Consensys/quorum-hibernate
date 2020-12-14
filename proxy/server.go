@@ -15,8 +15,8 @@ import (
 
 // ProxyServer represents a proxy server
 type ProxyServer struct {
-	nodeCtrl      *node.NodeControl   // node controller
-	proxyCfg      *config.ProxyConfig // proxy config
+	nodeCtrl      *node.NodeControl // node controller
+	proxyCfg      *config.Proxy     // proxy config
 	ignorePathMap map[string]bool
 	mux           *http.ServeMux
 	srv           *http.Server           // http server for the proxy
@@ -32,7 +32,7 @@ func (ps ProxyServer) CanIgnoreRequest(req string) bool {
 	return ok
 }
 
-func NewProxyServer(qn *node.NodeControl, pc *config.ProxyConfig, errc chan error) (Proxy, error) {
+func NewProxyServer(qn *node.NodeControl, pc *config.Proxy, errc chan error) (Proxy, error) {
 	ps := &ProxyServer{qn, pc, make(map[string]bool), nil, nil, nil, nil, errc, sync.WaitGroup{}}
 	url, err := url.Parse(ps.proxyCfg.UpstreamAddr)
 	if err != nil {

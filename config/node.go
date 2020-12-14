@@ -10,30 +10,30 @@ import (
 	"os"
 )
 
-type NodeConfig struct {
-	BasicConfig  *BasicConfig         `toml:"basicConfig"` // basic config of this node manager
-	NodeManagers NodeManagerConfigArr // node manager config of other node manager
+type Node struct {
+	BasicConfig  *Basic         `toml:"basicConfig"` // basic config of this node manager
+	NodeManagers NodeManagerArr // node manager config of other node manager
 }
 
-func ReadNodeConfig(configFile string) (NodeConfig, error) {
+func ReadNodeConfig(configFile string) (Node, error) {
 	f, err := os.Open(configFile)
 	if err != nil {
-		return NodeConfig{}, err
+		return Node{}, err
 	}
 	defer f.Close()
-	var input NodeConfig
+	var input Node
 	if err = toml.NewDecoder(f).Decode(&input); err != nil {
-		return NodeConfig{}, err
+		return Node{}, err
 	}
 
 	// check if the config is valid
 	if input.BasicConfig == nil {
-		return NodeConfig{}, errors.New("invalid configuration passed")
+		return Node{}, errors.New("invalid configuration passed")
 	}
 
 	// validate config rules
 	if err = input.BasicConfig.IsValid(); err != nil {
-		return NodeConfig{}, err
+		return Node{}, err
 	}
 
 	// default populate the run mode to strict
@@ -44,7 +44,7 @@ func ReadNodeConfig(configFile string) (NodeConfig, error) {
 	return input, nil
 }
 
-func (c NodeConfig) IsConsensusValid(client *http.Client) error {
+func (c Node) IsConsensusValid(client *http.Client) error {
 	const (
 		adminInfoReq = `{"jsonrpc":"2.0", "method":"admin_nodeInfo", "params":[], "id":67}`
 		protocolKey  = "protocols"
@@ -91,13 +91,13 @@ func (c NodeConfig) IsConsensusValid(client *http.Client) error {
 	return nil
 }
 
-func ReadNodeManagerConfig(configFile string) ([]*NodeManagerConfig, error) {
+func ReadNodeManagerConfig(configFile string) ([]*NodeManager, error) {
 	f, err := os.Open(configFile)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	var input NodeManagerListConfig
+	var input NodeManagerList
 	if err = toml.NewDecoder(f).Decode(&input); err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func ReadNodeManagerConfig(configFile string) ([]*NodeManagerConfig, error) {
 	return input.NodeManagers, nil
 }
 
-func (c NodeConfig) IsValid() error {
+func (c Node) IsValid() error {
 	if c.BasicConfig == nil {
 		return errors.New("basicConfig is nil")
 	}

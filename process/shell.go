@@ -12,13 +12,13 @@ import (
 
 // ShellProcessControl represents process control for a shell process
 type ShellProcessControl struct {
-	cfg     *config.ProcessConfig
+	cfg     *config.Process
 	status  bool
 	client  *http.Client
 	muxLock sync.Mutex
 }
 
-func NewShellProcess(c *http.Client, p *config.ProcessConfig, s bool) Process {
+func NewShellProcess(c *http.Client, p *config.Process, s bool) Process {
 	sp := &ShellProcessControl{p, s, c, sync.Mutex{}}
 	sp.UpdateStatus()
 	log.Debug("shell process created", "name", sp.cfg.Name)

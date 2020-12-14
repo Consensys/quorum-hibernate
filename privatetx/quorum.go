@@ -10,7 +10,7 @@ import (
 )
 
 type QuorumTxHandler struct {
-	cfg *config.NodeConfig
+	cfg *config.Node
 }
 
 const (
@@ -43,7 +43,7 @@ var pvtReqParamMap = map[string]int{
 	estimateGas:     1,
 }
 
-func NewQuorumTxHandler(cfg *config.NodeConfig) TxHandler {
+func NewQuorumTxHandler(cfg *config.Node) TxHandler {
 	return &QuorumTxHandler{cfg: cfg}
 }
 

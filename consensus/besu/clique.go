@@ -13,7 +13,7 @@ import (
 )
 
 type CliqueConsensus struct {
-	cfg    *config.NodeConfig
+	cfg    *config.Node
 	client *http.Client
 }
 
@@ -53,7 +53,7 @@ const (
 	CLiqueSigners   = `{"jsonrpc":"2.0", "method":"clique_getSigners", "params":[], "id":67}`
 )
 
-func NewCliqueConsensus(qn *config.NodeConfig, c *http.Client) consensus.Consensus {
+func NewCliqueConsensus(qn *config.Node, c *http.Client) consensus.Consensus {
 	return &CliqueConsensus{cfg: qn, client: c}
 }
 

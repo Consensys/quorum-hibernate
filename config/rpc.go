@@ -5,14 +5,14 @@ import (
 	"fmt"
 )
 
-type RPCServerConfig struct {
-	RpcAddr     string           `toml:"rpcAddr"`
-	RPCCorsList []string         `toml:"rpcCorsList"`
-	RPCVHosts   []string         `toml:"rpcvHosts"`
-	TLSConfig   *ServerTLSConfig `toml:"tlsConfig"`
+type RPCServer struct {
+	RpcAddr     string     `toml:"rpcAddr"`
+	RPCCorsList []string   `toml:"rpcCorsList"`
+	RPCVHosts   []string   `toml:"rpcvHosts"`
+	TLSConfig   *ServerTLS `toml:"tlsConfig"`
 }
 
-func (c RPCServerConfig) IsValid() error {
+func (c RPCServer) IsValid() error {
 	if c.RpcAddr == "" {
 		return errors.New("rpcAddr is empty")
 	}

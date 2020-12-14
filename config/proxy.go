@@ -6,30 +6,30 @@ import (
 	"strings"
 )
 
-type ProxyConfig struct {
+type Proxy struct {
 	Name         string   `toml:"name"`         // name of node manager process
 	Type         string   `toml:"type"`         // proxy scheme - http or ws
 	ProxyAddr    string   `toml:"proxyAddr"`    // proxy address
 	UpstreamAddr string   `toml:"upstreamAddr"` // upstream address of the proxy address
 	ProxyPaths   []string `toml:"proxyPaths"`   // httpRequestURI paths of the upstream address
 	// httpRequestURI paths of the upstream address that should be ignored for activity
-	IgnorePathsForActivity []string         `toml:"ignorePathsForActivity"`
-	ReadTimeout            int              `toml:"readTimeout"`     // readTimeout of the proxy server
-	WriteTimeout           int              `toml:"writeTimeout"`    // writeTimeout of the proxy server
-	ProxyServerTLSConfig   *ServerTLSConfig `toml:"proxyTLSConfig"`  // proxy server tls config
-	ClientTLSConfig        *ClientTLSConfig `toml:"clientTLSConfig"` // reverse proxy client tls config
+	IgnorePathsForActivity []string   `toml:"ignorePathsForActivity"`
+	ReadTimeout            int        `toml:"readTimeout"`     // readTimeout of the proxy server
+	WriteTimeout           int        `toml:"writeTimeout"`    // writeTimeout of the proxy server
+	ProxyServerTLSConfig   *ServerTLS `toml:"proxyTLSConfig"`  // proxy server tls config
+	ClientTLSConfig        *ClientTLS `toml:"clientTLSConfig"` // reverse proxy client tls config
 }
 
-func (c ProxyConfig) IsHttp() bool {
+func (c Proxy) IsHttp() bool {
 	return strings.ToLower(c.Type) == "http"
 }
 
-func (c ProxyConfig) IsWS() bool {
+func (c Proxy) IsWS() bool {
 	return strings.ToLower(c.Type) == "ws"
 }
 
-// IsValid returns nil if the ProxyConfig is valid else returns error
-func (c ProxyConfig) IsValid() error {
+// IsValid returns nil if the Proxy is valid else returns error
+func (c Proxy) IsValid() error {
 	if c.Name == "" {
 		return errors.New("name is empty")
 	}

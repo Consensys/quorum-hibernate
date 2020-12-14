@@ -16,7 +16,7 @@ import (
 
 func TestNewNodeRPCAPIs(t *testing.T) {
 	service := &mockControllerApiService{}
-	conf := &config.NodeConfig{}
+	conf := &config.Node{}
 
 	api := NewNodeRPCAPIs(service, conf)
 
@@ -25,7 +25,7 @@ func TestNewNodeRPCAPIs(t *testing.T) {
 
 func TestNodeRPCAPIs_IsNodeUp_GetsStatusFromService(t *testing.T) {
 	var (
-		conf  = &config.NodeConfig{}
+		conf  = &config.Node{}
 		param = new(string)
 	)
 
@@ -68,7 +68,7 @@ func TestNodeRPCAPIs_IsNodeUp_GetsStatusFromService(t *testing.T) {
 
 func TestNodeRPCAPIs_PrepareForPrivateTx(t *testing.T) {
 	var (
-		conf  = &config.NodeConfig{}
+		conf  = &config.Node{}
 		param = new(string)
 	)
 
@@ -129,7 +129,7 @@ func TestNodeRPCAPIs_PrepareForPrivateTx(t *testing.T) {
 
 func TestTestNodeRPCAPIs_PrepareForPrivateTx_IfClientsDownPrepareInBackground(t *testing.T) {
 	var (
-		conf  = &config.NodeConfig{}
+		conf  = &config.Node{}
 		param = new(string)
 	)
 
@@ -196,8 +196,8 @@ func TestTestNodeRPCAPIs_PrepareForPrivateTx_IfClientsDownPrepareInBackground(t 
 
 func TestNodeRPCAPIs_NodeStatus(t *testing.T) {
 	var (
-		conf = &config.NodeConfig{
-			BasicConfig: &config.BasicConfig{
+		conf = &config.Node{
+			BasicConfig: &config.Basic{
 				InactivityTime: 50,
 			},
 		}

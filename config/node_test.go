@@ -29,7 +29,7 @@ func TestReadNodeManagerConfig(t *testing.T) {
 	got, err := ReadNodeManagerConfig(f.Name())
 	require.NoError(t, err)
 
-	want := []*NodeManagerConfig{
+	want := []*NodeManager{
 		{
 			Name:       "node1",
 			PrivManKey: "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
@@ -43,7 +43,7 @@ func TestReadNodeManagerConfig(t *testing.T) {
 	}
 
 	// dereference is required for require.Contains
-	gotDeref := make([]NodeManagerConfig, len(got))
+	gotDeref := make([]NodeManager, len(got))
 	for i := range got {
 		gotDeref[i] = *got[i]
 	}
@@ -111,8 +111,8 @@ upcheckCfg = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", bod
 	got, err := ReadNodeConfig(f.Name())
 	require.NoError(t, err)
 
-	want := NodeConfig{
-		BasicConfig: &BasicConfig{
+	want := Node{
+		BasicConfig: &Basic{
 			Name:                  "node1",
 			BcClntRpcUrl:          "http://localhost:22000",
 			PrivManKey:            "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
@@ -122,31 +122,31 @@ upcheckCfg = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", bod
 			NodeManagerConfigFile: "./test/shell/nm1.toml",
 			InactivityTime:        60,
 			RunMode:               "STRICT",
-			Server: &RPCServerConfig{
+			Server: &RPCServer{
 				RpcAddr:     "localhost:8081",
 				RPCCorsList: []string{"*"},
 				RPCVHosts:   []string{"*"},
 			},
-			BcClntProcess: &ProcessConfig{
+			BcClntProcess: &Process{
 				Name:         "bcclnt",
 				ControlType:  "shell",
 				ContainerId:  "",
 				StopCommand:  []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"},
 				StartCommand: []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"},
-				UpcheckCfg: UpcheckConfig{
+				UpcheckCfg: Upcheck{
 					UpcheckUrl: "http://localhost:22000",
 					Method:     "POST",
 					Body:       "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",
 					ReturnType: "rpcresult",
 				},
 			},
-			PrivManProcess: &ProcessConfig{
+			PrivManProcess: &Process{
 				Name:         "privman",
 				ControlType:  "shell",
 				ContainerId:  "",
 				StopCommand:  []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"},
 				StartCommand: []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"},
-				UpcheckCfg: UpcheckConfig{
+				UpcheckCfg: Upcheck{
 					UpcheckUrl: "http://localhost:9001/upcheck",
 					Method:     "GET",
 					Body:       "",
@@ -154,7 +154,7 @@ upcheckCfg = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", bod
 					Expected:   "I'm up!",
 				},
 			},
-			Proxies: []*ProxyConfig{
+			Proxies: []*Proxy{
 				{
 					Name:         "geth-rpc",
 					Type:         "http",

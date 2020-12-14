@@ -14,8 +14,8 @@ func TestIstanbulConsensus_ValidateShutdown_NonValidator_Valid(t *testing.T) {
 	mockServer := startMockIstanbulServer(t, `{"result": false}`, "")
 	defer mockServer.Close()
 
-	istanbul := NewIstanbulConsensus(&config.NodeConfig{
-		BasicConfig: &config.BasicConfig{
+	istanbul := NewIstanbulConsensus(&config.Node{
+		BasicConfig: &config.Basic{
 			BcClntRpcUrl: mockServer.URL,
 		},
 	}, nil)
@@ -61,8 +61,8 @@ func TestIstanbulConsensus_ValidateShutdown_Validator(t *testing.T) {
 			mockServer := startMockIstanbulServer(t, tt.istanbulIsValidatorResp, tt.istanbulStatusResp)
 			defer mockServer.Close()
 
-			istanbul := NewIstanbulConsensus(&config.NodeConfig{
-				BasicConfig: &config.BasicConfig{
+			istanbul := NewIstanbulConsensus(&config.Node{
+				BasicConfig: &config.Basic{
 					BcClntRpcUrl: mockServer.URL,
 				},
 			}, nil)
@@ -88,8 +88,8 @@ func TestIstanbulConsensus_ValidateShutdown_IsValidatorRpcError(t *testing.T) {
 	mockServer := startMockIstanbulServer(t, istanbulIsValidatorResp, istanbulStatusResp)
 	defer mockServer.Close()
 
-	istanbul := NewIstanbulConsensus(&config.NodeConfig{
-		BasicConfig: &config.BasicConfig{
+	istanbul := NewIstanbulConsensus(&config.Node{
+		BasicConfig: &config.Basic{
 			BcClntRpcUrl: mockServer.URL,
 		},
 	}, nil)
@@ -110,8 +110,8 @@ func TestIstanbulConsensus_ValidateShutdown_SealerStatusRpcError(t *testing.T) {
 	mockServer := startMockIstanbulServer(t, istanbulIsValidatorResp, istanbulStatusResp)
 	defer mockServer.Close()
 
-	istanbul := NewIstanbulConsensus(&config.NodeConfig{
-		BasicConfig: &config.BasicConfig{
+	istanbul := NewIstanbulConsensus(&config.Node{
+		BasicConfig: &config.Basic{
 			BcClntRpcUrl: mockServer.URL,
 		},
 	}, nil)

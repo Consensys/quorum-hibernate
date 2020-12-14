@@ -16,11 +16,11 @@ const (
 	PreparePvtTxMethod = `{"jsonrpc":"2.0", "method":"node.PrepareForPrivateTx", "params":["%s"], "id":77}`
 )
 
-func NewPeerManager(cfg *config.NodeConfig) *PeerManager {
+func NewPeerManager(cfg *config.Node) *PeerManager {
 	return &PeerManager{cfg: cfg}
 }
 
-func (pm *PeerManager) getConfigByPrivManKey(key string) *config.NodeManagerConfig {
+func (pm *PeerManager) getConfigByPrivManKey(key string) *config.NodeManager {
 	for _, n := range pm.getLatestConfig() {
 		if n.PrivManKey == key {
 			log.Debug("getConfigByPrivManKey - privacy manager key matched", "node", n)
@@ -30,7 +30,7 @@ func (pm *PeerManager) getConfigByPrivManKey(key string) *config.NodeManagerConf
 	return nil
 }
 
-func (pm *PeerManager) getLatestConfig() []*config.NodeManagerConfig {
+func (pm *PeerManager) getLatestConfig() []*config.NodeManager {
 	newCfg, err := config.ReadNodeManagerConfig(pm.cfg.BasicConfig.NodeManagerConfigFile)
 	if err != nil {
 		log.Error("getLatestConfig - error updating node manager config. will use old config", "path", pm.cfg.BasicConfig.NodeManagerConfigFile, "err", err)
@@ -107,7 +107,7 @@ func (pm *PeerManager) peerPrivateTxStatus(participantKeys []string) []bool {
 
 		if nmCfg != nil {
 			wg.Add(1)
-			go func(nmc *config.NodeManagerConfig) {
+			go func(nmc *config.NodeManager) {
 				defer wg.Done()
 				result := PeerPrivateTxPrepResult{}
 				var client *http.Client
@@ -156,7 +156,7 @@ func (pm *PeerManager) ValidatePeers() ([]NodeStatusInfo, error) {
 	return statusArr, nil
 }
 
-func (pm *PeerManager) getConfigCount(nmCfgs []*config.NodeManagerConfig) int {
+func (pm *PeerManager) getConfigCount(nmCfgs []*config.NodeManager) int {
 	nodeManagerCount := 0
 	for _, n := range nmCfgs {
 		//skip self
@@ -212,7 +212,7 @@ func (pm *PeerManager) peerStatus() (int, []NodeStatusInfo) {
 			continue
 		}
 		wg.Add(1)
-		go func(nmc *config.NodeManagerConfig) {
+		go func(nmc *config.NodeManager) {
 			defer wg.Done()
 			var res = PeerNodeStatusResult{}
 			var client *http.Client

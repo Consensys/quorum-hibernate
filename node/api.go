@@ -10,7 +10,7 @@ import (
 
 type NodeRPCAPIs struct {
 	service ControllerApiService
-	conf    *config.NodeConfig
+	conf    *config.Node
 }
 
 type NodeUpReply struct {
@@ -21,7 +21,7 @@ type PrivateTxPrepReply struct {
 	Status bool
 }
 
-func NewNodeRPCAPIs(qn ControllerApiService, conf *config.NodeConfig) *NodeRPCAPIs {
+func NewNodeRPCAPIs(qn ControllerApiService, conf *config.Node) *NodeRPCAPIs {
 	return &NodeRPCAPIs{
 		service: qn,
 		conf:    conf,

@@ -30,7 +30,7 @@ type RPCService struct {
 	shutdownWg  sync.WaitGroup
 }
 
-func NewRPCService(qn *node.NodeControl, config *config.RPCServerConfig, backendErrorChan chan error) *RPCService {
+func NewRPCService(qn *node.NodeControl, config *config.RPCServer, backendErrorChan chan error) *RPCService {
 	return &RPCService{
 		qn:          qn,
 		cors:        config.RPCCorsList,

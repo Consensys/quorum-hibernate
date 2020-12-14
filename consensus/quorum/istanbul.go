@@ -28,7 +28,7 @@ type IstanbulIsValidatorResp struct {
 }
 
 type IstanbulConsensus struct {
-	cfg    *config.NodeConfig
+	cfg    *config.Node
 	client *http.Client
 }
 
@@ -40,7 +40,7 @@ const (
 	IstanbulIsValidatorReq = `{"jsonrpc":"2.0", "method":"istanbul_isValidator", "params":[], "id":67}`
 )
 
-func NewIstanbulConsensus(qn *config.NodeConfig, c *http.Client) consensus.Consensus {
+func NewIstanbulConsensus(qn *config.Node, c *http.Client) consensus.Consensus {
 	return &IstanbulConsensus{cfg: qn, client: c}
 }
 

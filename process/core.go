@@ -56,7 +56,7 @@ func ExecuteShellCommand(cmdArr []string) error {
 	return nil
 }
 
-func IsProcessUp(client *http.Client, cfg config.UpcheckConfig) (bool, error) {
+func IsProcessUp(client *http.Client, cfg config.Upcheck) (bool, error) {
 	if cfg.IsRpcResult() {
 		var resp UpcheckResponse
 		if err := core.CallRPC(client, cfg.UpcheckUrl, []byte(cfg.Body), &resp); err != nil || resp.Error != nil {

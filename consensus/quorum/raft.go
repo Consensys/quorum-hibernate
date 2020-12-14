@@ -32,7 +32,7 @@ type RaftRoleResp struct {
 }
 
 type RaftConsensus struct {
-	cfg    *config.NodeConfig
+	cfg    *config.Node
 	client *http.Client
 }
 
@@ -46,7 +46,7 @@ const (
 	RaftClusterReq = `{"jsonrpc":"2.0", "method":"raft_cluster", "params":[], "id":67}`
 )
 
-func NewRaftConsensus(qn *config.NodeConfig, c *http.Client) consensus.Consensus {
+func NewRaftConsensus(qn *config.Node, c *http.Client) consensus.Consensus {
 	return &RaftConsensus{cfg: qn, client: c}
 }
 
