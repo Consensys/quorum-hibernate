@@ -94,7 +94,7 @@ func NewNodeControl(cfg *config.Node) *NodeControl {
 	}
 	node.im = NewInactivityResyncMonitor(node)
 	populateConsensusHandler(node)
-	if node.config.BasicConfig.IsQuorumClient() {
+	if node.config.BasicConfig.IsGoQuorumClient() {
 		node.txh = privatetx.NewQuorumTxHandler(node.config)
 	} // TODO add tx handler for Besu
 	node.config.BasicConfig.InactivityTime += getRandomBufferTime(node.config.BasicConfig.InactivityTime)
@@ -131,7 +131,7 @@ func getRandomBufferTime(inactivityTime int) int {
 }
 
 func populateConsensusHandler(n *NodeControl) {
-	if n.config.BasicConfig.IsQuorumClient() {
+	if n.config.BasicConfig.IsGoQuorumClient() {
 		if n.config.BasicConfig.IsRaft() {
 			n.consensus = qnm.NewRaftConsensus(n.config, n.bcclntHttpClient)
 		} else if n.config.BasicConfig.IsIstanbul() {
@@ -407,7 +407,7 @@ func (n *NodeControl) StopClient() bool {
 func (n *NodeControl) checkAndValidateConsensus() (bool, error) {
 	// validate if the consensus passed in config is correct.
 	// for besu bypass this check as it does not provide any rpc api to confirm consensus
-	if !n.consValid && n.config.BasicConfig.IsQuorumClient() {
+	if !n.consValid && n.config.BasicConfig.IsGoQuorumClient() {
 		if err := n.config.IsConsensusValid(n.pmclntHttpClient); err != nil {
 			return false, err
 		}

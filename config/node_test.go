@@ -67,11 +67,11 @@ rpcCorsList = ["*"]
 rpcvHosts = ["*"]
 
 [quorumClient]
-clientType = "quorum"
+type = "goquorum"
 consensus = "raft"
-quorumClientRpcUrl = "http://localhost:22000"
+rpcUrl = "http://localhost:22000"
 
-[quorumClient.quorumClientProcess]
+[quorumClient.process]
 name = "bcclnt"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
@@ -79,9 +79,9 @@ startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/start
 upcheckConfig = { upcheckUrl = "http://localhost:22000", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
 
 [privacyManager]
-privacyManagerKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
+publicKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
 
-[privacyManager.privacyManagerProcess]
+[privacyManager.process]
 name = "privman"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"]
@@ -110,10 +110,10 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 		"rpcvHosts": ["*"]
 	},
 	"quorumClient": {
-		"clientType": "quorum",
+		"type": "goquorum",
 		"consensus": "raft",
-		"quorumClientRpcUrl": "http://localhost:22000",
-		"quorumClientProcess": {
+		"rpcUrl": "http://localhost:22000",
+		"process": {
 			"name": "bcclnt",
 			"controlType": "shell",
 			"stopCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"],
@@ -122,8 +122,8 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 		}
 	},
 	"privacyManager": {
-		"privacyManagerKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
-		"privacyManagerProcess": {
+		"publicKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
+		"process": {
 			"name": "privman",
 			"controlType": "shell",
 			"stopCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"],
@@ -166,7 +166,7 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 					RPCVHosts:   []string{"*"},
 				},
 				QuorumClient: &QuorumClient{
-					ClientType:   "quorum",
+					ClientType:   "goquorum",
 					Consensus:    "raft",
 					BcClntRpcUrl: "http://localhost:22000",
 					//BcClntTLSConfig: nil,

@@ -34,8 +34,8 @@ func (c Basic) IsClique() bool {
 	return c.QuorumClient.IsClique()
 }
 
-func (c Basic) IsQuorumClient() bool {
-	return c.QuorumClient.IsQuorumClient()
+func (c Basic) IsGoQuorumClient() bool {
+	return c.QuorumClient.IsGoQuorumClient()
 }
 
 func (c Basic) IsBesuClient() bool {

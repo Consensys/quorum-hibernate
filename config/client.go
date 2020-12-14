@@ -7,17 +7,17 @@ import (
 )
 
 type QuorumClient struct {
-	ClientType      string     `toml:"clientType" json:"clientType"`                       // client used by this node manager. it should be quorum or besu
-	Consensus       string     `toml:"consensus" json:"consensus"`                         // consensus used by blockchain client. ex: raft / istanbul / clique
-	BcClntRpcUrl    string     `toml:"quorumClientRpcUrl" json:"quorumClientRpcUrl"`       // RPC url of blockchain client managed by this node manager
-	BcClntTLSConfig *ClientTLS `toml:"quorumClientTlsConfig" json:"quorumClientTlsConfig"` // blockchain client TLS config
-	BcClntProcess   *Process   `toml:"quorumClientProcess" json:"quorumClientProcess"`     // blockchain client process managed by this node manager
+	ClientType      string     `toml:"type" json:"type"`           // client used by this node manager. it should be quorum or besu
+	Consensus       string     `toml:"consensus" json:"consensus"` // consensus used by blockchain client. ex: raft / istanbul / clique
+	BcClntRpcUrl    string     `toml:"rpcUrl" json:"rpcUrl"`       // RPC url of blockchain client managed by this node manager
+	BcClntTLSConfig *ClientTLS `toml:"tlsConfig" json:"tlsConfig"` // blockchain client TLS config
+	BcClntProcess   *Process   `toml:"process" json:"process"`     // blockchain client process managed by this node manager
 }
 
 type PrivacyManager struct {
-	PrivManKey       string     `toml:"privacyManagerKey" json:"privacyManagerKey"`             // public key of privacy manager managed by this node manager
-	PrivManTLSConfig *ClientTLS `toml:"privacyManagerTlsConfig" json:"privacyManagerTlsConfig"` // Privacy manager TLS config
-	PrivManProcess   *Process   `toml:"privacyManagerProcess" json:"privacyManagerProcess"`     // privacy manager process managed by this node manager
+	PrivManKey       string     `toml:"publicKey" json:"publicKey"` // public key of privacy manager managed by this node manager
+	PrivManTLSConfig *ClientTLS `toml:"tlsConfig" json:"tlsConfig"` // Privacy manager TLS config
+	PrivManProcess   *Process   `toml:"process" json:"process"`     // privacy manager process managed by this node manager
 }
 
 func (c *QuorumClient) IsRaft() bool {
@@ -32,8 +32,8 @@ func (c *QuorumClient) IsClique() bool {
 	return strings.ToLower(c.Consensus) == "clique"
 }
 
-func (c *QuorumClient) IsQuorumClient() bool {
-	return strings.ToLower(c.ClientType) == "quorum"
+func (c *QuorumClient) IsGoQuorumClient() bool {
+	return strings.ToLower(c.ClientType) == "goquorum"
 }
 
 func (c *QuorumClient) IsBesuClient() bool {
@@ -52,8 +52,8 @@ func (c *QuorumClient) IsValid() error {
 	if c.ClientType == "" {
 		return errors.New("clientType is empty")
 	}
-	if !c.IsQuorumClient() && !c.IsBesuClient() {
-		return errors.New("invalid clientType. supports only quorum or besu")
+	if !c.IsGoQuorumClient() && !c.IsBesuClient() {
+		return errors.New("invalid clientType. supports only goquorum or besu")
 	}
 
 	if c.BcClntProcess == nil {
