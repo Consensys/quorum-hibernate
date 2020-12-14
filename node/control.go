@@ -2,7 +2,7 @@ package node
 
 import (
 	"errors"
-	config2 "github.com/ConsenSysQuorum/node-manager/config"
+	"github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
 	"sync"
 	"time"
@@ -29,7 +29,7 @@ const CONSENSUS_WAIT_TIME = 60
 // It starts blockchain client/privacyManager processes when there is a activity.
 // It takes care of managing combined status of blockchain client & privacyManager.
 type NodeControl struct {
-	config              *config2.Node            // config of this node
+	config              *config.Node             // config of this node
 	im                  *InactivityResyncMonitor // inactivity monitor
 	nm                  *p2p.PeerManager         // node manager to communicate with other node manager
 	bcclntProcess       proc.Process             // blockchain client process controller
@@ -61,7 +61,7 @@ func (n *NodeControl) ClientStatus() core.ClientStatus {
 	return n.clientStatus
 }
 
-func NewNodeControl(cfg *config2.Node) *NodeControl {
+func NewNodeControl(cfg *config.Node) *NodeControl {
 	node := &NodeControl{
 		config:              cfg,
 		nm:                  p2p.NewPeerManager(cfg),
@@ -102,7 +102,7 @@ func NewNodeControl(cfg *config2.Node) *NodeControl {
 	return node
 }
 
-func setHttpClients(cfg *config2.Node, node *NodeControl) {
+func setHttpClients(cfg *config.Node, node *NodeControl) {
 	if cfg.BasicConfig.BcClntTLSConfig != nil {
 		node.bcclntHttpClient = core.NewHttpClient(cfg.BasicConfig.BcClntTLSConfig.TlsCfg)
 	} else {
@@ -146,11 +146,11 @@ func populateConsensusHandler(n *NodeControl) {
 	}
 }
 
-func (n *NodeControl) GetRPCConfig() *config2.RPCServer {
+func (n *NodeControl) GetRPCConfig() *config.RPCServer {
 	return n.config.BasicConfig.Server
 }
 
-func (n *NodeControl) GetNodeConfig() *config2.Node {
+func (n *NodeControl) GetNodeConfig() *config.Node {
 	return n.config
 }
 
@@ -158,7 +158,7 @@ func (n *NodeControl) GetNodeStatus() core.NodeStatus {
 	return n.nodeStatus
 }
 
-func (n *NodeControl) GetProxyConfig() []*config2.Proxy {
+func (n *NodeControl) GetProxyConfig() []*config.Proxy {
 	return n.config.BasicConfig.Proxies
 }
 
@@ -366,7 +366,7 @@ func (n *NodeControl) StopClient() bool {
 	}
 	log.Info("StopClient - consensus check passed, node can be shutdown")
 
-	if consensusNode && n.config.BasicConfig.RunMode == config2.STRICT_MODE {
+	if consensusNode && n.config.BasicConfig.RunMode == config.STRICT_MODE {
 		// consensus node running in strict mode. node cannot be brouwght down
 		log.Info("StopClient - node manager running in strict mode. consensus node cannot be shut down")
 		return false
