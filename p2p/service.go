@@ -3,6 +3,7 @@ package p2p
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/ConsenSysQuorum/node-manager/core"
@@ -16,7 +17,7 @@ const (
 )
 
 func NewPeerManager(cfg *types.NodeConfig) *PeerManager {
-	return &PeerManager{cfg: cfg, client: core.NewHttpClient()}
+	return &PeerManager{cfg: cfg}
 }
 
 func (pm *PeerManager) getConfigByPrivManKey(key string) *types.NodeManagerConfig {
@@ -109,7 +110,11 @@ func (pm *PeerManager) peerPrivateTxStatus(participantKeys []string) []bool {
 			go func(nmc *types.NodeManagerConfig) {
 				defer wg.Done()
 				result := PeerPrivateTxPrepResult{}
-				if err := core.CallRPC(nmc.RpcUrl, preparePvtTxReq, &result); err != nil {
+				var client *http.Client
+				if nmc.TLSConfig != nil {
+					client = core.NewHttpClient(nmc.TLSConfig.TlsCfg)
+				}
+				if err := core.CallRPC(client, nmc.RpcUrl, preparePvtTxReq, &result); err != nil {
 					log.Error("peerPrivateTxStatus rpc failed", "err", err)
 					result.Error = err
 				} else if result.Error != nil {
@@ -210,7 +215,11 @@ func (pm *PeerManager) peerStatus() (int, []NodeStatusInfo) {
 		go func(nmc *types.NodeManagerConfig) {
 			defer wg.Done()
 			var res = PeerNodeStatusResult{}
-			if err := core.CallRPC(nmc.RpcUrl, nodeStatusReq, &res); err != nil {
+			var client *http.Client
+			if nmc.TLSConfig != nil {
+				client = core.NewHttpClient(nmc.TLSConfig.TlsCfg)
+			}
+			if err := core.CallRPC(client, nmc.RpcUrl, nodeStatusReq, &res); err != nil {
 				log.Error("peerStatus - ClientStatus - failed", "err", err)
 			}
 			if res.Error != nil {

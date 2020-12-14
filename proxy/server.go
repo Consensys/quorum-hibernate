@@ -62,8 +62,8 @@ func NewProxyServer(qn *node.NodeControl, pc *types.ProxyConfig, errc chan error
 		WriteTimeout: time.Duration(ps.proxyCfg.WriteTimeout) * time.Second,
 		ReadTimeout:  time.Duration(ps.proxyCfg.ReadTimeout) * time.Second,
 	}
-	if pc.ServerTLSConfig != nil {
-		ps.srv.TLSConfig = pc.ServerTLSConfig.Convert()
+	if pc.ProxyServerTLSConfig != nil {
+		ps.srv.TLSConfig = pc.ProxyServerTLSConfig.TlsCfg
 	}
 	log.Info("ProxyServer - created proxy server for config", "cfg", *pc)
 	return ps, nil
@@ -74,10 +74,9 @@ func initHttpHandler(ps *ProxyServer, url *url.URL) error {
 
 	if ps.proxyCfg.ClientTLSConfig != nil {
 		transport := http.DefaultTransport.(*http.Transport).Clone()
-		transport.TLSClientConfig = ps.proxyCfg.ClientTLSConfig.Convert() //TODO(cjh) may not work, may have to set rpTransport.DialTLSContext
+		transport.TLSClientConfig = ps.proxyCfg.ClientTLSConfig.TlsCfg //TODO(cjh) may not work, may have to set rpTransport.DialTLSContext
 		ps.rp.Transport = transport
 	}
-
 	ps.rp.ModifyResponse = func(res *http.Response) error {
 		respStatus := res.Status
 		log.Debug("initHttpHandler - response status", "status", respStatus, "code", res.StatusCode)
@@ -116,7 +115,7 @@ func (ps ProxyServer) Start() {
 
 		var err error
 
-		if ps.proxyCfg.ServerTLSConfig != nil {
+		if ps.proxyCfg.ProxyServerTLSConfig != nil {
 			log.Debug("Starting TLS-enabled proxy server", "proxyAddr", ps.proxyCfg.ProxyAddr, "upstream", ps.proxyCfg.UpstreamAddr)
 			err = ps.srv.ListenAndServeTLS("", "")
 		} else {

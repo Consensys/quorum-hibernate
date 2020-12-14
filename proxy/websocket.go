@@ -100,6 +100,11 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		dialer = DefaultDialer
 	}
 
+	// enable tls config if tls is enabled for client
+	if w.ps.proxyCfg.ClientTLSConfig != nil {
+		dialer.TLSClientConfig = w.ps.proxyCfg.ClientTLSConfig.TlsCfg
+	}
+
 	// Pass headers from the incoming request to the dialer to forward them to
 	// the final destinations.
 	requestHeader := http.Header{}
@@ -152,6 +157,7 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	// Connect to the backend URL, also pass the headers we get from the request
 	// together with the Forwarded headers we prepared above.
+	log.Info("WS-handler", "backendURL", backendURL.String())
 	connBackend, resp, err := dialer.Dial(backendURL.String(), requestHeader)
 	if err != nil {
 		log.Error("ServeHTTP-WS - couldn't dial to remote backend url", "err", err)
@@ -168,6 +174,7 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 		return
 	}
+
 	log.Info("ServeHTTP-WS - connected to backend", "name", w.ps.proxyCfg.Name, "dest", w.ps.proxyCfg.UpstreamAddr)
 	defer func() {
 		connBackend.Close()

@@ -54,7 +54,7 @@ func TestCallRPC(t *testing.T) {
 
 	var got interface{}
 
-	err := CallRPC(mockServer.URL, []byte(req), &got)
+	err := CallRPC(nil, mockServer.URL, []byte(req), &got)
 	require.NoError(t, err)
 
 	rpcResp := got.(map[string]interface{})
@@ -106,7 +106,7 @@ func TestCallRPC_HTTPError(t *testing.T) {
 
 			var resp interface{}
 
-			err := CallRPC(mockServer.URL, []byte(req), &resp)
+			err := CallRPC(nil, mockServer.URL, []byte(req), &resp)
 			require.EqualError(t, err, tt.wantErr)
 			require.Empty(t, resp)
 		})
@@ -146,7 +146,7 @@ func TestCallRPC_RpcError(t *testing.T) {
 
 	var got interface{}
 
-	err := CallRPC(mockServer.URL, []byte(req), &got)
+	err := CallRPC(nil, mockServer.URL, []byte(req), &got)
 	require.NoError(t, err)
 
 	rpcResp := got.(map[string]interface{})
@@ -194,7 +194,7 @@ func TestCallRPC_InvalidRespType(t *testing.T) {
 
 	var got invalid
 
-	err := CallRPC(mockServer.URL, []byte(req), &got)
+	err := CallRPC(nil, mockServer.URL, []byte(req), &got)
 	require.NoError(t, err)
 	require.Empty(t, got)
 }
@@ -236,7 +236,7 @@ func TestRpcError(t *testing.T) {
 
 	var got resp
 
-	err := CallRPC(mockServer.URL, []byte(req), &got)
+	err := CallRPC(nil, mockServer.URL, []byte(req), &got)
 	require.NoError(t, err)
 
 	want := resp{
@@ -293,13 +293,13 @@ func Test_CallREST_response_match_error(t *testing.T) {
 	defer server.Close()
 
 	// test if response matches
-	res, err := CallREST(server.URL+"/upcheck", "GET", []byte(""))
+	res, err := CallREST(nil, server.URL+"/upcheck", "GET", []byte(""))
 	assert.NoError(t, err)
 	expected := "I'am up!"
 	assert.Equal(t, res, expected)
 
 	// test if error is handled
-	_, err = CallREST(server.URL+"/invalid", "GET", []byte(""))
+	_, err = CallREST(nil, server.URL+"/invalid", "GET", []byte(""))
 	assert.Error(t, err)
 
 }
@@ -345,7 +345,7 @@ func Test_CallRPC_validResult_invalidResult_json_error(t *testing.T) {
 
 	// test if json decode works fine with interface{} type in result
 	var bnResp DummyBlocknumResp
-	err := CallRPC(server.URL+"/blocknumber", []byte("dummy req"), &bnResp)
+	err := CallRPC(nil, server.URL+"/blocknumber", []byte("dummy req"), &bnResp)
 	assert.NoError(t, err)
 	assert.NotNil(t, bnResp)
 	assert.NoError(t, bnResp.Error)
@@ -356,14 +356,14 @@ func Test_CallRPC_validResult_invalidResult_json_error(t *testing.T) {
 
 	// test if json decode works fine with wrong json field name in result
 	var badResp DummyBlocknumInvalidResp
-	err = CallRPC(server.URL+"/blocknumber", []byte("dummy req"), &badResp)
+	err = CallRPC(nil, server.URL+"/blocknumber", []byte("dummy req"), &badResp)
 	assert.NoError(t, err)
 	assert.NotNil(t, badResp)
 	assert.Nil(t, badResp.ResultDum)
 
 	// test if json decode works fine with proper struct in result
 	var validUserResp DummyUserdResp
-	err = CallRPC(server.URL+"/userdata/valid", []byte("dummy req"), &validUserResp)
+	err = CallRPC(nil, server.URL+"/userdata/valid", []byte("dummy req"), &validUserResp)
 	assert.NoError(t, err)
 	assert.NotNil(t, validUserResp)
 	assert.NoError(t, validUserResp.Error)
@@ -373,6 +373,6 @@ func Test_CallRPC_validResult_invalidResult_json_error(t *testing.T) {
 
 	// test if json decode fails when result format is wrong
 	var userResp DummyUserdResp
-	err = CallRPC(server.URL+"/userdata/jsonerror", []byte("dummy req"), &userResp)
+	err = CallRPC(nil, server.URL+"/userdata/jsonerror", []byte("dummy req"), &userResp)
 	assert.Error(t, err)
 }

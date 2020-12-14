@@ -2,6 +2,7 @@ package process
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -13,12 +14,13 @@ import (
 type ShellProcessControl struct {
 	cfg     *types.ProcessConfig
 	status  bool
+	client  *http.Client
 	muxLock sync.Mutex
 }
 
-func NewShellProcess(p *types.ProcessConfig, s bool) Process {
-	sp := &ShellProcessControl{p, s, sync.Mutex{}}
-	sp.IsUp()
+func NewShellProcess(c *http.Client, p *types.ProcessConfig, s bool) Process {
+	sp := &ShellProcessControl{p, s, c, sync.Mutex{}}
+	sp.UpdateStatus()
 	log.Debug("shell process created", "name", sp.cfg.Name)
 	return sp
 }
@@ -33,18 +35,19 @@ func (sp *ShellProcessControl) Status() bool {
 	return sp.status
 }
 
-// Status implements Process.IsUp
-func (sp *ShellProcessControl) IsUp() bool {
+// UpdateStatus implements Process.UpdateStatus
+func (sp *ShellProcessControl) UpdateStatus() bool {
+
 	s := false
 	var err error
-	s, err = IsProcessUp(sp.cfg.UpcheckCfg)
+	s, err = IsProcessUp(sp.client, sp.cfg.UpcheckCfg)
 	if err != nil {
 		sp.setStatus(false)
-		log.Error("IsUp - blockchain client is down", "err", err)
+		log.Error("UpdateStatus - shell process is down", "err", err)
 	} else {
 		sp.setStatus(s)
 	}
-	log.Debug("IsUp", "name", sp.cfg.Name, "return", sp.status)
+	log.Debug("UpdateStatus", "name", sp.cfg.Name, "return", sp.status)
 	return sp.status
 }
 
@@ -106,7 +109,7 @@ func (sp *ShellProcessControl) WaitToComeUp() bool {
 	retryCount := 30
 	c := 1
 	for c <= retryCount {
-		if sp.IsUp() {
+		if sp.UpdateStatus() {
 			return true
 		}
 		time.Sleep(time.Second)
@@ -123,7 +126,7 @@ func (sp *ShellProcessControl) WaitToBeDown() bool {
 	retryCount := 30
 	c := 1
 	for c <= retryCount {
-		if !sp.IsUp() {
+		if !sp.UpdateStatus() {
 			return true
 		}
 		time.Sleep(time.Second)

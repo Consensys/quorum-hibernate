@@ -1,8 +1,6 @@
 package p2p
 
 import (
-	"net/http"
-
 	"github.com/ConsenSysQuorum/node-manager/core/types"
 )
 
@@ -16,8 +14,7 @@ type PrivateTxPrepStatus struct {
 }
 
 type PeerManager struct {
-	cfg    *types.NodeConfig
-	client *http.Client
+	cfg *types.NodeConfig
 }
 
 type PeerNodeStatusResult struct {

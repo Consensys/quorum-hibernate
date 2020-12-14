@@ -44,7 +44,7 @@ func (r *RPCService) Start() error {
 
 	jsonrpcServer := rpc.NewServer()
 	jsonrpcServer.RegisterCodec(json.NewCodec(), "application/json")
-	if err := jsonrpcServer.RegisterService(node.NewNodeRPCAPIs(r.qn), "node"); err != nil {
+	if err := jsonrpcServer.RegisterService(node.NewNodeRPCAPIs(r.qn, r.qn.GetNodeConfig()), "node"); err != nil {
 		return err
 	}
 
@@ -56,6 +56,15 @@ func (r *RPCService) Start() error {
 		ReadTimeout:  ReadTimeout,
 		WriteTimeout: WriteTimeout,
 		IdleTimeout:  IdleTimeout,
+	}
+
+	tlsCfg := r.qn.GetNodeConfig().BasicConfig.Server.TLSConfig
+	if tlsCfg != nil {
+		var err error
+		r.httpServer.TLSConfig, err = tlsCfg.TLSConfig()
+		if err != nil {
+			return err
+		}
 	}
 
 	r.shutdownWg.Add(1)

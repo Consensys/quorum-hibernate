@@ -33,7 +33,6 @@ type IstanbulConsensus struct {
 }
 
 const (
-	validatorDownSealDiff = 2
 
 	// Istanbul RPC APIs
 	//TODO(cjh) deterministic rpc request ids - check other rpc requests too
@@ -41,13 +40,13 @@ const (
 	IstanbulIsValidatorReq = `{"jsonrpc":"2.0", "method":"istanbul_isValidator", "params":[], "id":67}`
 )
 
-func NewIstanbulConsensus(qn *types.NodeConfig) consensus.Consensus {
-	return &IstanbulConsensus{cfg: qn, client: core.NewHttpClient()}
+func NewIstanbulConsensus(qn *types.NodeConfig, c *http.Client) consensus.Consensus {
+	return &IstanbulConsensus{cfg: qn, client: c}
 }
 
 func (i *IstanbulConsensus) getIstanbulSealerActivity() (*IstanbulSealActivity, error) {
 	var respResult IstanbulSealActivityResp
-	if err := core.CallRPC(i.cfg.BasicConfig.BcClntRpcUrl, []byte(IstanbulStatusReq), &respResult); err != nil {
+	if err := core.CallRPC(i.client, i.cfg.BasicConfig.BcClntRpcUrl, []byte(IstanbulStatusReq), &respResult); err != nil {
 		return nil, err
 	}
 	if respResult.Error != nil {
@@ -58,7 +57,7 @@ func (i *IstanbulConsensus) getIstanbulSealerActivity() (*IstanbulSealActivity, 
 
 func (i *IstanbulConsensus) getIstanbulIsValidator() (bool, error) {
 	var respResult IstanbulIsValidatorResp
-	if err := core.CallRPC(i.cfg.BasicConfig.BcClntRpcUrl, []byte(IstanbulIsValidatorReq), &respResult); err != nil {
+	if err := core.CallRPC(i.client, i.cfg.BasicConfig.BcClntRpcUrl, []byte(IstanbulIsValidatorReq), &respResult); err != nil {
 		return false, err
 	}
 	if respResult.Error != nil {
@@ -87,22 +86,23 @@ func (i *IstanbulConsensus) ValidateShutdown() (bool, error) {
 		return isValidator, fmt.Errorf("unable to check istanbul sealer status: %v", err)
 	}
 
-	totalValidators := len(activity.SealerActivity)
-
-	if totalValidators == 0 {
-		return isValidator, errors.New("istanbul consensus check failed - no signers")
-	}
-
-	maxSealBlocks := activity.NumBlocks / totalValidators
-
 	if activity.NumBlocks == 0 {
 		return isValidator, errors.New("istanbul consensus check failed - block minting not started at network")
 	}
 
+	// first identify the max number of blocks sealed by any of the validators
+	maxBlockSealed := 0
+	for _, numBlocks := range activity.SealerActivity {
+		if numBlocks > maxBlockSealed {
+			maxBlockSealed = numBlocks
+		}
+	}
+
+	// check how many validators have sealed less blocks and potentially down
+	totalValidators := len(activity.SealerActivity)
 	var numNodesDown = 0
 	for _, numBlocks := range activity.SealerActivity {
-		sealDiff := maxSealBlocks - numBlocks
-		if sealDiff >= validatorDownSealDiff {
+		if maxBlockSealed-numBlocks > 1 {
 			numNodesDown++
 		}
 	}
