@@ -20,7 +20,7 @@ func NewPeerManager(cfg *config.Node) *PeerManager {
 	return &PeerManager{cfg: cfg}
 }
 
-func (pm *PeerManager) getConfigByPrivManKey(key string) *config.NodeManager {
+func (pm *PeerManager) getConfigByPrivManKey(key string) *config.Peer {
 	for _, n := range pm.getLatestConfig() {
 		if n.PrivManKey == key {
 			log.Debug("getConfigByPrivManKey - privacy manager key matched", "node", n)
@@ -30,10 +30,10 @@ func (pm *PeerManager) getConfigByPrivManKey(key string) *config.NodeManager {
 	return nil
 }
 
-func (pm *PeerManager) getLatestConfig() []*config.NodeManager {
-	newCfg, err := config.ReadNodeManagerConfig(pm.cfg.BasicConfig.NodeManagerConfigFile)
+func (pm *PeerManager) getLatestConfig() []*config.Peer {
+	newCfg, err := config.ReadPeersConfig(pm.cfg.BasicConfig.PeersConfigFile)
 	if err != nil {
-		log.Error("getLatestConfig - error updating node manager config. will use old config", "path", pm.cfg.BasicConfig.NodeManagerConfigFile, "err", err)
+		log.Error("getLatestConfig - error updating node manager config. will use old config", "path", pm.cfg.BasicConfig.PeersConfigFile, "err", err)
 		return pm.cfg.NodeManagers
 	}
 	log.Debug("getLatestConfig - loaded new config", "cfg", newCfg)
@@ -107,7 +107,7 @@ func (pm *PeerManager) peerPrivateTxStatus(participantKeys []string) []bool {
 
 		if nmCfg != nil {
 			wg.Add(1)
-			go func(nmc *config.NodeManager) {
+			go func(nmc *config.Peer) {
 				defer wg.Done()
 				result := PeerPrivateTxPrepResult{}
 				var client *http.Client
@@ -156,7 +156,7 @@ func (pm *PeerManager) ValidatePeers() ([]NodeStatusInfo, error) {
 	return statusArr, nil
 }
 
-func (pm *PeerManager) getConfigCount(nmCfgs []*config.NodeManager) int {
+func (pm *PeerManager) getConfigCount(nmCfgs []*config.Peer) int {
 	nodeManagerCount := 0
 	for _, n := range nmCfgs {
 		//skip self
@@ -212,7 +212,7 @@ func (pm *PeerManager) peerStatus() (int, []NodeStatusInfo) {
 			continue
 		}
 		wg.Add(1)
-		go func(nmc *config.NodeManager) {
+		go func(nmc *config.Peer) {
 			defer wg.Done()
 			var res = PeerNodeStatusResult{}
 			var client *http.Client

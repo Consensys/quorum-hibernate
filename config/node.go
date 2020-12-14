@@ -11,8 +11,8 @@ import (
 )
 
 type Node struct {
-	BasicConfig  *Basic         `toml:"basicConfig"` // basic config of this node manager
-	NodeManagers NodeManagerArr // node manager config of other node manager
+	BasicConfig  *Basic  `toml:"basicConfig"` // basic config of this node manager
+	NodeManagers PeerArr // node manager config of other node manager
 }
 
 func ReadNodeConfig(configFile string) (Node, error) {
@@ -89,23 +89,6 @@ func (c Node) IsConsensusValid(client *http.Client) error {
 		}
 	}
 	return nil
-}
-
-func ReadNodeManagerConfig(configFile string) ([]*NodeManager, error) {
-	f, err := os.Open(configFile)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	var input NodeManagerList
-	if err = toml.NewDecoder(f).Decode(&input); err != nil {
-		return nil, err
-	}
-	if err := input.NodeManagers.IsValid(); err != nil {
-		return nil, err
-	}
-
-	return input.NodeManagers, nil
 }
 
 func (c Node) IsValid() error {

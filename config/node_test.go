@@ -8,52 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNamedError(t *testing.T) {
-	got := namedValidationError{name: "someName", errMsg: "someErr"}
-	require.EqualError(t, got, "name = someName: someErr")
-}
-
-func TestReadNodeManagerConfig(t *testing.T) {
-	fileContents := `nodeManagers = [
-	{ name = "node1", privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", rpcUrl = "http://localhost:8081" },
-	{ name = "node2", privManKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", rpcUrl = "http://localhost:8082" }
-]`
-
-	f, err := ioutil.TempFile("", "remotesconfig")
-	require.NoError(t, err)
-	defer os.Remove(f.Name())
-
-	_, err = f.Write([]byte(fileContents))
-	require.NoError(t, err)
-
-	got, err := ReadNodeManagerConfig(f.Name())
-	require.NoError(t, err)
-
-	want := []*NodeManager{
-		{
-			Name:       "node1",
-			PrivManKey: "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
-			RpcUrl:     "http://localhost:8081",
-		},
-		{
-			Name:       "node2",
-			PrivManKey: "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=",
-			RpcUrl:     "http://localhost:8082",
-		},
-	}
-
-	// dereference is required for require.Contains
-	gotDeref := make([]NodeManager, len(got))
-	for i := range got {
-		gotDeref[i] = *got[i]
-	}
-
-	require.Len(t, got, 2)
-	require.Contains(t, gotDeref, *want[0])
-	require.Contains(t, gotDeref, *want[1])
-
-}
-
 func TestReadNodeConfig(t *testing.T) {
 	fileContents := `[basicConfig]
 #node manager name
@@ -64,7 +18,7 @@ privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
 consensus = "raft"
 clientType = "quorum"
 upcheckPollingInterval = 1
-nodeManagerConfigFile = "./test/shell/nm1.toml"
+peersConfigFile = "./test/shell/nm1.toml"
 #blockchain client/privacy manager inactivity timeout seconds
 inactivityTime = 60
 runMode = "STRICT"
@@ -113,15 +67,15 @@ upcheckCfg = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", bod
 
 	want := Node{
 		BasicConfig: &Basic{
-			Name:                  "node1",
-			BcClntRpcUrl:          "http://localhost:22000",
-			PrivManKey:            "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
-			Consensus:             "raft",
-			ClientType:            "quorum",
-			UpchkPollingInterval:  1,
-			NodeManagerConfigFile: "./test/shell/nm1.toml",
-			InactivityTime:        60,
-			RunMode:               "STRICT",
+			Name:                 "node1",
+			BcClntRpcUrl:         "http://localhost:22000",
+			PrivManKey:           "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
+			Consensus:            "raft",
+			ClientType:           "quorum",
+			UpchkPollingInterval: 1,
+			PeersConfigFile:      "./test/shell/nm1.toml",
+			InactivityTime:       60,
+			RunMode:              "STRICT",
 			Server: &RPCServer{
 				RpcAddr:     "localhost:8081",
 				RPCCorsList: []string{"*"},

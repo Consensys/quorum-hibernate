@@ -7,22 +7,22 @@ import (
 )
 
 type Basic struct {
-	Name                  string     `toml:"name"`                   // name of this node manager
-	RunMode               string     `toml:"runMode"`                // can be strict or normal. strict mode keeps consensus nodes alive always
-	BcClntRpcUrl          string     `toml:"bcClntRpcUrl"`           // RPC url of blockchain client managed by this node manager
-	BcClntTLSConfig       *ClientTLS `toml:"bcClntTLSConfig"`        // blockchain client TLS config
-	PrivManTLSConfig      *ClientTLS `toml:"PrivManTLSConfig"`       // Privacy manager TLS config
-	PrivManKey            string     `toml:"privManKey"`             // public key of privacy manager managed by this node manager
-	Consensus             string     `toml:"consensus"`              // consensus used by blockchain client. ex: raft / istanbul / clique
-	ClientType            string     `toml:"clientType"`             // client used by this node manager. it should be quorum or besu
-	UpchkPollingInterval  int        `toml:"upcheckPollingInterval"` // up check polling interval in seconds for the node
-	NodeManagerConfigFile string     `toml:"nodeManagerConfigFile"`  // node manager config file path
-	InactivityTime        int        `toml:"inactivityTime"`         // inactivity time for blockchain client and privacy manager
-	ResyncTime            int        `toml:"resyncTime"`             // time after which client should be started to sync up with network
-	Server                *RPCServer `toml:"server"`                 // RPC server config of this node manager
-	BcClntProcess         *Process   `toml:"bcClntProcess"`          // blockchain client process managed by this node manager
-	PrivManProcess        *Process   `toml:"privManProcess"`         // privacy manager process managed by this node manager
-	Proxies               []*Proxy   `toml:"proxies"`                // proxies managed by this node manager
+	Name                 string     `toml:"name"`                   // name of this node manager
+	RunMode              string     `toml:"runMode"`                // can be strict or normal. strict mode keeps consensus nodes alive always
+	BcClntRpcUrl         string     `toml:"bcClntRpcUrl"`           // RPC url of blockchain client managed by this node manager
+	BcClntTLSConfig      *ClientTLS `toml:"bcClntTLSConfig"`        // blockchain client TLS config
+	PrivManTLSConfig     *ClientTLS `toml:"PrivManTLSConfig"`       // Privacy manager TLS config
+	PrivManKey           string     `toml:"privManKey"`             // public key of privacy manager managed by this node manager
+	Consensus            string     `toml:"consensus"`              // consensus used by blockchain client. ex: raft / istanbul / clique
+	ClientType           string     `toml:"clientType"`             // client used by this node manager. it should be quorum or besu
+	UpchkPollingInterval int        `toml:"upcheckPollingInterval"` // up check polling interval in seconds for the node
+	PeersConfigFile      string     `toml:"peersConfigFile"`        // node manager config file path
+	InactivityTime       int        `toml:"inactivityTime"`         // inactivity time for blockchain client and privacy manager
+	ResyncTime           int        `toml:"resyncTime"`             // time after which client should be started to sync up with network
+	Server               *RPCServer `toml:"server"`                 // RPC server config of this node manager
+	BcClntProcess        *Process   `toml:"bcClntProcess"`          // blockchain client process managed by this node manager
+	PrivManProcess       *Process   `toml:"privManProcess"`         // privacy manager process managed by this node manager
+	Proxies              []*Proxy   `toml:"proxies"`                // proxies managed by this node manager
 }
 
 func (c Basic) IsRaft() bool {
@@ -54,8 +54,8 @@ func (c Basic) IsValid() error {
 		return errors.New("name is empty")
 	}
 
-	if c.NodeManagerConfigFile == "" {
-		return errors.New("nodeManagerConfigFile is empty")
+	if c.PeersConfigFile == "" {
+		return errors.New("peersConfigFile is empty")
 	}
 
 	if c.RunMode != "" && (c.RunMode != STRICT_MODE && c.RunMode != NORMAL_MODE) {

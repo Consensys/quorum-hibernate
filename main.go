@@ -99,7 +99,7 @@ func readNodeConfigFromFile(configFile string) (config.Node, error) {
 		return config.Node{}, err
 	}
 	log.Info("readNodeConfigFromFile - node config file read successfully")
-	if nodeConfig.NodeManagers, err = config.ReadNodeManagerConfig(nodeConfig.BasicConfig.NodeManagerConfigFile); err != nil {
+	if nodeConfig.NodeManagers, err = config.ReadPeersConfig(nodeConfig.BasicConfig.PeersConfigFile); err != nil {
 		log.Error("readNodeConfigFromFile - loading node manager config failed", "err", err)
 		return config.Node{}, err
 	}
