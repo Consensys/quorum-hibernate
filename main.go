@@ -2,11 +2,11 @@ package main
 
 import (
 	"flag"
+	"github.com/ConsenSysQuorum/node-manager/config"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
 	"github.com/ConsenSysQuorum/node-manager/proxy"
@@ -45,7 +45,7 @@ func main() {
 	waitForShutdown(rpcBackendErrCh, proxyBackendErrCh)
 }
 
-func Start(nodeConfig types.NodeConfig, err error, proxyBackendErrCh chan error, rpcBackendErrCh chan error) bool {
+func Start(nodeConfig config.NodeConfig, err error, proxyBackendErrCh chan error, rpcBackendErrCh chan error) bool {
 	nmApp.node = node.NewNodeControl(&nodeConfig)
 	if nmApp.proxyServers, err = proxy.MakeProxyServices(nmApp.node, proxyBackendErrCh); err != nil {
 		log.Error("Start - creating proxies failed", "err", err)
@@ -91,17 +91,17 @@ func waitForShutdown(rpcBackendErrCh chan error, proxyBackendErrCh chan error) {
 	}
 }
 
-func readNodeConfigFromFile(configFile string) (types.NodeConfig, error) {
-	var nodeConfig types.NodeConfig
+func readNodeConfigFromFile(configFile string) (config.NodeConfig, error) {
+	var nodeConfig config.NodeConfig
 	var err error
-	if nodeConfig, err = types.ReadNodeConfig(configFile); err != nil {
+	if nodeConfig, err = config.ReadNodeConfig(configFile); err != nil {
 		log.Error("readNodeConfigFromFile - loading node config file failed", "configfile", configFile, "err", err)
-		return types.NodeConfig{}, err
+		return config.NodeConfig{}, err
 	}
 	log.Info("readNodeConfigFromFile - node config file read successfully")
-	if nodeConfig.NodeManagers, err = types.ReadNodeManagerConfig(nodeConfig.BasicConfig.NodeManagerConfigFile); err != nil {
+	if nodeConfig.NodeManagers, err = config.ReadNodeManagerConfig(nodeConfig.BasicConfig.NodeManagerConfigFile); err != nil {
 		log.Error("readNodeConfigFromFile - loading node manager config failed", "err", err)
-		return types.NodeConfig{}, err
+		return config.NodeConfig{}, err
 	}
 	log.Info("readNodeConfigFromFile - node manager config file read successfully")
 	return nodeConfig, nil

@@ -2,7 +2,7 @@ package quorum
 
 import (
 	"encoding/json"
-	"github.com/ConsenSysQuorum/node-manager/core/types"
+	"github.com/ConsenSysQuorum/node-manager/config"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
@@ -14,8 +14,8 @@ func TestRaftConsensus_ValidateShutdown_Minter_Invalid(t *testing.T) {
 	mockServer := startMockRaftServer(t, `{"result": "minter"}`, "")
 	defer mockServer.Close()
 
-	raft := NewRaftConsensus(&types.NodeConfig{
-		BasicConfig: &types.BasicConfig{
+	raft := NewRaftConsensus(&config.NodeConfig{
+		BasicConfig: &config.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
 	}, nil)
@@ -29,8 +29,8 @@ func TestRaftConsensus_ValidateShutdown_Learner_Valid(t *testing.T) {
 	mockServer := startMockRaftServer(t, `{"result": "learner"}`, "")
 	defer mockServer.Close()
 
-	raft := NewRaftConsensus(&types.NodeConfig{
-		BasicConfig: &types.BasicConfig{
+	raft := NewRaftConsensus(&config.NodeConfig{
+		BasicConfig: &config.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
 	}, nil)
@@ -70,8 +70,8 @@ func TestRaftConsensus_ValidateShutdown_Verifier_NotEnoughActivePeers_Invalid(t 
 			mockServer := startMockRaftServer(t, tt.raftRoleResp, tt.raftClusterResp)
 			defer mockServer.Close()
 
-			raft := NewRaftConsensus(&types.NodeConfig{
-				BasicConfig: &types.BasicConfig{
+			raft := NewRaftConsensus(&config.NodeConfig{
+				BasicConfig: &config.BasicConfig{
 					BcClntRpcUrl: mockServer.URL,
 				},
 			}, nil)
@@ -97,8 +97,8 @@ func TestRaftConsensus_ValidateShutdown_GetRoleRpcError(t *testing.T) {
 	mockServer := startMockRaftServer(t, raftRoleResp, raftClusterResp)
 	defer mockServer.Close()
 
-	raft := NewRaftConsensus(&types.NodeConfig{
-		BasicConfig: &types.BasicConfig{
+	raft := NewRaftConsensus(&config.NodeConfig{
+		BasicConfig: &config.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
 	}, nil)
@@ -119,8 +119,8 @@ func TestRaftConsensus_ValidateShutdown_GetClusterInfoRpcError(t *testing.T) {
 	mockServer := startMockRaftServer(t, raftRoleResp, raftClusterResp)
 	defer mockServer.Close()
 
-	raft := NewRaftConsensus(&types.NodeConfig{
-		BasicConfig: &types.BasicConfig{
+	raft := NewRaftConsensus(&config.NodeConfig{
+		BasicConfig: &config.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
 	}, nil)

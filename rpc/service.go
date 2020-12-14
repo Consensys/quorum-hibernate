@@ -3,11 +3,11 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
 	"github.com/gorilla/rpc/v2"
@@ -30,7 +30,7 @@ type RPCService struct {
 	shutdownWg  sync.WaitGroup
 }
 
-func NewRPCService(qn *node.NodeControl, config *types.RPCServerConfig, backendErrorChan chan error) *RPCService {
+func NewRPCService(qn *node.NodeControl, config *config.RPCServerConfig, backendErrorChan chan error) *RPCService {
 	return &RPCService{
 		qn:          qn,
 		cors:        config.RPCCorsList,

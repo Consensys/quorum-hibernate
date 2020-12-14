@@ -2,6 +2,7 @@ package node
 
 import (
 	"errors"
+	config2 "github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
 	"sync"
 	"time"
@@ -15,7 +16,6 @@ import (
 	"github.com/ConsenSysQuorum/node-manager/core"
 	proc "github.com/ConsenSysQuorum/node-manager/process"
 
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
@@ -29,7 +29,7 @@ const CONSENSUS_WAIT_TIME = 60
 // It starts blockchain client/privacyManager processes when there is a activity.
 // It takes care of managing combined status of blockchain client & privacyManager.
 type NodeControl struct {
-	config              *types.NodeConfig        // config of this node
+	config              *config2.NodeConfig      // config of this node
 	im                  *InactivityResyncMonitor // inactivity monitor
 	nm                  *p2p.PeerManager         // node manager to communicate with other node manager
 	bcclntProcess       proc.Process             // blockchain client process controller
@@ -40,8 +40,8 @@ type NodeControl struct {
 	txh                 privatetx.TxHandler      // Transaction handler
 	withPrivMan         bool                     // indicates if the node is running with a privacy manage
 	consValid           bool                     // indicates if network level consensus is valid
-	clientStatus        types.ClientStatus       // combined status of blockchain client and privacy manager processes
-	nodeStatus          types.NodeStatus         // status of node manager
+	clientStatus        core.ClientStatus        // combined status of blockchain client and privacy manager processes
+	nodeStatus          core.NodeStatus          // status of node manager
 	inactivityResetCh   chan bool                // channel to reset inactivity
 	syncResetCh         chan bool                // channel to reset sync timer
 	stopClntCh          chan bool                // channel to request stop node
@@ -55,18 +55,18 @@ type NodeControl struct {
 	nodeStatusMux       sync.Mutex               // lock for setting the node status
 }
 
-func (n *NodeControl) ClientStatus() types.ClientStatus {
+func (n *NodeControl) ClientStatus() core.ClientStatus {
 	n.clntStatusMux.Lock()
 	defer n.clntStatusMux.Unlock()
 	return n.clientStatus
 }
 
-func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
+func NewNodeControl(cfg *config2.NodeConfig) *NodeControl {
 	node := &NodeControl{
 		config:              cfg,
 		nm:                  p2p.NewPeerManager(cfg),
 		withPrivMan:         cfg.BasicConfig.PrivManProcess != nil,
-		nodeStatus:          types.OK,
+		nodeStatus:          core.OK,
 		inactivityResetCh:   make(chan bool, 1),
 		syncResetCh:         make(chan bool, 1),
 		stopClntCh:          make(chan bool, 1),
@@ -102,7 +102,7 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 	return node
 }
 
-func setHttpClients(cfg *types.NodeConfig, node *NodeControl) {
+func setHttpClients(cfg *config2.NodeConfig, node *NodeControl) {
 	if cfg.BasicConfig.BcClntTLSConfig != nil {
 		node.bcclntHttpClient = core.NewHttpClient(cfg.BasicConfig.BcClntTLSConfig.TlsCfg)
 	} else {
@@ -146,19 +146,19 @@ func populateConsensusHandler(n *NodeControl) {
 	}
 }
 
-func (n *NodeControl) GetRPCConfig() *types.RPCServerConfig {
+func (n *NodeControl) GetRPCConfig() *config2.RPCServerConfig {
 	return n.config.BasicConfig.Server
 }
 
-func (n *NodeControl) GetNodeConfig() *types.NodeConfig {
+func (n *NodeControl) GetNodeConfig() *config2.NodeConfig {
 	return n.config
 }
 
-func (n *NodeControl) GetNodeStatus() types.NodeStatus {
+func (n *NodeControl) GetNodeStatus() core.NodeStatus {
 	return n.nodeStatus
 }
 
-func (n *NodeControl) GetProxyConfig() []*types.ProxyConfig {
+func (n *NodeControl) GetProxyConfig() []*config2.ProxyConfig {
 	return n.config.BasicConfig.Proxies
 }
 
@@ -166,20 +166,20 @@ func (n *NodeControl) GetTxHandler() privatetx.TxHandler {
 	return n.txh
 }
 
-func (n *NodeControl) SetClntStatus(ns types.ClientStatus) {
+func (n *NodeControl) SetClntStatus(ns core.ClientStatus) {
 	defer n.clntStatusMux.Unlock()
 	n.clntStatusMux.Lock()
 	n.clientStatus = ns
 }
 
-func (n *NodeControl) SetNodeStatus(ns types.NodeStatus) {
+func (n *NodeControl) SetNodeStatus(ns core.NodeStatus) {
 	defer n.nodeStatusMux.Unlock()
 	n.nodeStatusMux.Lock()
 	n.nodeStatus = ns
 }
 
 func (n *NodeControl) IsClientUp() bool {
-	return n.ClientStatus() == types.Up
+	return n.ClientStatus() == core.Up
 }
 
 // CheckClientUpStatus performs up check for blockchain client and privacy manager and returns the combined status
@@ -199,9 +199,9 @@ func (n *NodeControl) CheckClientUpStatus(connectToClient bool) bool {
 	areClientsUp := bcclntStatus && pmStatus
 
 	if areClientsUp {
-		n.SetClntStatus(types.Up)
+		n.SetClntStatus(core.Up)
 	} else {
-		n.SetClntStatus(types.Down)
+		n.SetClntStatus(core.Down)
 	}
 	return areClientsUp
 }
@@ -232,11 +232,11 @@ func (n *NodeControl) fetchCurrentClientStatuses() (bool, bool) {
 // IsNodeBusy returns error if the node manager is busy with shutdown/startup
 func (n *NodeControl) IsNodeBusy() error {
 	switch n.nodeStatus {
-	case types.ShutdownInprogress:
+	case core.ShutdownInprogress:
 		return errors.New(core.NodeIsBeingShutdown)
-	case types.StartupInprogress:
+	case core.StartupInprogress:
 		return errors.New(core.NodeIsBeingStarted)
-	case types.OK:
+	case core.OK:
 		return nil
 	}
 	return nil
@@ -361,12 +361,12 @@ func (n *NodeControl) StopClient() bool {
 	consensusNode, err := n.checkAndValidateConsensus()
 	if err != nil {
 		log.Info("StopClient - consensus check failed, node cannot be shutdown", "err", err)
-		n.SetNodeStatus(types.OK)
+		n.SetNodeStatus(core.OK)
 		return false
 	}
 	log.Info("StopClient - consensus check passed, node can be shutdown")
 
-	if consensusNode && n.config.BasicConfig.RunMode == types.STRICT_MODE {
+	if consensusNode && n.config.BasicConfig.RunMode == config2.STRICT_MODE {
 		// consensus node running in strict mode. node cannot be brouwght down
 		log.Info("StopClient - node manager running in strict mode. consensus node cannot be shut down")
 		return false
@@ -377,10 +377,10 @@ func (n *NodeControl) StopClient() bool {
 	w := core.RandomInt(10, 5000)
 	log.Info("StopClient - waiting for p2p validation try", "wait time in seconds", w)
 	time.Sleep(time.Duration(w) * time.Millisecond)
-	n.SetNodeStatus(types.ShutdownInprogress)
+	n.SetNodeStatus(core.ShutdownInprogress)
 
 	if peersStatus, err = n.nm.ValidatePeers(); err != nil {
-		n.SetNodeStatus(types.OK)
+		n.SetNodeStatus(core.OK)
 		log.Error("StopClient - node cannot be shutdown, p2p validation failed")
 		return false
 	}
@@ -388,15 +388,15 @@ func (n *NodeControl) StopClient() bool {
 
 	bcStatus, pmStatus := n.stopProcesses()
 	if bcStatus && pmStatus {
-		n.SetClntStatus(types.Down)
+		n.SetClntStatus(core.Down)
 
 		// for IBFT and Clique, since we rely on block signed data
 		// do not want to mark the QNM status as OK immediately
 		// want to allow enough sleep period so that the consensus
 		// engine can mint enough new blocks before another node hibernates
-		n.SetNodeStatus(types.ConsensusWait)
+		n.SetNodeStatus(core.ConsensusWait)
 		time.Sleep(CONSENSUS_WAIT_TIME * time.Second)
-		n.SetNodeStatus(types.OK)
+		n.SetNodeStatus(core.OK)
 
 	}
 	// if stopping of blockchain client or privacy manager fails Status will remain as ShutdownInprogress and node manager will not process any requests from clients
@@ -450,7 +450,7 @@ func (n *NodeControl) StartClient() bool {
 		log.Debug("StartClient - node is already up")
 		return true
 	}
-	n.SetNodeStatus(types.StartupInprogress)
+	n.SetNodeStatus(core.StartupInprogress)
 	gs := true
 	ts := true
 	if n.withPrivMan && n.pmclntProcess.Start() != nil {
@@ -460,8 +460,8 @@ func (n *NodeControl) StartClient() bool {
 		ts = false
 	}
 	if gs && ts {
-		n.SetClntStatus(types.Up)
-		n.SetNodeStatus(types.OK)
+		n.SetClntStatus(core.Up)
+		n.SetNodeStatus(core.OK)
 	}
 	// if start up of blockchain client or privacy manager fails Status will remain as StartupInprogress and node manager will not process any requests from clients
 	// it will need some manual intervention to set it to the correct status

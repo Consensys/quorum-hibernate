@@ -1,4 +1,4 @@
-package types
+package core
 
 // ClientStatus indicates the combined status of both blockchain client and privacy manager processes
 type ClientStatus uint8

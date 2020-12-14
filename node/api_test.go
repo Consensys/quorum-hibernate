@@ -2,6 +2,8 @@ package node
 
 import (
 	"errors"
+	"github.com/ConsenSysQuorum/node-manager/config"
+	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/p2p"
 	"path/filepath"
 	"runtime"
@@ -9,13 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewNodeRPCAPIs(t *testing.T) {
 	service := &mockControllerApiService{}
-	conf := &types.NodeConfig{}
+	conf := &config.NodeConfig{}
 
 	api := NewNodeRPCAPIs(service, conf)
 
@@ -24,7 +25,7 @@ func TestNewNodeRPCAPIs(t *testing.T) {
 
 func TestNodeRPCAPIs_IsNodeUp_GetsStatusFromService(t *testing.T) {
 	var (
-		conf  = &types.NodeConfig{}
+		conf  = &config.NodeConfig{}
 		param = new(string)
 	)
 
@@ -67,7 +68,7 @@ func TestNodeRPCAPIs_IsNodeUp_GetsStatusFromService(t *testing.T) {
 
 func TestNodeRPCAPIs_PrepareForPrivateTx(t *testing.T) {
 	var (
-		conf  = &types.NodeConfig{}
+		conf  = &config.NodeConfig{}
 		param = new(string)
 	)
 
@@ -128,7 +129,7 @@ func TestNodeRPCAPIs_PrepareForPrivateTx(t *testing.T) {
 
 func TestTestNodeRPCAPIs_PrepareForPrivateTx_IfClientsDownPrepareInBackground(t *testing.T) {
 	var (
-		conf  = &types.NodeConfig{}
+		conf  = &config.NodeConfig{}
 		param = new(string)
 	)
 
@@ -195,18 +196,18 @@ func TestTestNodeRPCAPIs_PrepareForPrivateTx_IfClientsDownPrepareInBackground(t 
 
 func TestNodeRPCAPIs_NodeStatus(t *testing.T) {
 	var (
-		conf = &types.NodeConfig{
-			BasicConfig: &types.BasicConfig{
+		conf = &config.NodeConfig{
+			BasicConfig: &config.BasicConfig{
 				InactivityTime: 50,
 			},
 		}
 		param              = new(string)
 		mockServiceResults = map[string]interface{}{
-			"GetNodeStatus":          types.OK,
+			"GetNodeStatus":          core.OK,
 			"GetInactivityTimeCount": 40,
 		}
 		want = p2p.NodeStatusInfo{
-			Status:            types.OK,
+			Status:            core.OK,
 			InactiveTimeLimit: 50,
 			InactiveTime:      40,
 			TimeToShutdown:    10,
@@ -279,12 +280,12 @@ func (s *mockControllerApiService) PrepareClient() bool {
 	return s.results[getMethodName()].(bool)
 }
 
-func (s *mockControllerApiService) GetNodeStatus() types.NodeStatus {
+func (s *mockControllerApiService) GetNodeStatus() core.NodeStatus {
 	s.callCount[getMethodName()]++
 	if s.results[getMethodName()] == nil {
-		return types.NodeStatus(0)
+		return core.NodeStatus(0)
 	}
-	return s.results[getMethodName()].(types.NodeStatus)
+	return s.results[getMethodName()].(core.NodeStatus)
 }
 
 func (s *mockControllerApiService) GetInactivityTimeCount() int {

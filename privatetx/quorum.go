@@ -3,14 +3,14 @@ package privatetx
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ConsenSysQuorum/node-manager/config"
 	"strings"
 
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
 type QuorumTxHandler struct {
-	cfg *types.NodeConfig
+	cfg *config.NodeConfig
 }
 
 const (
@@ -43,7 +43,7 @@ var pvtReqParamMap = map[string]int{
 	estimateGas:     1,
 }
 
-func NewQuorumTxHandler(cfg *types.NodeConfig) TxHandler {
+func NewQuorumTxHandler(cfg *config.NodeConfig) TxHandler {
 	return &QuorumTxHandler{cfg: cfg}
 }
 

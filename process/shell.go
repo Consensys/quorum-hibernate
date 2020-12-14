@@ -2,23 +2,23 @@ package process
 
 import (
 	"fmt"
+	"github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
 // ShellProcessControl represents process control for a shell process
 type ShellProcessControl struct {
-	cfg     *types.ProcessConfig
+	cfg     *config.ProcessConfig
 	status  bool
 	client  *http.Client
 	muxLock sync.Mutex
 }
 
-func NewShellProcess(c *http.Client, p *types.ProcessConfig, s bool) Process {
+func NewShellProcess(c *http.Client, p *config.ProcessConfig, s bool) Process {
 	sp := &ShellProcessControl{p, s, c, sync.Mutex{}}
 	sp.UpdateStatus()
 	log.Debug("shell process created", "name", sp.cfg.Name)

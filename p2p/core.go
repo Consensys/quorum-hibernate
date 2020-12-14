@@ -1,7 +1,8 @@
 package p2p
 
 import (
-	"github.com/ConsenSysQuorum/node-manager/core/types"
+	"github.com/ConsenSysQuorum/node-manager/config"
+	"github.com/ConsenSysQuorum/node-manager/core"
 )
 
 type PeerPrivateTxPrepResult struct {
@@ -14,7 +15,7 @@ type PrivateTxPrepStatus struct {
 }
 
 type PeerManager struct {
-	cfg *types.NodeConfig
+	cfg *config.NodeConfig
 }
 
 type PeerNodeStatusResult struct {
@@ -23,7 +24,7 @@ type PeerNodeStatusResult struct {
 }
 
 type NodeStatusInfo struct {
-	Status            types.NodeStatus
+	Status            core.NodeStatus
 	InactiveTimeLimit int
 	InactiveTime      int
 	TimeToShutdown    int

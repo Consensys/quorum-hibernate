@@ -2,7 +2,7 @@ package quorum
 
 import (
 	"encoding/json"
-	"github.com/ConsenSysQuorum/node-manager/core/types"
+	"github.com/ConsenSysQuorum/node-manager/config"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
@@ -14,8 +14,8 @@ func TestIstanbulConsensus_ValidateShutdown_NonValidator_Valid(t *testing.T) {
 	mockServer := startMockIstanbulServer(t, `{"result": false}`, "")
 	defer mockServer.Close()
 
-	istanbul := NewIstanbulConsensus(&types.NodeConfig{
-		BasicConfig: &types.BasicConfig{
+	istanbul := NewIstanbulConsensus(&config.NodeConfig{
+		BasicConfig: &config.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
 	}, nil)
@@ -61,8 +61,8 @@ func TestIstanbulConsensus_ValidateShutdown_Validator(t *testing.T) {
 			mockServer := startMockIstanbulServer(t, tt.istanbulIsValidatorResp, tt.istanbulStatusResp)
 			defer mockServer.Close()
 
-			istanbul := NewIstanbulConsensus(&types.NodeConfig{
-				BasicConfig: &types.BasicConfig{
+			istanbul := NewIstanbulConsensus(&config.NodeConfig{
+				BasicConfig: &config.BasicConfig{
 					BcClntRpcUrl: mockServer.URL,
 				},
 			}, nil)
@@ -88,8 +88,8 @@ func TestIstanbulConsensus_ValidateShutdown_IsValidatorRpcError(t *testing.T) {
 	mockServer := startMockIstanbulServer(t, istanbulIsValidatorResp, istanbulStatusResp)
 	defer mockServer.Close()
 
-	istanbul := NewIstanbulConsensus(&types.NodeConfig{
-		BasicConfig: &types.BasicConfig{
+	istanbul := NewIstanbulConsensus(&config.NodeConfig{
+		BasicConfig: &config.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
 	}, nil)
@@ -110,8 +110,8 @@ func TestIstanbulConsensus_ValidateShutdown_SealerStatusRpcError(t *testing.T) {
 	mockServer := startMockIstanbulServer(t, istanbulIsValidatorResp, istanbulStatusResp)
 	defer mockServer.Close()
 
-	istanbul := NewIstanbulConsensus(&types.NodeConfig{
-		BasicConfig: &types.BasicConfig{
+	istanbul := NewIstanbulConsensus(&config.NodeConfig{
+		BasicConfig: &config.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
 	}, nil)

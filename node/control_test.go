@@ -1,7 +1,7 @@
 package node
 
 import (
-	"github.com/ConsenSysQuorum/node-manager/core/types"
+	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/process"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -9,7 +9,7 @@ import (
 
 func TestNodeControl_CheckClientUpStatus_IfCachedStatusIsDownThenOnlyUpdateCacheWhenForced(t *testing.T) {
 	var (
-		initialClientStatus = types.Down
+		initialClientStatus = core.Down
 	)
 
 	tests := []struct {
@@ -18,7 +18,7 @@ func TestNodeControl_CheckClientUpStatus_IfCachedStatusIsDownThenOnlyUpdateCache
 		pmClient             process.Process
 		forceConnectToClient bool
 		want                 bool
-		wantClientStatus     types.ClientStatus
+		wantClientStatus     core.ClientStatus
 	}{
 		{
 			name:                 "returnsCacheWithoutUpdating",
@@ -26,7 +26,7 @@ func TestNodeControl_CheckClientUpStatus_IfCachedStatusIsDownThenOnlyUpdateCache
 			pmClient:             &mockUpProcess{}, // if status was updated it would return as up
 			forceConnectToClient: false,
 			want:                 false,
-			wantClientStatus:     types.Down,
+			wantClientStatus:     core.Down,
 		},
 		{
 			name:                 "forceUpdate_BcUpPmUp",
@@ -34,7 +34,7 @@ func TestNodeControl_CheckClientUpStatus_IfCachedStatusIsDownThenOnlyUpdateCache
 			pmClient:             &mockUpProcess{},
 			forceConnectToClient: true,
 			want:                 true,
-			wantClientStatus:     types.Up,
+			wantClientStatus:     core.Up,
 		},
 		{
 			name:                 "forceUpdate_BcDownPmDown",
@@ -42,7 +42,7 @@ func TestNodeControl_CheckClientUpStatus_IfCachedStatusIsDownThenOnlyUpdateCache
 			pmClient:             &mockDownProcess{},
 			forceConnectToClient: true,
 			want:                 false,
-			wantClientStatus:     types.Down,
+			wantClientStatus:     core.Down,
 		},
 		{
 			name:                 "forceUpdate_BcUpPmDown",
@@ -50,7 +50,7 @@ func TestNodeControl_CheckClientUpStatus_IfCachedStatusIsDownThenOnlyUpdateCache
 			pmClient:             &mockDownProcess{},
 			forceConnectToClient: true,
 			want:                 false,
-			wantClientStatus:     types.Down,
+			wantClientStatus:     core.Down,
 		},
 		{
 			name:                 "forceUpdate_BcDownPmUp",
@@ -58,7 +58,7 @@ func TestNodeControl_CheckClientUpStatus_IfCachedStatusIsDownThenOnlyUpdateCache
 			pmClient:             &mockUpProcess{},
 			forceConnectToClient: true,
 			want:                 false,
-			wantClientStatus:     types.Down,
+			wantClientStatus:     core.Down,
 		},
 	}
 
@@ -81,7 +81,7 @@ func TestNodeControl_CheckClientUpStatus_IfCachedStatusIsDownThenOnlyUpdateCache
 
 func TestNodeControl_CheckClientUpStatus_IfCachedStatusIsUpThenAlwaysUpdateCache(t *testing.T) {
 	var (
-		initialClientStatus  = types.Up
+		initialClientStatus  = core.Up
 		forceConnectToClient = false
 	)
 
@@ -90,35 +90,35 @@ func TestNodeControl_CheckClientUpStatus_IfCachedStatusIsUpThenAlwaysUpdateCache
 		bcClient         process.Process
 		pmClient         process.Process
 		want             bool
-		wantClientStatus types.ClientStatus
+		wantClientStatus core.ClientStatus
 	}{
 		{
 			name:             "updates_BcUpPmUp",
 			bcClient:         &mockUpProcess{},
 			pmClient:         &mockUpProcess{},
 			want:             true,
-			wantClientStatus: types.Up,
+			wantClientStatus: core.Up,
 		},
 		{
 			name:             "updates_BcDownPmDown",
 			bcClient:         &mockDownProcess{},
 			pmClient:         &mockDownProcess{},
 			want:             false,
-			wantClientStatus: types.Down,
+			wantClientStatus: core.Down,
 		},
 		{
 			name:             "updates_BcUpPmDown",
 			bcClient:         &mockUpProcess{},
 			pmClient:         &mockDownProcess{},
 			want:             false,
-			wantClientStatus: types.Down,
+			wantClientStatus: core.Down,
 		},
 		{
 			name:             "updates_BcDownPmUp",
 			bcClient:         &mockDownProcess{},
 			pmClient:         &mockUpProcess{},
 			want:             false,
-			wantClientStatus: types.Down,
+			wantClientStatus: core.Down,
 		},
 	}
 

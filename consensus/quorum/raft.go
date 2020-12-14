@@ -3,11 +3,11 @@ package quorum
 import (
 	"errors"
 	"fmt"
+	"github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
 
 	"github.com/ConsenSysQuorum/node-manager/consensus"
 	"github.com/ConsenSysQuorum/node-manager/core"
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
@@ -32,7 +32,7 @@ type RaftRoleResp struct {
 }
 
 type RaftConsensus struct {
-	cfg    *types.NodeConfig
+	cfg    *config.NodeConfig
 	client *http.Client
 }
 
@@ -46,7 +46,7 @@ const (
 	RaftClusterReq = `{"jsonrpc":"2.0", "method":"raft_cluster", "params":[], "id":67}`
 )
 
-func NewRaftConsensus(qn *types.NodeConfig, c *http.Client) consensus.Consensus {
+func NewRaftConsensus(qn *config.NodeConfig, c *http.Client) consensus.Consensus {
 	return &RaftConsensus{cfg: qn, client: c}
 }
 

@@ -3,16 +3,16 @@ package quorum
 import (
 	"errors"
 	"fmt"
+	"github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
 
 	"github.com/ConsenSysQuorum/node-manager/consensus"
 	"github.com/ConsenSysQuorum/node-manager/core"
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
 type CliqueConsensus struct {
-	cfg    *types.NodeConfig
+	cfg    *config.NodeConfig
 	client *http.Client
 }
 
@@ -41,7 +41,7 @@ const (
 	CoinBaseReq     = `{"jsonrpc":"2.0", "method":"eth_coinbase", "id":67}`
 )
 
-func NewCliqueConsensus(qn *types.NodeConfig, c *http.Client) consensus.Consensus {
+func NewCliqueConsensus(qn *config.NodeConfig, c *http.Client) consensus.Consensus {
 	return &CliqueConsensus{cfg: qn, client: c}
 }
 
