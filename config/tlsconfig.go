@@ -12,7 +12,7 @@ import (
 
 type ServerTLS struct {
 	KeyFile  string `toml:"keyFile" json:"keyFile"`
-	CertFile string `toml:"certFile" json:"certFile"`
+	CertFile string `toml:"certificateFile" json:"certificateFile"`
 	TlsCfg   *tls.Config
 }
 
@@ -55,7 +55,7 @@ func (c *ServerTLS) TLSConfig() (*tls.Config, error) {
 }
 
 type ClientTLS struct {
-	CACertFile         string `toml:"caCertFile" json:"caCertFile"`
+	CACertFile         string `toml:"caCertificateFile" json:"caCertificateFile"`
 	InsecureSkipVerify bool   `toml:"insecureSkipVerify" json:"insecureSkipVerify"`
 	TlsCfg             *tls.Config
 }

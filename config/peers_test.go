@@ -48,8 +48,8 @@ func TestPeersReader_Read(t *testing.T) {
 			name: "toml",
 			config: `
 peers = [
-	{ name = "node1", privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", rpcUrl = "http://localhost:8081" },
-	{ name = "node2", privManKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", rpcUrl = "http://localhost:8082" }
+	{ name = "node1", privacyManagerKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", rpcUrl = "http://localhost:8081" },
+	{ name = "node2", privacyManagerKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", rpcUrl = "http://localhost:8082" }
 ]`,
 		},
 		{
@@ -59,12 +59,12 @@ peers = [
 	"peers": [
 		{ 
 			"name": "node1", 
-			"privManKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", 
+			"privacyManagerKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", 
 			"rpcUrl": "http://localhost:8081" 
 		},
 		{ 
 			"name": "node2", 
-			"privManKey": "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", 
+			"privacyManagerKey": "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", 
 			"rpcUrl": "http://localhost:8082" 
 		}
 	]

@@ -21,10 +21,10 @@ type NodeManagerList struct {
 }
 
 type Peer struct {
-	Name       string     `toml:"name" json:"name"`             // Name of the other node manager
-	PrivManKey string     `toml:"privManKey" json:"privManKey"` // PrivManKey managed by the other node manager
-	RpcUrl     string     `toml:"rpcUrl" json:"rpcUrl"`         // RPC url of the other node manager
-	TLSConfig  *ClientTLS `toml:"tlsConfig" json:"tlsConfig"`   // tls config
+	Name       string     `toml:"name" json:"name"`                           // Name of the other node manager
+	PrivManKey string     `toml:"privacyManagerKey" json:"privacyManagerKey"` // PrivManKey managed by the other node manager
+	RpcUrl     string     `toml:"rpcUrl" json:"rpcUrl"`                       // RPC url of the other node manager
+	TLSConfig  *ClientTLS `toml:"tlsConfig" json:"tlsConfig"`                 // tls config
 }
 
 // IsValid returns nil if the Peer is valid else returns error

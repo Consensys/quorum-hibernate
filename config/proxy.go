@@ -7,17 +7,16 @@ import (
 )
 
 type Proxy struct {
-	Name         string   `toml:"name" json:"name"`                 // name of node manager process
-	Type         string   `toml:"type" json:"type"`                 // proxy scheme - http or ws
-	ProxyAddr    string   `toml:"proxyAddr" json:"proxyAddr"`       // proxy address
-	UpstreamAddr string   `toml:"upstreamAddr" json:"upstreamAddr"` // upstream address of the proxy address
-	ProxyPaths   []string `toml:"proxyPaths" json:"proxyPaths"`     // httpRequestURI paths of the upstream address
-	// httpRequestURI paths of the upstream address that should be ignored for activity
-	IgnorePathsForActivity []string   `toml:"ignorePathsForActivity" json:"ignorePathsForActivity"`
-	ReadTimeout            int        `toml:"readTimeout" json:"readTimeout"`         // readTimeout of the proxy server
-	WriteTimeout           int        `toml:"writeTimeout" json:"writeTimeout"`       // writeTimeout of the proxy server
-	ProxyServerTLSConfig   *ServerTLS `toml:"proxyTLSConfig" json:"proxyTLSConfig"`   // proxy server tls config
-	ClientTLSConfig        *ClientTLS `toml:"clientTLSConfig" json:"clientTLSConfig"` // reverse proxy client tls config
+	Name                   string     `toml:"name" json:"name"`                                     // name of node manager process
+	Type                   string     `toml:"type" json:"type"`                                     // proxy scheme - http or ws
+	ProxyAddr              string     `toml:"proxyAddress" json:"proxyAddress"`                     // proxy address
+	UpstreamAddr           string     `toml:"upstreamAddress" json:"upstreamAddress"`               // upstream address of the proxy address
+	ProxyPaths             []string   `toml:"proxyPaths" json:"proxyPaths"`                         // httpRequestURI paths of the upstream address
+	IgnorePathsForActivity []string   `toml:"ignorePathsForActivity" json:"ignorePathsForActivity"` // httpRequestURI paths of the upstream address that should be ignored for activity
+	ReadTimeout            int        `toml:"readTimeout" json:"readTimeout"`                       // readTimeout of the proxy server
+	WriteTimeout           int        `toml:"writeTimeout" json:"writeTimeout"`                     // writeTimeout of the proxy server
+	ProxyServerTLSConfig   *ServerTLS `toml:"proxyTlsConfig" json:"proxyTlsConfig"`                 // proxy server tls config
+	ClientTLSConfig        *ClientTLS `toml:"clientTlsConfig" json:"clientTlsConfig"`               // reverse proxy client tls config
 }
 
 func (c Proxy) IsHttp() bool {

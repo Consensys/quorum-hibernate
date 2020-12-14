@@ -6,7 +6,7 @@ import (
 )
 
 type RPCServer struct {
-	RpcAddr     string     `toml:"rpcAddr" json:"rpcAddr"`
+	RpcAddr     string     `toml:"rpcAddress" json:"rpcAddress"`
 	RPCCorsList []string   `toml:"rpcCorsList" json:"rpcCorsList"`
 	RPCVHosts   []string   `toml:"rpcvHosts" json:"rpcvHosts"`
 	TLSConfig   *ServerTLS `toml:"tlsConfig" json:"tlsConfig"`

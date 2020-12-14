@@ -7,22 +7,22 @@ import (
 )
 
 type Basic struct {
-	Name                 string     `toml:"name" json:"name"`                                     // name of this node manager
-	RunMode              string     `toml:"runMode" json:"runMode"`                               // can be strict or normal. strict mode keeps consensus nodes alive always
-	BcClntRpcUrl         string     `toml:"bcClntRpcUrl" json:"bcClntRpcUrl"`                     // RPC url of blockchain client managed by this node manager
-	BcClntTLSConfig      *ClientTLS `toml:"bcClntTLSConfig" json:"bcClntTLSConfig"`               // blockchain client TLS config
-	PrivManTLSConfig     *ClientTLS `toml:"PrivManTLSConfig" json:"PrivManTLSConfig"`             // Privacy manager TLS config
-	PrivManKey           string     `toml:"privManKey" json:"privManKey"`                         // public key of privacy manager managed by this node manager
-	Consensus            string     `toml:"consensus" json:"consensus"`                           // consensus used by blockchain client. ex: raft / istanbul / clique
-	ClientType           string     `toml:"clientType" json:"clientType"`                         // client used by this node manager. it should be quorum or besu
-	UpchkPollingInterval int        `toml:"upcheckPollingInterval" json:"upcheckPollingInterval"` // up check polling interval in seconds for the node
-	PeersConfigFile      string     `toml:"peersConfigFile" json:"peersConfigFile"`               // node manager config file path
-	InactivityTime       int        `toml:"inactivityTime" json:"inactivityTime"`                 // inactivity time for blockchain client and privacy manager
-	ResyncTime           int        `toml:"resyncTime" json:"resyncTime"`                         // time after which client should be started to sync up with network
-	Server               *RPCServer `toml:"server" json:"server"`                                 // RPC server config of this node manager
-	BcClntProcess        *Process   `toml:"bcClntProcess" json:"bcClntProcess"`                   // blockchain client process managed by this node manager
-	PrivManProcess       *Process   `toml:"privManProcess" json:"PrivManProcess"`                 // privacy manager process managed by this node manager
-	Proxies              []*Proxy   `toml:"proxies" json:"proxies"`                               // proxies managed by this node manager
+	Name                 string     `toml:"name" json:"name"`                                       // name of this node manager
+	RunMode              string     `toml:"runMode" json:"runMode"`                                 // can be strict or normal. strict mode keeps consensus nodes alive always
+	BcClntRpcUrl         string     `toml:"bcClientRpcUrl" json:"bcClientRpcUrl"`                   // RPC url of blockchain client managed by this node manager
+	BcClntTLSConfig      *ClientTLS `toml:"bcClientTlsConfig" json:"bcClientTlsConfig"`             // blockchain client TLS config
+	PrivManTLSConfig     *ClientTLS `toml:"privacyManagerTlsConfig" json:"privacyManagerTlsConfig"` // Privacy manager TLS config
+	PrivManKey           string     `toml:"privacyManagerKey" json:"privacyManagerKey"`             // public key of privacy manager managed by this node manager
+	Consensus            string     `toml:"consensus" json:"consensus"`                             // consensus used by blockchain client. ex: raft / istanbul / clique
+	ClientType           string     `toml:"clientType" json:"clientType"`                           // client used by this node manager. it should be quorum or besu
+	UpchkPollingInterval int        `toml:"upcheckPollingInterval" json:"upcheckPollingInterval"`   // up check polling interval in seconds for the node
+	PeersConfigFile      string     `toml:"peersConfigFile" json:"peersConfigFile"`                 // node manager config file path
+	InactivityTime       int        `toml:"inactivityTime" json:"inactivityTime"`                   // inactivity time for blockchain client and privacy manager
+	ResyncTime           int        `toml:"resyncTime" json:"resyncTime"`                           // time after which client should be started to sync up with network
+	Server               *RPCServer `toml:"server" json:"server"`                                   // RPC server config of this node manager
+	BcClntProcess        *Process   `toml:"bcClientProcess" json:"bcClientProcess"`                 // blockchain client process managed by this node manager
+	PrivManProcess       *Process   `toml:"privacyManagerProcess" json:"privacyManagerProcess"`     // privacy manager process managed by this node manager
+	Proxies              []*Proxy   `toml:"proxies" json:"proxies"`                                 // proxies managed by this node manager
 }
 
 func (c Basic) IsRaft() bool {

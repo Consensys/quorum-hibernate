@@ -49,8 +49,8 @@ func TestTomlNodeManagerReader_Read(t *testing.T) {
 			name: "toml",
 			config: `
 name = "node1"
-bcClntRpcUrl = "http://localhost:22000"
-privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
+bcClientRpcUrl = "http://localhost:22000"
+privacyManagerKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
 consensus = "raft"
 clientType = "quorum"
 upcheckPollingInterval = 1
@@ -59,30 +59,30 @@ inactivityTime = 60
 runMode = "STRICT"
 
 proxies = [
-    { name = "geth-rpc", type = "http", proxyAddr = "localhost:9091", upstreamAddr = "http://localhost:22000", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
-    { name = "geth-graphql", type = "http", proxyAddr = "localhost:9191", upstreamAddr = "http://localhost:8547/graphql", proxyPaths = ["/graphql"], readTimeout = 15, writeTimeout = 15 },
-    { name = "geth-ws", type = "ws", proxyAddr = "localhost:9291", upstreamAddr = "ws://localhost:23000", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
-    { name = "tessera", type = "http", proxyAddr = "localhost:9391", upstreamAddr = "http://127.0.0.1:9001", proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], readTimeout = 15, writeTimeout = 15 },
+    { name = "geth-rpc", type = "http", proxyAddress = "localhost:9091", upstreamAddress = "http://localhost:22000", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
+    { name = "geth-graphql", type = "http", proxyAddress = "localhost:9191", upstreamAddress = "http://localhost:8547/graphql", proxyPaths = ["/graphql"], readTimeout = 15, writeTimeout = 15 },
+    { name = "geth-ws", type = "ws", proxyAddress = "localhost:9291", upstreamAddress = "ws://localhost:23000", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
+    { name = "tessera", type = "http", proxyAddress = "localhost:9391", upstreamAddress = "http://127.0.0.1:9001", proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], readTimeout = 15, writeTimeout = 15 },
 ]
 
 [server]
-rpcAddr = "localhost:8081"
+rpcAddress = "localhost:8081"
 rpcCorsList = ["*"]
 rpcvHosts = ["*"]
 
-[bcClntProcess]
+[bcClientProcess]
 name = "bcclnt"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"]
-upcheckCfg = { upcheckUrl = "http://localhost:22000", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
+upcheckConfig = { upcheckUrl = "http://localhost:22000", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
 
-[privManProcess]
+[privacyManagerProcess]
 name = "privman"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"]
-upcheckCfg = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", body = "", returnType = "string", expected = "I'm up!"}
+upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", body = "", returnType = "string", expected = "I'm up!"}
 `,
 		},
 		{
@@ -90,8 +90,8 @@ upcheckCfg = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", bod
 			config: `
 {
 	"name": "node1",
-	"bcClntRpcUrl": "http://localhost:22000",
-	"privManKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
+	"bcClientRpcUrl": "http://localhost:22000",
+	"privacyManagerKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
 	"consensus": "raft",
 	"clientType": "quorum",
 	"upcheckPollingInterval": 1,
@@ -99,29 +99,29 @@ upcheckCfg = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", bod
 	"inactivityTime": 60,
 	"runMode": "STRICT",
 	"proxies": [
-		{ "name": "geth-rpc", "type": "http", "proxyAddr": "localhost:9091", "upstreamAddr": "http://localhost:22000", "proxyPaths": ["/"], "readTimeout": 15, "writeTimeout": 15 },
-		{ "name": "geth-graphql", "type": "http", "proxyAddr": "localhost:9191", "upstreamAddr": "http://localhost:8547/graphql", "proxyPaths": ["/graphql"], "readTimeout": 15, "writeTimeout": 15 },
-		{ "name": "geth-ws", "type": "ws", "proxyAddr": "localhost:9291", "upstreamAddr": "ws://localhost:23000", "proxyPaths": ["/"], "readTimeout": 15, "writeTimeout": 15 },
-		{ "name": "tessera", "type": "http", "proxyAddr": "localhost:9391", "upstreamAddr": "http://127.0.0.1:9001", "proxyPaths": ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], "readTimeout": 15, "writeTimeout": 15 }
+		{ "name": "geth-rpc", "type": "http", "proxyAddress": "localhost:9091", "upstreamAddress": "http://localhost:22000", "proxyPaths": ["/"], "readTimeout": 15, "writeTimeout": 15 },
+		{ "name": "geth-graphql", "type": "http", "proxyAddress": "localhost:9191", "upstreamAddress": "http://localhost:8547/graphql", "proxyPaths": ["/graphql"], "readTimeout": 15, "writeTimeout": 15 },
+		{ "name": "geth-ws", "type": "ws", "proxyAddress": "localhost:9291", "upstreamAddress": "ws://localhost:23000", "proxyPaths": ["/"], "readTimeout": 15, "writeTimeout": 15 },
+		{ "name": "tessera", "type": "http", "proxyAddress": "localhost:9391", "upstreamAddress": "http://127.0.0.1:9001", "proxyPaths": ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], "readTimeout": 15, "writeTimeout": 15 }
 	],
 	"server": {
-		"rpcAddr": "localhost:8081",
+		"rpcAddress": "localhost:8081",
 		"rpcCorsList": ["*"],
 		"rpcvHosts": ["*"]
 	},
-	"bcClntProcess": {
+	"bcClientProcess": {
 		"name": "bcclnt",
 		"controlType": "shell",
 		"stopCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"],
 		"startCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"],
-		"upcheckCfg": { "upcheckUrl": "http://localhost:22000", "method": "POST", "body": "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}", "returnType": "rpcresult"}	
+		"upcheckConfig": { "upcheckUrl": "http://localhost:22000", "method": "POST", "body": "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}", "returnType": "rpcresult"}	
 	},
-	"privManProcess": {
+	"privacyManagerProcess": {
 		"name": "privman",
 		"controlType": "shell",
 		"stopCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"],
 		"startCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"],
-		"upcheckCfg": { "upcheckUrl": "http://localhost:9001/upcheck", "method": "GET", "body": "", "returnType": "string", "expected": "I'm up!"}
+		"upcheckConfig": { "upcheckUrl": "http://localhost:9001/upcheck", "method": "GET", "body": "", "returnType": "string", "expected": "I'm up!"}
 	}
 }
 `,
