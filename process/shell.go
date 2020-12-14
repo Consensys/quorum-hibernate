@@ -2,6 +2,7 @@ package process
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -13,11 +14,12 @@ import (
 type ShellProcessControl struct {
 	cfg     *types.ProcessConfig
 	status  bool
+	client  *http.Client
 	muxLock sync.Mutex
 }
 
-func NewShellProcess(p *types.ProcessConfig, s bool) Process {
-	sp := &ShellProcessControl{p, s, sync.Mutex{}}
+func NewShellProcess(c *http.Client, p *types.ProcessConfig, s bool) Process {
+	sp := &ShellProcessControl{p, s, c, sync.Mutex{}}
 	sp.UpdateStatus()
 	log.Debug("shell process created", "name", sp.cfg.Name)
 	return sp
@@ -38,7 +40,7 @@ func (sp *ShellProcessControl) UpdateStatus() bool {
 
 	s := false
 	var err error
-	s, err = IsProcessUp(sp.cfg.UpcheckCfg)
+	s, err = IsProcessUp(sp.client, sp.cfg.UpcheckCfg)
 	if err != nil {
 		sp.setStatus(false)
 		log.Error("UpdateStatus - shell process is down", "err", err)

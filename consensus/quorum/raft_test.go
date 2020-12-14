@@ -18,7 +18,7 @@ func TestRaftConsensus_ValidateShutdown_Minter_Invalid(t *testing.T) {
 		BasicConfig: &types.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
-	})
+	}, nil)
 
 	isConsensusNode, err := raft.ValidateShutdown()
 	require.EqualError(t, err, "minter node, cannot be shutdown")
@@ -33,7 +33,7 @@ func TestRaftConsensus_ValidateShutdown_Learner_Valid(t *testing.T) {
 		BasicConfig: &types.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
-	})
+	}, nil)
 
 	isConsensusNode, err := raft.ValidateShutdown()
 	require.NoError(t, err)
@@ -74,7 +74,7 @@ func TestRaftConsensus_ValidateShutdown_Verifier_NotEnoughActivePeers_Invalid(t 
 				BasicConfig: &types.BasicConfig{
 					BcClntRpcUrl: mockServer.URL,
 				},
-			})
+			}, nil)
 
 			isConsensusNode, err := raft.ValidateShutdown()
 			if tt.wantErrMsg == "" {
@@ -101,7 +101,7 @@ func TestRaftConsensus_ValidateShutdown_GetRoleRpcError(t *testing.T) {
 		BasicConfig: &types.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
-	})
+	}, nil)
 
 	isConsensusNode, err := raft.ValidateShutdown()
 
@@ -123,7 +123,7 @@ func TestRaftConsensus_ValidateShutdown_GetClusterInfoRpcError(t *testing.T) {
 		BasicConfig: &types.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
-	})
+	}, nil)
 
 	isConsensusNode, err := raft.ValidateShutdown()
 

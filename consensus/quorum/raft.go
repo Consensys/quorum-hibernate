@@ -46,13 +46,13 @@ const (
 	RaftClusterReq = `{"jsonrpc":"2.0", "method":"raft_cluster", "params":[], "id":67}`
 )
 
-func NewRaftConsensus(qn *types.NodeConfig) consensus.Consensus {
-	return &RaftConsensus{cfg: qn, client: core.NewHttpClient()}
+func NewRaftConsensus(qn *types.NodeConfig, c *http.Client) consensus.Consensus {
+	return &RaftConsensus{cfg: qn, client: c}
 }
 
 func (r *RaftConsensus) getRole(rpcUrl string) (string, error) {
 	var respResult RaftRoleResp
-	if err := core.CallRPC(rpcUrl, []byte(RaftRoleReq), &respResult); err != nil {
+	if err := core.CallRPC(r.client, rpcUrl, []byte(RaftRoleReq), &respResult); err != nil {
 		return "", err
 	}
 	if respResult.Error != nil {
@@ -63,7 +63,7 @@ func (r *RaftConsensus) getRole(rpcUrl string) (string, error) {
 
 func (r *RaftConsensus) getRaftClusterInfo(rpcUrl string) ([]RaftClusterEntry, error) {
 	var respResult RaftClusterResp
-	if err := core.CallRPC(rpcUrl, []byte(RaftClusterReq), &respResult); err != nil {
+	if err := core.CallRPC(r.client, rpcUrl, []byte(RaftClusterReq), &respResult); err != nil {
 		return nil, err
 	}
 	if respResult.Error != nil {

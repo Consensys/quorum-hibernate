@@ -2,6 +2,7 @@ package node
 
 import (
 	"errors"
+	"net/http"
 	"sync"
 	"time"
 
@@ -31,8 +32,10 @@ type NodeControl struct {
 	config              *types.NodeConfig        // config of this node
 	im                  *InactivityResyncMonitor // inactivity monitor
 	nm                  *p2p.PeerManager         // node manager to communicate with other node manager
-	bcclnt              proc.Process             // blockchain client process controller
-	pmclnt              proc.Process             // privacy manager process controller
+	bcclntProcess       proc.Process             // blockchain client process controller
+	pmclntProcess       proc.Process             // privacy manager process controller
+	bcclntHttpClient    *http.Client             // blockchain client http client
+	pmclntHttpClient    *http.Client             // privacy manager http client
 	consensus           cons.Consensus           // consensus validator
 	txh                 privatetx.TxHandler      // Transaction handler
 	withPrivMan         bool                     // indicates if the node is running with a privacy manage
@@ -60,41 +63,33 @@ func (n *NodeControl) ClientStatus() types.ClientStatus {
 
 func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 	node := &NodeControl{
-		cfg,
-		nil,
-		p2p.NewPeerManager(cfg),
-		nil,
-		nil,
-		nil,
-		nil,
-		cfg.BasicConfig.PrivManProcess != nil,
-		false,
-		types.Up,
-		types.OK,
-		make(chan bool, 1),
-		make(chan bool, 1),
-		make(chan bool, 1),
-		make(chan bool, 1),
-		make(chan bool, 1),
-		make(chan bool, 1),
-		make(chan bool, 1),
-		make(chan bool, 1),
-		sync.Mutex{},
-		sync.Mutex{},
-		sync.Mutex{},
+		config:              cfg,
+		nm:                  p2p.NewPeerManager(cfg),
+		withPrivMan:         cfg.BasicConfig.PrivManProcess != nil,
+		nodeStatus:          types.OK,
+		inactivityResetCh:   make(chan bool, 1),
+		syncResetCh:         make(chan bool, 1),
+		stopClntCh:          make(chan bool, 1),
+		stopClntCompleteCh:  make(chan bool, 1),
+		startClntCh:         make(chan bool, 1),
+		startClntCompleteCh: make(chan bool, 1),
+		stopCh:              make(chan bool, 1),
+		clntStatMonStopCh:   make(chan bool, 1),
 	}
 
+	setHttpClients(cfg, node)
+
 	if cfg.BasicConfig.BcClntProcess.IsShell() {
-		node.bcclnt = proc.NewShellProcess(cfg.BasicConfig.BcClntProcess, true)
+		node.bcclntProcess = proc.NewShellProcess(node.bcclntHttpClient, cfg.BasicConfig.BcClntProcess, true)
 	} else if cfg.BasicConfig.BcClntProcess.IsDocker() {
-		node.bcclnt = proc.NewDockerProcess(cfg.BasicConfig.BcClntProcess, true)
+		node.bcclntProcess = proc.NewDockerProcess(node.bcclntHttpClient, cfg.BasicConfig.BcClntProcess, true)
 	}
 
 	if node.WithPrivMan() {
 		if cfg.BasicConfig.PrivManProcess.IsShell() {
-			node.pmclnt = proc.NewShellProcess(cfg.BasicConfig.PrivManProcess, true)
+			node.pmclntProcess = proc.NewShellProcess(node.pmclntHttpClient, cfg.BasicConfig.PrivManProcess, true)
 		} else if cfg.BasicConfig.PrivManProcess.IsDocker() {
-			node.pmclnt = proc.NewDockerProcess(cfg.BasicConfig.PrivManProcess, true)
+			node.pmclntProcess = proc.NewDockerProcess(node.pmclntHttpClient, cfg.BasicConfig.PrivManProcess, true)
 		}
 	}
 	node.im = NewInactivityResyncMonitor(node)
@@ -105,6 +100,20 @@ func NewNodeControl(cfg *types.NodeConfig) *NodeControl {
 	node.config.BasicConfig.InactivityTime += getRandomBufferTime(node.config.BasicConfig.InactivityTime)
 	log.Debug("Node config - inactivity time after random buffer", "InactivityTime", node.config.BasicConfig.InactivityTime)
 	return node
+}
+
+func setHttpClients(cfg *types.NodeConfig, node *NodeControl) {
+	if cfg.BasicConfig.BcClntTLSConfig != nil {
+		node.bcclntHttpClient = core.NewHttpClient(cfg.BasicConfig.BcClntTLSConfig.TlsCfg)
+	} else {
+		node.bcclntHttpClient = core.NewHttpClient(nil)
+	}
+
+	if cfg.BasicConfig.PrivManTLSConfig != nil {
+		node.pmclntHttpClient = core.NewHttpClient(cfg.BasicConfig.PrivManTLSConfig.TlsCfg)
+	} else {
+		node.pmclntHttpClient = core.NewHttpClient(nil)
+	}
 }
 
 func (n *NodeControl) WithPrivMan() bool {
@@ -124,15 +133,15 @@ func getRandomBufferTime(inactivityTime int) int {
 func populateConsensusHandler(n *NodeControl) {
 	if n.config.BasicConfig.IsQuorumClient() {
 		if n.config.BasicConfig.IsRaft() {
-			n.consensus = qnm.NewRaftConsensus(n.config)
+			n.consensus = qnm.NewRaftConsensus(n.config, n.bcclntHttpClient)
 		} else if n.config.BasicConfig.IsIstanbul() {
-			n.consensus = qnm.NewIstanbulConsensus(n.config)
+			n.consensus = qnm.NewIstanbulConsensus(n.config, n.bcclntHttpClient)
 		} else if n.config.BasicConfig.IsClique() {
-			n.consensus = qnm.NewCliqueConsensus(n.config)
+			n.consensus = qnm.NewCliqueConsensus(n.config, n.bcclntHttpClient)
 		}
 	} else if n.config.BasicConfig.IsBesuClient() {
 		if n.config.BasicConfig.IsClique() {
-			n.consensus = besu.NewCliqueConsensus(n.config)
+			n.consensus = besu.NewCliqueConsensus(n.config, n.bcclntHttpClient)
 		}
 	}
 }
@@ -204,7 +213,7 @@ func (n *NodeControl) fetchCurrentClientStatuses() (bool, bool) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		bcclntStatus = n.bcclnt.UpdateStatus()
+		bcclntStatus = n.bcclntProcess.UpdateStatus()
 	}()
 
 	pmStatus := true
@@ -212,7 +221,7 @@ func (n *NodeControl) fetchCurrentClientStatuses() (bool, bool) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			pmStatus = n.pmclnt.UpdateStatus()
+			pmStatus = n.pmclntProcess.UpdateStatus()
 		}()
 	}
 
@@ -399,7 +408,7 @@ func (n *NodeControl) checkAndValidateConsensus() (bool, error) {
 	// validate if the consensus passed in config is correct.
 	// for besu bypass this check as it does not provide any rpc api to confirm consensus
 	if !n.consValid && n.config.BasicConfig.IsQuorumClient() {
-		if err := n.config.IsConsensusValid(); err != nil {
+		if err := n.config.IsConsensusValid(n.pmclntHttpClient); err != nil {
 			return false, err
 		}
 		n.consValid = true
@@ -416,14 +425,14 @@ func (n *NodeControl) stopProcesses() (bool, bool) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if n.bcclnt.Stop() != nil {
+		if n.bcclntProcess.Stop() != nil {
 			gs = false
 		}
 	}()
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if n.pmclnt.Stop() != nil {
+		if n.pmclntProcess.Stop() != nil {
 			ts = false
 		}
 	}()
@@ -444,10 +453,10 @@ func (n *NodeControl) StartClient() bool {
 	n.SetNodeStatus(types.StartupInprogress)
 	gs := true
 	ts := true
-	if n.withPrivMan && n.pmclnt.Start() != nil {
+	if n.withPrivMan && n.pmclntProcess.Start() != nil {
 		gs = false
 	}
-	if n.bcclnt.Start() != nil {
+	if n.bcclntProcess.Start() != nil {
 		ts = false
 	}
 	if gs && ts {

@@ -18,7 +18,7 @@ func TestIstanbulConsensus_ValidateShutdown_NonValidator_Valid(t *testing.T) {
 		BasicConfig: &types.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
-	})
+	}, nil)
 
 	isConsensusNode, err := istanbul.ValidateShutdown()
 	require.NoError(t, err)
@@ -65,7 +65,7 @@ func TestIstanbulConsensus_ValidateShutdown_Validator(t *testing.T) {
 				BasicConfig: &types.BasicConfig{
 					BcClntRpcUrl: mockServer.URL,
 				},
-			})
+			}, nil)
 
 			isConsensusNode, err := istanbul.ValidateShutdown()
 			if tt.wantErrMsg == "" {
@@ -92,7 +92,7 @@ func TestIstanbulConsensus_ValidateShutdown_IsValidatorRpcError(t *testing.T) {
 		BasicConfig: &types.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
-	})
+	}, nil)
 
 	isConsensusNode, err := istanbul.ValidateShutdown()
 
@@ -114,7 +114,7 @@ func TestIstanbulConsensus_ValidateShutdown_SealerStatusRpcError(t *testing.T) {
 		BasicConfig: &types.BasicConfig{
 			BcClntRpcUrl: mockServer.URL,
 		},
-	})
+	}, nil)
 
 	isConsensusNode, err := istanbul.ValidateShutdown()
 

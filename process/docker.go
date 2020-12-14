@@ -3,6 +3,7 @@ package process
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -16,11 +17,12 @@ import (
 type DockerControl struct {
 	cfg     *types.ProcessConfig
 	status  bool
+	client  *http.Client
 	muxLock sync.Mutex
 }
 
-func NewDockerProcess(p *types.ProcessConfig, s bool) Process {
-	sp := &DockerControl{p, s, sync.Mutex{}}
+func NewDockerProcess(c *http.Client, p *types.ProcessConfig, s bool) Process {
+	sp := &DockerControl{p, s, c, sync.Mutex{}}
 	sp.UpdateStatus()
 	log.Debug("docker process created", "name", sp.cfg.Name)
 	return sp
@@ -40,7 +42,7 @@ func (dc *DockerControl) Status() bool {
 func (dc *DockerControl) UpdateStatus() bool {
 	s := false
 	var err error
-	s, err = IsProcessUp(dc.cfg.UpcheckCfg)
+	s, err = IsProcessUp(dc.client, dc.cfg.UpcheckCfg)
 	if err != nil {
 		dc.setStatus(false)
 		log.Error("Update status - docker process is down", "err", err)
