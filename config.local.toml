@@ -4,8 +4,8 @@ name = "node1"
 #blockchain client RPC URL
 bcClntRpcUrl = "http://localhost:22000"
 privManKey = "BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo="
-consensus = "istanbul"
-clientType = "quorum"
+consensus = "ibft"
+clientType = "besu"
 nodeManagerConfigFile = "./nm1.toml"
 upcheckPollingInterval = 1
 inactivityTime = 60
