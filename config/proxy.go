@@ -7,17 +7,17 @@ import (
 )
 
 type Proxy struct {
-	Name         string   `toml:"name"`         // name of node manager process
-	Type         string   `toml:"type"`         // proxy scheme - http or ws
-	ProxyAddr    string   `toml:"proxyAddr"`    // proxy address
-	UpstreamAddr string   `toml:"upstreamAddr"` // upstream address of the proxy address
-	ProxyPaths   []string `toml:"proxyPaths"`   // httpRequestURI paths of the upstream address
+	Name         string   `toml:"name" json:"name"`                 // name of node manager process
+	Type         string   `toml:"type" json:"type"`                 // proxy scheme - http or ws
+	ProxyAddr    string   `toml:"proxyAddr" json:"proxyAddr"`       // proxy address
+	UpstreamAddr string   `toml:"upstreamAddr" json:"upstreamAddr"` // upstream address of the proxy address
+	ProxyPaths   []string `toml:"proxyPaths" json:"proxyPaths"`     // httpRequestURI paths of the upstream address
 	// httpRequestURI paths of the upstream address that should be ignored for activity
-	IgnorePathsForActivity []string   `toml:"ignorePathsForActivity"`
-	ReadTimeout            int        `toml:"readTimeout"`     // readTimeout of the proxy server
-	WriteTimeout           int        `toml:"writeTimeout"`    // writeTimeout of the proxy server
-	ProxyServerTLSConfig   *ServerTLS `toml:"proxyTLSConfig"`  // proxy server tls config
-	ClientTLSConfig        *ClientTLS `toml:"clientTLSConfig"` // reverse proxy client tls config
+	IgnorePathsForActivity []string   `toml:"ignorePathsForActivity" json:"ignorePathsForActivity"`
+	ReadTimeout            int        `toml:"readTimeout" json:"readTimeout"`         // readTimeout of the proxy server
+	WriteTimeout           int        `toml:"writeTimeout" json:"writeTimeout"`       // writeTimeout of the proxy server
+	ProxyServerTLSConfig   *ServerTLS `toml:"proxyTLSConfig" json:"proxyTLSConfig"`   // proxy server tls config
+	ClientTLSConfig        *ClientTLS `toml:"clientTLSConfig" json:"clientTLSConfig"` // reverse proxy client tls config
 }
 
 func (c Proxy) IsHttp() bool {

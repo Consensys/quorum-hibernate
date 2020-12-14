@@ -11,8 +11,8 @@ import (
 //  Might make sense to export this logic in the plugin, or move out to quorum-go-utils project
 
 type ServerTLS struct {
-	KeyFile  string `toml:"keyFile"`
-	CertFile string `toml:"certFile"`
+	KeyFile  string `toml:"keyFile" json:"keyFile"`
+	CertFile string `toml:"certFile" json:"certFile"`
 	TlsCfg   *tls.Config
 }
 
@@ -55,8 +55,8 @@ func (c *ServerTLS) TLSConfig() (*tls.Config, error) {
 }
 
 type ClientTLS struct {
-	CACertFile         string `toml:"caCertFile"`
-	InsecureSkipVerify bool   `toml:"insecureSkipVerify"`
+	CACertFile         string `toml:"caCertFile" json:"caCertFile"`
+	InsecureSkipVerify bool   `toml:"insecureSkipVerify" json:"insecureSkipVerify"`
 	TlsCfg             *tls.Config
 }
 

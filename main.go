@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"github.com/ConsenSysQuorum/node-manager/config"
 	"os"
@@ -36,7 +37,7 @@ func main() {
 		log.Error("main - loading config file failed", "err", err)
 		return
 	}
-	log.Debug("main - node config", "basic", nodeConfig.BasicConfig, "nms", nodeConfig.NodeManagers)
+	log.Debug("main - node config", "basic", nodeConfig.BasicConfig, "nms", nodeConfig.Peers)
 	rpcBackendErrCh := make(chan error)
 	proxyBackendErrCh := make(chan error)
 	if !Start(nodeConfig, err, proxyBackendErrCh, rpcBackendErrCh) {
@@ -92,19 +93,52 @@ func waitForShutdown(rpcBackendErrCh chan error, proxyBackendErrCh chan error) {
 }
 
 func readNodeConfigFromFile(configFile string) (config.Node, error) {
-	var nodeConfig config.Node
-	var err error
-	if nodeConfig, err = config.ReadNodeConfig(configFile); err != nil {
+	nmReader, err := config.NewNodeManagerReader(configFile)
+	if err != nil {
+		return config.Node{}, err
+	}
+
+	nmConfig, err := nmReader.Read()
+	if err != nil {
 		log.Error("readNodeConfigFromFile - loading node config file failed", "configfile", configFile, "err", err)
 		return config.Node{}, err
 	}
 	log.Info("readNodeConfigFromFile - node config file read successfully")
-	if nodeConfig.NodeManagers, err = config.ReadPeersConfig(nodeConfig.BasicConfig.PeersConfigFile); err != nil {
-		log.Error("readNodeConfigFromFile - loading node manager config failed", "err", err)
+
+	// check if the config is valid
+	if nmConfig.BasicConfig == nil {
+		return config.Node{}, errors.New("invalid configuration passed")
+	}
+
+	// validate config rules
+	if err = nmConfig.BasicConfig.IsValid(); err != nil {
 		return config.Node{}, err
 	}
-	log.Info("readNodeConfigFromFile - node manager config file read successfully")
-	return nodeConfig, nil
+
+	// default populate the run mode to strict
+	if nmConfig.BasicConfig.RunMode == "" {
+		nmConfig.BasicConfig.RunMode = config.STRICT_MODE
+	}
+
+	peersReader, err := config.NewPeersReader(nmConfig.BasicConfig.PeersConfigFile)
+	if err != nil {
+		return config.Node{}, err
+	}
+
+	peersConfig, err := peersReader.Read()
+	if err != nil {
+		log.Error("readNodeConfigFromFile - loading peers config failed", "err", err)
+		return config.Node{}, err
+	}
+	log.Info("readNodeConfigFromFile - peers config file read successfully")
+
+	if err := peersConfig.IsValid(); err != nil {
+		return config.Node{}, err
+	}
+
+	nmConfig.Peers = peersConfig
+
+	return nmConfig, nil
 }
 
 func Shutdown() {

@@ -6,10 +6,10 @@ import (
 )
 
 type RPCServer struct {
-	RpcAddr     string     `toml:"rpcAddr"`
-	RPCCorsList []string   `toml:"rpcCorsList"`
-	RPCVHosts   []string   `toml:"rpcvHosts"`
-	TLSConfig   *ServerTLS `toml:"tlsConfig"`
+	RpcAddr     string     `toml:"rpcAddr" json:"rpcAddr"`
+	RPCCorsList []string   `toml:"rpcCorsList" json:"rpcCorsList"`
+	RPCVHosts   []string   `toml:"rpcvHosts" json:"rpcvHosts"`
+	TLSConfig   *ServerTLS `toml:"tlsConfig" json:"tlsConfig"`
 }
 
 func (c RPCServer) IsValid() error {

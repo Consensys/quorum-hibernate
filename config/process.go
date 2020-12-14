@@ -6,12 +6,12 @@ import (
 )
 
 type Process struct {
-	Name         string   `toml:"name"`         // name of process. should be bcclnt or privman
-	ControlType  string   `toml:"controlType"`  // control type supported. shell or docker
-	ContainerId  string   `toml:"containerId"`  // docker container id. required if controlType is docker
-	StopCommand  []string `toml:"stopCommand"`  // stop command. required if controlType is shell
-	StartCommand []string `toml:"startCommand"` // start command. required if controlType is shell
-	UpcheckCfg   Upcheck  `toml:"upcheckCfg"`   // Upcheck config
+	Name         string   `toml:"name" json:"name"`                 // name of process. should be bcclnt or privman
+	ControlType  string   `toml:"controlType" json:"controlType"`   // control type supported. shell or docker
+	ContainerId  string   `toml:"containerId" json:"containerId"`   // docker container id. required if controlType is docker
+	StopCommand  []string `toml:"stopCommand" json:"stopCommand"`   // stop command. required if controlType is shell
+	StartCommand []string `toml:"startCommand" json:"startCommand"` // start command. required if controlType is shell
+	UpcheckCfg   Upcheck  `toml:"upcheckCfg" json:"upcheckCfg"`     // Upcheck config
 }
 
 func (c Process) IsShell() bool {

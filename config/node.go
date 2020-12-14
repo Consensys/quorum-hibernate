@@ -5,43 +5,12 @@ import (
 	"fmt"
 	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/log"
-	"github.com/naoina/toml"
 	"net/http"
-	"os"
 )
 
 type Node struct {
-	BasicConfig  *Basic  `toml:"basicConfig"` // basic config of this node manager
-	NodeManagers PeerArr // node manager config of other node manager
-}
-
-func ReadNodeConfig(configFile string) (Node, error) {
-	f, err := os.Open(configFile)
-	if err != nil {
-		return Node{}, err
-	}
-	defer f.Close()
-	var input Node
-	if err = toml.NewDecoder(f).Decode(&input); err != nil {
-		return Node{}, err
-	}
-
-	// check if the config is valid
-	if input.BasicConfig == nil {
-		return Node{}, errors.New("invalid configuration passed")
-	}
-
-	// validate config rules
-	if err = input.BasicConfig.IsValid(); err != nil {
-		return Node{}, err
-	}
-
-	// default populate the run mode to strict
-	if input.BasicConfig.RunMode == "" {
-		input.BasicConfig.RunMode = STRICT_MODE
-	}
-
-	return input, nil
+	BasicConfig *Basic  `toml:"basicConfig" json:"basicConfig"` // basic config of this node manager
+	Peers       PeerArr // node manager config of other node manager
 }
 
 func (c Node) IsConsensusValid(client *http.Client) error {
@@ -98,7 +67,7 @@ func (c Node) IsValid() error {
 	if err := c.BasicConfig.IsValid(); err != nil {
 		return fmt.Errorf("invalid basicConfig: %v", err)
 	}
-	if err := c.NodeManagers.IsValid(); err != nil {
+	if err := c.Peers.IsValid(); err != nil {
 		return fmt.Errorf("invalid nodeManagers config: %v", err)
 	}
 	return nil

@@ -6,11 +6,11 @@ import (
 )
 
 type Upcheck struct {
-	UpcheckUrl string `toml:"upcheckUrl"` // http endpoint for up check
-	ReturnType string `toml:"returnType"` // type of returned data. RPCResult or string
-	Method     string `toml:"method"`     // GET or POST
-	Body       string `toml:"body"`       // Body of up check request
-	Expected   string `toml:"expected"`   // expected output string if return type is string
+	UpcheckUrl string `toml:"upcheckUrl" json:"upcheckUrl"` // http endpoint for up check
+	ReturnType string `toml:"returnType" json:"returnType"` // type of returned data. RPCResult or string
+	Method     string `toml:"method" json:"method"`         // GET or POST
+	Body       string `toml:"body" json:"body"`             // Body of up check request
+	Expected   string `toml:"expected" json:"expected"`     // expected output string if return type is string
 }
 
 func (c Upcheck) IsRpcResult() bool {

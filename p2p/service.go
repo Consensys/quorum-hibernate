@@ -17,7 +17,12 @@ const (
 )
 
 func NewPeerManager(cfg *config.Node) *PeerManager {
-	return &PeerManager{cfg: cfg}
+	configReader, _ := config.NewPeersReader(cfg.BasicConfig.PeersConfigFile)
+
+	return &PeerManager{
+		cfg:          cfg,
+		configReader: configReader,
+	}
 }
 
 func (pm *PeerManager) getConfigByPrivManKey(key string) *config.Peer {
@@ -31,18 +36,18 @@ func (pm *PeerManager) getConfigByPrivManKey(key string) *config.Peer {
 }
 
 func (pm *PeerManager) getLatestConfig() []*config.Peer {
-	newCfg, err := config.ReadPeersConfig(pm.cfg.BasicConfig.PeersConfigFile)
+	newCfg, err := pm.configReader.Read()
 	if err != nil {
 		log.Error("getLatestConfig - error updating node manager config. will use old config", "path", pm.cfg.BasicConfig.PeersConfigFile, "err", err)
-		return pm.cfg.NodeManagers
+		return pm.cfg.Peers
 	}
 	log.Debug("getLatestConfig - loaded new config", "cfg", newCfg)
 	if len(newCfg) == 0 {
 		log.Warn("getLatestConfig - node manager list is empty after reload")
 	}
 	log.Debug("getLatestConfig - node manager config", "new cfg", newCfg)
-	pm.cfg.NodeManagers = newCfg
-	return pm.cfg.NodeManagers
+	pm.cfg.Peers = newCfg
+	return pm.cfg.Peers
 }
 
 // TODO if a node manager is down/not reachable should we mark it as down and proceed?
