@@ -72,9 +72,16 @@ func (r *RPCService) Start() error {
 	go func() {
 		defer r.shutdownWg.Done()
 		log.Info("Started node manager JSON-RPC server", "Addr", r.httpAddress)
-		if err := r.httpServer.ListenAndServe(); err != http.ErrServerClosed {
-			log.Error("Unable to start node manager JSON-RPC server", "err", err)
-			r.errCh <- err
+		if tlsCfg != nil {
+			if err := r.httpServer.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
+				log.Error("Unable to start node manager JSON-RPC server", "err", err)
+				r.errCh <- err
+			}
+		} else {
+			if err := r.httpServer.ListenAndServe(); err != http.ErrServerClosed {
+				log.Error("Unable to start node manager JSON-RPC server", "err", err)
+				r.errCh <- err
+			}
 		}
 	}()
 

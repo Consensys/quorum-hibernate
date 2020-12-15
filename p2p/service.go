@@ -37,17 +37,22 @@ func (pm *PeerManager) getConfigByPrivManKey(key string) *config.Peer {
 }
 
 func (pm *PeerManager) getLatestConfig() []*config.Peer {
-	newCfg, err := pm.configReader.Read()
+	newPeers, err := pm.configReader.Read()
 	if err != nil {
 		log.Error("getLatestConfig - error updating node manager config. will use old config", "path", pm.cfg.BasicConfig.PeersConfigFile, "err", err)
 		return pm.cfg.Peers
 	}
-	log.Debug("getLatestConfig - loaded new config", "cfg", newCfg)
-	if len(newCfg) == 0 {
+	if err = newPeers.IsValid(); err != nil {
+		log.Error("getLatestConfig - error validation of node manager config failed.", "err", err)
+		return pm.cfg.Peers
+	}
+
+	log.Debug("getLatestConfig - loaded new config", "cfg", newPeers)
+	if len(newPeers) == 0 {
 		log.Warn("getLatestConfig - node manager list is empty after reload")
 	}
-	log.Debug("getLatestConfig - node manager config", "new cfg", newCfg)
-	pm.cfg.Peers = newCfg
+	log.Debug("getLatestConfig - node manager config", "new cfg", newPeers)
+	pm.cfg.Peers = newPeers
 	return pm.cfg.Peers
 }
 
@@ -56,6 +61,9 @@ func (pm *PeerManager) getLatestConfig() []*config.Peer {
 func (pm *PeerManager) ValidatePeerPrivateTxStatus(participantKeys []string) (bool, error) {
 	statusArr := pm.peerPrivateTxStatus(participantKeys)
 	finalStatus := true
+	if len(statusArr) == 0 {
+		finalStatus = false
+	}
 	for _, s := range statusArr {
 		if !s {
 			finalStatus = false
