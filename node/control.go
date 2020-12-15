@@ -430,13 +430,15 @@ func (n *NodeControl) stopProcesses() (bool, bool) {
 			gs = false
 		}
 	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if n.pmclntProcess.Stop() != nil {
-			ts = false
-		}
-	}()
+	if n.pmclntProcess != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if n.pmclntProcess.Stop() != nil {
+				ts = false
+			}
+		}()
+	}
 	wg.Wait()
 	return gs, ts
 }
