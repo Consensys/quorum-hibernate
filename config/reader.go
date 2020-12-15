@@ -3,9 +3,10 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"github.com/naoina/toml"
 	"os"
 	"strings"
+
+	"github.com/naoina/toml"
 )
 
 type NodeManagerReader interface {

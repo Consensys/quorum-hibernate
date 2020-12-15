@@ -3,8 +3,9 @@ package privatetx
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ConsenSysQuorum/node-manager/config"
 	"strings"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
 )

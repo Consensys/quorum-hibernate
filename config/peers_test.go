@@ -1,10 +1,11 @@
 package config
 
 import (
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewPeersReader(t *testing.T) {

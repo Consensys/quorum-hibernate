@@ -1,10 +1,11 @@
 package node
 
 import (
+	"testing"
+
 	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/process"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestNodeControl_CheckClientUpStatus_IfCachedStatusIsDownThenOnlyUpdateCacheWhenForced(t *testing.T) {

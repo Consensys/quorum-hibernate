@@ -3,9 +3,10 @@ package p2p
 import (
 	"errors"
 	"fmt"
-	"github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
 	"sync"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
 
 	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/log"

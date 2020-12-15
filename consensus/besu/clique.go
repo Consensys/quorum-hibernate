@@ -3,9 +3,10 @@ package quorum
 import (
 	"errors"
 	"fmt"
-	"github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
 	"strconv"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
 
 	"github.com/ConsenSysQuorum/node-manager/consensus"
 	"github.com/ConsenSysQuorum/node-manager/core"

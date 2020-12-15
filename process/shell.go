@@ -2,10 +2,11 @@ package process
 
 import (
 	"fmt"
-	"github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
 )

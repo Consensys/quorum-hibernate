@@ -2,12 +2,13 @@ package proxy
 
 import (
 	"context"
-	"github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"sync"
 	"time"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"

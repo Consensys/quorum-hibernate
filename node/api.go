@@ -1,8 +1,9 @@
 package node
 
 import (
-	"github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/p2p"

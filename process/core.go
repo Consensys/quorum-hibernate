@@ -2,10 +2,11 @@ package process
 
 import (
 	"bytes"
-	"github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
 	"os/exec"
 	"syscall"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
 
 	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/log"

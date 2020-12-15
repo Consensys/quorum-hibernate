@@ -2,12 +2,13 @@ package quorum
 
 import (
 	"encoding/json"
-	"github.com/ConsenSysQuorum/node-manager/config"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRaftConsensus_ValidateShutdown_Minter_Invalid(t *testing.T) {

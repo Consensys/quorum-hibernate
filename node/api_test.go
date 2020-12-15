@@ -2,14 +2,15 @@ package node
 
 import (
 	"errors"
-	"github.com/ConsenSysQuorum/node-manager/config"
-	"github.com/ConsenSysQuorum/node-manager/core"
-	"github.com/ConsenSysQuorum/node-manager/p2p"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
+	"github.com/ConsenSysQuorum/node-manager/core"
+	"github.com/ConsenSysQuorum/node-manager/p2p"
 
 	"github.com/stretchr/testify/require"
 )

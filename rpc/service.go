@@ -3,10 +3,11 @@ package rpc
 import (
 	"context"
 	"fmt"
-	"github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"

@@ -3,9 +3,10 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/log"
-	"net/http"
 )
 
 type Node struct {

@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
-	"github.com/ConsenSysQuorum/node-manager/config"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"

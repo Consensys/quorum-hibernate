@@ -2,10 +2,11 @@ package node
 
 import (
 	"errors"
-	"github.com/ConsenSysQuorum/node-manager/config"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
 
 	"github.com/ConsenSysQuorum/node-manager/p2p"
 	"github.com/ConsenSysQuorum/node-manager/privatetx"
