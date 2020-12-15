@@ -6,16 +6,16 @@ import (
 )
 
 type Basic struct {
-	Name                 string          `toml:"name" json:"name"`                                     // name of this node manager
-	DisableStrictMode    bool            `toml:"disableStrictMode" json:"disableStrictMode"`           // strict mode keeps consensus nodes alive always
-	UpchkPollingInterval int             `toml:"upcheckPollingInterval" json:"upcheckPollingInterval"` // up check polling interval in seconds for the quorumClient and privacyManager
-	PeersConfigFile      string          `toml:"peersConfigFile" json:"peersConfigFile"`               // node manager config file path
-	InactivityTime       int             `toml:"inactivityTime" json:"inactivityTime"`                 // inactivity time for blockchain client and privacy manager
-	ResyncTime           int             `toml:"resyncTime" json:"resyncTime"`                         // time after which client should be started to sync up with network
-	QuorumClient         *QuorumClient   `toml:"quorumClient" json:"quorumClient"`
-	PrivacyManager       *PrivacyManager `toml:"privacyManager" json:"privacyManager"`
-	Server               *RPCServer      `toml:"server" json:"server"`   // RPC server config of this node manager
-	Proxies              []*Proxy        `toml:"proxies" json:"proxies"` // proxies managed by this node manager
+	Name                 string            `toml:"name" json:"name"`                                     // name of this node manager
+	DisableStrictMode    bool              `toml:"disableStrictMode" json:"disableStrictMode"`           // strict mode keeps consensus nodes alive always
+	UpchkPollingInterval int               `toml:"upcheckPollingInterval" json:"upcheckPollingInterval"` // up check polling interval in seconds for the blockchainClient and privacyManager
+	PeersConfigFile      string            `toml:"peersConfigFile" json:"peersConfigFile"`               // node manager config file path
+	InactivityTime       int               `toml:"inactivityTime" json:"inactivityTime"`                 // inactivity time for blockchain client and privacy manager
+	ResyncTime           int               `toml:"resyncTime" json:"resyncTime"`                         // time after which client should be started to sync up with network
+	BlockchainClient     *BlockchainClient `toml:"blockchainClient" json:"blockchainClient"`
+	PrivacyManager       *PrivacyManager   `toml:"privacyManager" json:"privacyManager"`
+	Server               *RPCServer        `toml:"server" json:"server"`   // RPC server config of this node manager
+	Proxies              []*Proxy          `toml:"proxies" json:"proxies"` // proxies managed by this node manager
 }
 
 func (c Basic) IsResyncTimerSet() bool {
@@ -23,23 +23,23 @@ func (c Basic) IsResyncTimerSet() bool {
 }
 
 func (c Basic) IsRaft() bool {
-	return c.QuorumClient.IsRaft()
+	return c.BlockchainClient.IsRaft()
 }
 
 func (c Basic) IsIstanbul() bool {
-	return c.QuorumClient.IsIstanbul()
+	return c.BlockchainClient.IsIstanbul()
 }
 
 func (c Basic) IsClique() bool {
-	return c.QuorumClient.IsClique()
+	return c.BlockchainClient.IsClique()
 }
 
 func (c Basic) IsGoQuorumClient() bool {
-	return c.QuorumClient.IsGoQuorumClient()
+	return c.BlockchainClient.IsGoQuorumClient()
 }
 
 func (c Basic) IsBesuClient() bool {
-	return c.QuorumClient.IsBesuClient()
+	return c.BlockchainClient.IsBesuClient()
 }
 
 func (c Basic) IsValid() error {
@@ -67,12 +67,12 @@ func (c Basic) IsValid() error {
 		return errors.New("server is empty")
 	}
 
-	if c.QuorumClient == nil {
-		return errors.New("quorumClient is empty")
+	if c.BlockchainClient == nil {
+		return errors.New("blockchainClient is empty")
 	}
 
-	if err := c.QuorumClient.IsValid(); err != nil {
-		return fmt.Errorf("invalid quorumClient: %v", err)
+	if err := c.BlockchainClient.IsValid(); err != nil {
+		return fmt.Errorf("invalid blockchainClient: %v", err)
 	}
 
 	if c.PrivacyManager != nil {

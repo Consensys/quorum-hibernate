@@ -66,12 +66,12 @@ rpcAddress = "localhost:8081"
 rpcCorsList = ["*"]
 rpcvHosts = ["*"]
 
-[quorumClient]
+[blockchainClient]
 type = "goquorum"
 consensus = "raft"
 rpcUrl = "http://localhost:22000"
 
-[quorumClient.process]
+[blockchainClient.process]
 name = "bcclnt"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
@@ -109,7 +109,7 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 		"rpcCorsList": ["*"],
 		"rpcvHosts": ["*"]
 	},
-	"quorumClient": {
+	"blockchainClient": {
 		"type": "goquorum",
 		"consensus": "raft",
 		"rpcUrl": "http://localhost:22000",
@@ -165,7 +165,7 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 					RPCCorsList: []string{"*"},
 					RPCVHosts:   []string{"*"},
 				},
-				QuorumClient: &QuorumClient{
+				BlockchainClient: &BlockchainClient{
 					ClientType:   "goquorum",
 					Consensus:    "raft",
 					BcClntRpcUrl: "http://localhost:22000",

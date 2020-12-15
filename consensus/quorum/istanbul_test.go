@@ -17,7 +17,7 @@ func TestIstanbulConsensus_ValidateShutdown_NonValidator_Valid(t *testing.T) {
 
 	istanbul := NewIstanbulConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			QuorumClient: &config.QuorumClient{
+			BlockchainClient: &config.BlockchainClient{
 				BcClntRpcUrl: mockServer.URL,
 			},
 		},
@@ -66,7 +66,7 @@ func TestIstanbulConsensus_ValidateShutdown_Validator(t *testing.T) {
 
 			istanbul := NewIstanbulConsensus(&config.Node{
 				BasicConfig: &config.Basic{
-					QuorumClient: &config.QuorumClient{
+					BlockchainClient: &config.BlockchainClient{
 						BcClntRpcUrl: mockServer.URL,
 					},
 				},
@@ -95,7 +95,7 @@ func TestIstanbulConsensus_ValidateShutdown_IsValidatorRpcError(t *testing.T) {
 
 	istanbul := NewIstanbulConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			QuorumClient: &config.QuorumClient{
+			BlockchainClient: &config.BlockchainClient{
 				BcClntRpcUrl: mockServer.URL,
 			},
 		},
@@ -119,7 +119,7 @@ func TestIstanbulConsensus_ValidateShutdown_SealerStatusRpcError(t *testing.T) {
 
 	istanbul := NewIstanbulConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			QuorumClient: &config.QuorumClient{
+			BlockchainClient: &config.BlockchainClient{
 				BcClntRpcUrl: mockServer.URL,
 			},
 		},
