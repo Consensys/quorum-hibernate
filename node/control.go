@@ -110,10 +110,12 @@ func setHttpClients(cfg *config.Node, node *NodeControl) {
 		node.bcclntHttpClient = core.NewHttpClient(nil)
 	}
 
-	if cfg.BasicConfig.PrivacyManager.PrivManTLSConfig != nil {
-		node.pmclntHttpClient = core.NewHttpClient(cfg.BasicConfig.PrivacyManager.PrivManTLSConfig.TlsCfg)
-	} else {
-		node.pmclntHttpClient = core.NewHttpClient(nil)
+	if node.WithPrivMan() {
+		if cfg.BasicConfig.PrivacyManager.PrivManTLSConfig != nil {
+			node.pmclntHttpClient = core.NewHttpClient(cfg.BasicConfig.PrivacyManager.PrivManTLSConfig.TlsCfg)
+		} else {
+			node.pmclntHttpClient = core.NewHttpClient(nil)
+		}
 	}
 }
 
