@@ -11,9 +11,10 @@ import (
 //  Might make sense to export this logic in the plugin, or move out to quorum-go-utils project
 
 type ServerTLS struct {
-	KeyFile  string `toml:"keyFile" json:"keyFile"`
-	CertFile string `toml:"certificateFile" json:"certificateFile"`
-	TlsCfg   *tls.Config
+	KeyFile          string `toml:"keyFile" json:"keyFile"`
+	CertFile         string `toml:"certificateFile" json:"certificateFile"`
+	ClientCaCertFile string `toml:"clientCaCertificateFile" json:"clientCaCertificateFile"`
+	TlsCfg           *tls.Config
 }
 
 func (c *ServerTLS) SetTLSConfig() error {
@@ -34,27 +35,40 @@ func (c *ServerTLS) IsValid() error {
 }
 
 func (c *ServerTLS) TLSConfig() (*tls.Config, error) {
-	certPem, err := ioutil.ReadFile(c.CertFile)
+	cert, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)
 	if err != nil {
 		return nil, err
 	}
-	keyPem, err := ioutil.ReadFile(c.KeyFile)
-	if err != nil {
-		return nil, err
-	}
-	cer, err := tls.X509KeyPair(certPem, keyPem)
-	if err != nil {
-		return nil, err
-	}
+
 	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cer},
+		Certificates: []tls.Certificate{cert},
 		// Support only TLS1.2 & Above
 		MinVersion: tls.VersionTLS12,
 	}
+
+	var caPem []byte
+	if c.ClientCaCertFile != "" {
+		caPem, err = ioutil.ReadFile(c.ClientCaCertFile)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(caPem) != 0 {
+		certPool, err := x509.SystemCertPool()
+		if err != nil {
+			certPool = x509.NewCertPool()
+		}
+		certPool.AppendCertsFromPEM(caPem)
+		tlsConfig.ClientCAs = certPool
+		tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+	}
+
 	return tlsConfig, nil
 }
 
 type ClientTLS struct {
+	CertFile           string `toml:"certificateFile" json:"certificateFile"`
+	KeyFile            string `toml:"keyFile" json:"keyFile"`
 	CACertFile         string `toml:"caCertificateFile" json:"caCertificateFile"`
 	InsecureSkipVerify bool   `toml:"insecureSkipVerify" json:"insecureSkipVerify"`
 	TlsCfg             *tls.Config
@@ -68,7 +82,10 @@ func (c *ClientTLS) SetTLSConfig() error {
 
 func (c *ClientTLS) IsValid() error {
 	if c.CACertFile == "" {
-		return errors.New("ClientTLS - certCA file is empty")
+		return errors.New("ClientTLS - caCertificateFile is empty")
+	}
+	if (c.CertFile == "" && c.KeyFile != "") || (c.CertFile != "" && c.KeyFile == "") {
+		return errors.New("ClientTLS - certificateFile and keyFile must be set together")
 	}
 	err := c.SetTLSConfig()
 	return err
@@ -81,13 +98,14 @@ func (c *ClientTLS) TLSConfig() (*tls.Config, error) {
 	if !c.InsecureSkipVerify {
 		var caPem []byte
 		var err error
-		// TODO(cjh) make sure we don't need CertFile for the client side of 1-way TLS
-		//if c.CertFile != "" {
-		//	certPem, err = ioutil.ReadFile(c.CertFile.String())
-		//	if err != nil {
-		//		return nil, err
-		//	}
-		//}
+
+		if c.CertFile != "" && c.KeyFile != "" {
+			cert, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)
+			if err != nil {
+				return nil, err
+			}
+			tlsConfig.Certificates = []tls.Certificate{cert}
+		}
 		if c.CACertFile != "" {
 			caPem, err = ioutil.ReadFile(c.CACertFile)
 			if err != nil {
