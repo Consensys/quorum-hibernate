@@ -82,6 +82,10 @@ func (c *QuorumClient) IsValid() error {
 }
 
 func (c *PrivacyManager) IsValid() error {
+	if c.PrivManKey != "" && c.PrivManProcess == nil {
+		return errors.New("privManProcess details are empty")
+	}
+
 	if c.PrivManProcess != nil {
 
 		if c.PrivManKey == "" {
