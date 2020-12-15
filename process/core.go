@@ -2,10 +2,11 @@ package process
 
 import (
 	"bytes"
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"net/http"
 	"os/exec"
 	"syscall"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
 
 	"github.com/ConsenSysQuorum/node-manager/core"
 	"github.com/ConsenSysQuorum/node-manager/log"
@@ -56,7 +57,7 @@ func ExecuteShellCommand(cmdArr []string) error {
 	return nil
 }
 
-func IsProcessUp(client *http.Client, cfg types.UpcheckConfig) (bool, error) {
+func IsProcessUp(client *http.Client, cfg config.Upcheck) (bool, error) {
 	if cfg.IsRpcResult() {
 		var resp UpcheckResponse
 		if err := core.CallRPC(client, cfg.UpcheckUrl, []byte(cfg.Body), &resp); err != nil || resp.Error != nil {

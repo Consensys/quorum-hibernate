@@ -3,7 +3,7 @@ package node
 import (
 	"net/http"
 
-	"github.com/ConsenSysQuorum/node-manager/core/types"
+	"github.com/ConsenSysQuorum/node-manager/config"
 
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/p2p"
@@ -11,7 +11,7 @@ import (
 
 type NodeRPCAPIs struct {
 	service ControllerApiService
-	conf    *types.NodeConfig
+	conf    *config.Node
 }
 
 type NodeUpReply struct {
@@ -22,7 +22,7 @@ type PrivateTxPrepReply struct {
 	Status bool
 }
 
-func NewNodeRPCAPIs(qn ControllerApiService, conf *types.NodeConfig) *NodeRPCAPIs {
+func NewNodeRPCAPIs(qn ControllerApiService, conf *config.Node) *NodeRPCAPIs {
 	return &NodeRPCAPIs{
 		service: qn,
 		conf:    conf,

@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ConsenSysQuorum/node-manager/core/types"
+	"github.com/ConsenSysQuorum/node-manager/config"
+
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
 type QuorumTxHandler struct {
-	cfg *types.NodeConfig
+	cfg *config.Node
 }
 
 const (
@@ -43,7 +44,7 @@ var pvtReqParamMap = map[string]int{
 	estimateGas:     1,
 }
 
-func NewQuorumTxHandler(cfg *types.NodeConfig) TxHandler {
+func NewQuorumTxHandler(cfg *config.Node) TxHandler {
 	return &QuorumTxHandler{cfg: cfg}
 }
 

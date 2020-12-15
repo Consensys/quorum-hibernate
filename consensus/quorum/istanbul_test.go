@@ -2,21 +2,24 @@ package quorum
 
 import (
 	"encoding/json"
-	"github.com/ConsenSysQuorum/node-manager/core/types"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/ConsenSysQuorum/node-manager/config"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIstanbulConsensus_ValidateShutdown_NonValidator_Valid(t *testing.T) {
 	mockServer := startMockIstanbulServer(t, `{"result": false}`, "")
 	defer mockServer.Close()
 
-	istanbul := NewIstanbulConsensus(&types.NodeConfig{
-		BasicConfig: &types.BasicConfig{
-			BcClntRpcUrl: mockServer.URL,
+	istanbul := NewIstanbulConsensus(&config.Node{
+		BasicConfig: &config.Basic{
+			QuorumClient: &config.QuorumClient{
+				BcClntRpcUrl: mockServer.URL,
+			},
 		},
 	}, nil)
 
@@ -61,9 +64,11 @@ func TestIstanbulConsensus_ValidateShutdown_Validator(t *testing.T) {
 			mockServer := startMockIstanbulServer(t, tt.istanbulIsValidatorResp, tt.istanbulStatusResp)
 			defer mockServer.Close()
 
-			istanbul := NewIstanbulConsensus(&types.NodeConfig{
-				BasicConfig: &types.BasicConfig{
-					BcClntRpcUrl: mockServer.URL,
+			istanbul := NewIstanbulConsensus(&config.Node{
+				BasicConfig: &config.Basic{
+					QuorumClient: &config.QuorumClient{
+						BcClntRpcUrl: mockServer.URL,
+					},
 				},
 			}, nil)
 
@@ -88,9 +93,11 @@ func TestIstanbulConsensus_ValidateShutdown_IsValidatorRpcError(t *testing.T) {
 	mockServer := startMockIstanbulServer(t, istanbulIsValidatorResp, istanbulStatusResp)
 	defer mockServer.Close()
 
-	istanbul := NewIstanbulConsensus(&types.NodeConfig{
-		BasicConfig: &types.BasicConfig{
-			BcClntRpcUrl: mockServer.URL,
+	istanbul := NewIstanbulConsensus(&config.Node{
+		BasicConfig: &config.Basic{
+			QuorumClient: &config.QuorumClient{
+				BcClntRpcUrl: mockServer.URL,
+			},
 		},
 	}, nil)
 
@@ -110,9 +117,11 @@ func TestIstanbulConsensus_ValidateShutdown_SealerStatusRpcError(t *testing.T) {
 	mockServer := startMockIstanbulServer(t, istanbulIsValidatorResp, istanbulStatusResp)
 	defer mockServer.Close()
 
-	istanbul := NewIstanbulConsensus(&types.NodeConfig{
-		BasicConfig: &types.BasicConfig{
-			BcClntRpcUrl: mockServer.URL,
+	istanbul := NewIstanbulConsensus(&config.Node{
+		BasicConfig: &config.Basic{
+			QuorumClient: &config.QuorumClient{
+				BcClntRpcUrl: mockServer.URL,
+			},
 		},
 	}, nil)
 

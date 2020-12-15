@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/ConsenSysQuorum/node-manager/config"
+
 	"github.com/ConsenSysQuorum/node-manager/core"
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
@@ -16,11 +17,16 @@ const (
 	PreparePvtTxMethod = `{"jsonrpc":"2.0", "method":"node.PrepareForPrivateTx", "params":["%s"], "id":77}`
 )
 
-func NewPeerManager(cfg *types.NodeConfig) *PeerManager {
-	return &PeerManager{cfg: cfg}
+func NewPeerManager(cfg *config.Node) *PeerManager {
+	configReader, _ := config.NewPeersReader(cfg.BasicConfig.PeersConfigFile)
+
+	return &PeerManager{
+		cfg:          cfg,
+		configReader: configReader,
+	}
 }
 
-func (pm *PeerManager) getConfigByPrivManKey(key string) *types.NodeManagerConfig {
+func (pm *PeerManager) getConfigByPrivManKey(key string) *config.Peer {
 	for _, n := range pm.getLatestConfig() {
 		if n.PrivManKey == key {
 			log.Debug("getConfigByPrivManKey - privacy manager key matched", "node", n)
@@ -30,19 +36,19 @@ func (pm *PeerManager) getConfigByPrivManKey(key string) *types.NodeManagerConfi
 	return nil
 }
 
-func (pm *PeerManager) getLatestConfig() []*types.NodeManagerConfig {
-	newCfg, err := types.ReadNodeManagerConfig(pm.cfg.BasicConfig.NodeManagerConfigFile)
+func (pm *PeerManager) getLatestConfig() []*config.Peer {
+	newCfg, err := pm.configReader.Read()
 	if err != nil {
-		log.Error("getLatestConfig - error updating node manager config. will use old config", "path", pm.cfg.BasicConfig.NodeManagerConfigFile, "err", err)
-		return pm.cfg.NodeManagers
+		log.Error("getLatestConfig - error updating node manager config. will use old config", "path", pm.cfg.BasicConfig.PeersConfigFile, "err", err)
+		return pm.cfg.Peers
 	}
 	log.Debug("getLatestConfig - loaded new config", "cfg", newCfg)
 	if len(newCfg) == 0 {
 		log.Warn("getLatestConfig - node manager list is empty after reload")
 	}
 	log.Debug("getLatestConfig - node manager config", "new cfg", newCfg)
-	pm.cfg.NodeManagers = newCfg
-	return pm.cfg.NodeManagers
+	pm.cfg.Peers = newCfg
+	return pm.cfg.Peers
 }
 
 // TODO if a node manager is down/not reachable should we mark it as down and proceed?
@@ -107,7 +113,7 @@ func (pm *PeerManager) peerPrivateTxStatus(participantKeys []string) []bool {
 
 		if nmCfg != nil {
 			wg.Add(1)
-			go func(nmc *types.NodeManagerConfig) {
+			go func(nmc *config.Peer) {
 				defer wg.Done()
 				result := PeerPrivateTxPrepResult{}
 				var client *http.Client
@@ -144,7 +150,7 @@ func (pm *PeerManager) ValidatePeers() ([]NodeStatusInfo, error) {
 
 	shutdownInProgress := false
 	for _, n := range statusArr {
-		if n.Status == types.ShutdownInprogress || n.Status == types.ConsensusWait {
+		if n.Status == core.ShutdownInprogress || n.Status == core.ConsensusWait {
 			shutdownInProgress = true
 			break
 		}
@@ -156,11 +162,11 @@ func (pm *PeerManager) ValidatePeers() ([]NodeStatusInfo, error) {
 	return statusArr, nil
 }
 
-func (pm *PeerManager) getConfigCount(nmCfgs []*types.NodeManagerConfig) int {
+func (pm *PeerManager) getConfigCount(nmCfgs []*config.Peer) int {
 	nodeManagerCount := 0
 	for _, n := range nmCfgs {
 		//skip self
-		if n.PrivManKey == pm.cfg.BasicConfig.PrivManKey {
+		if n.PrivManKey == pm.cfg.BasicConfig.PrivacyManager.PrivManKey {
 			continue
 		}
 		nodeManagerCount++
@@ -208,11 +214,11 @@ func (pm *PeerManager) peerStatus() (int, []NodeStatusInfo) {
 
 	for _, n := range nmCfgs {
 		//skip self
-		if n.PrivManKey == pm.cfg.BasicConfig.PrivManKey {
+		if n.PrivManKey == pm.cfg.BasicConfig.PrivacyManager.PrivManKey {
 			continue
 		}
 		wg.Add(1)
-		go func(nmc *types.NodeManagerConfig) {
+		go func(nmc *config.Peer) {
 			defer wg.Done()
 			var res = PeerNodeStatusResult{}
 			var client *http.Client

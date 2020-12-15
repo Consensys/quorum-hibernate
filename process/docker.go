@@ -7,7 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ConsenSysQuorum/node-manager/core/types"
+	"github.com/ConsenSysQuorum/node-manager/config"
+
 	"github.com/ConsenSysQuorum/node-manager/log"
 	dtypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -15,13 +16,13 @@ import (
 
 // DockerControl represents process control for a docker container
 type DockerControl struct {
-	cfg     *types.ProcessConfig
+	cfg     *config.Process
 	status  bool
 	client  *http.Client
 	muxLock sync.Mutex
 }
 
-func NewDockerProcess(c *http.Client, p *types.ProcessConfig, s bool) Process {
+func NewDockerProcess(c *http.Client, p *config.Process, s bool) Process {
 	sp := &DockerControl{p, s, c, sync.Mutex{}}
 	sp.UpdateStatus()
 	log.Debug("docker process created", "name", sp.cfg.Name)

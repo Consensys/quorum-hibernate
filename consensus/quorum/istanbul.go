@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/ConsenSysQuorum/node-manager/config"
+
 	"github.com/ConsenSysQuorum/node-manager/consensus"
 	"github.com/ConsenSysQuorum/node-manager/core"
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
@@ -28,7 +29,7 @@ type IstanbulIsValidatorResp struct {
 }
 
 type IstanbulConsensus struct {
-	cfg    *types.NodeConfig
+	cfg    *config.Node
 	client *http.Client
 }
 
@@ -40,13 +41,13 @@ const (
 	IstanbulIsValidatorReq = `{"jsonrpc":"2.0", "method":"istanbul_isValidator", "params":[], "id":67}`
 )
 
-func NewIstanbulConsensus(qn *types.NodeConfig, c *http.Client) consensus.Consensus {
+func NewIstanbulConsensus(qn *config.Node, c *http.Client) consensus.Consensus {
 	return &IstanbulConsensus{cfg: qn, client: c}
 }
 
 func (i *IstanbulConsensus) getIstanbulSealerActivity() (*IstanbulSealActivity, error) {
 	var respResult IstanbulSealActivityResp
-	if err := core.CallRPC(i.client, i.cfg.BasicConfig.BcClntRpcUrl, []byte(IstanbulStatusReq), &respResult); err != nil {
+	if err := core.CallRPC(i.client, i.cfg.BasicConfig.QuorumClient.BcClntRpcUrl, []byte(IstanbulStatusReq), &respResult); err != nil {
 		return nil, err
 	}
 	if respResult.Error != nil {
@@ -57,7 +58,7 @@ func (i *IstanbulConsensus) getIstanbulSealerActivity() (*IstanbulSealActivity, 
 
 func (i *IstanbulConsensus) getIstanbulIsValidator() (bool, error) {
 	var respResult IstanbulIsValidatorResp
-	if err := core.CallRPC(i.client, i.cfg.BasicConfig.BcClntRpcUrl, []byte(IstanbulIsValidatorReq), &respResult); err != nil {
+	if err := core.CallRPC(i.client, i.cfg.BasicConfig.QuorumClient.BcClntRpcUrl, []byte(IstanbulIsValidatorReq), &respResult); err != nil {
 		return false, err
 	}
 	if respResult.Error != nil {

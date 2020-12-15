@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/ConsenSysQuorum/node-manager/config"
+
 	"github.com/ConsenSysQuorum/node-manager/consensus"
 	"github.com/ConsenSysQuorum/node-manager/core"
-	"github.com/ConsenSysQuorum/node-manager/core/types"
 	"github.com/ConsenSysQuorum/node-manager/log"
 )
 
 type CliqueConsensus struct {
-	cfg    *types.NodeConfig
+	cfg    *config.Node
 	client *http.Client
 }
 
@@ -41,14 +42,14 @@ const (
 	CoinBaseReq     = `{"jsonrpc":"2.0", "method":"eth_coinbase", "id":67}`
 )
 
-func NewCliqueConsensus(qn *types.NodeConfig, c *http.Client) consensus.Consensus {
+func NewCliqueConsensus(qn *config.Node, c *http.Client) consensus.Consensus {
 	return &CliqueConsensus{cfg: qn, client: c}
 }
 
 // returns true if the coinbase account of the node is one of the signer accounts
 func (c *CliqueConsensus) getCoinBaseAccount() (string, error) {
 	var result CoinBaseResp
-	if err := core.CallRPC(c.client, c.cfg.BasicConfig.BcClntRpcUrl, []byte(CoinBaseReq), &result); err != nil {
+	if err := core.CallRPC(c.client, c.cfg.BasicConfig.QuorumClient.BcClntRpcUrl, []byte(CoinBaseReq), &result); err != nil {
 		return "", err
 	}
 	if result.Error != nil {
@@ -59,7 +60,7 @@ func (c *CliqueConsensus) getCoinBaseAccount() (string, error) {
 
 func (c *CliqueConsensus) getConsensusStatus() (*CliqueStatus, error) {
 	var respResult CliqueStatusResp
-	if err := core.CallRPC(c.client, c.cfg.BasicConfig.BcClntRpcUrl, []byte(CliqueStatusReq), &respResult); err != nil {
+	if err := core.CallRPC(c.client, c.cfg.BasicConfig.QuorumClient.BcClntRpcUrl, []byte(CliqueStatusReq), &respResult); err != nil {
 		return nil, err
 	}
 	if respResult.Error != nil {
