@@ -56,6 +56,9 @@ func (pm *PeerManager) getLatestConfig() []*config.Peer {
 func (pm *PeerManager) ValidatePeerPrivateTxStatus(participantKeys []string) (bool, error) {
 	statusArr := pm.peerPrivateTxStatus(participantKeys)
 	finalStatus := true
+	if len(statusArr) == 0 {
+		finalStatus = false
+	}
 	for _, s := range statusArr {
 		if !s {
 			finalStatus = false
