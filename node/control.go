@@ -7,17 +7,14 @@ import (
 	"time"
 
 	"github.com/ConsenSysQuorum/node-manager/config"
-
-	"github.com/ConsenSysQuorum/node-manager/p2p"
-	"github.com/ConsenSysQuorum/node-manager/privatetx"
-
 	cons "github.com/ConsenSysQuorum/node-manager/consensus"
 	besu "github.com/ConsenSysQuorum/node-manager/consensus/besu"
 	qnm "github.com/ConsenSysQuorum/node-manager/consensus/quorum"
 	"github.com/ConsenSysQuorum/node-manager/core"
-	proc "github.com/ConsenSysQuorum/node-manager/process"
-
 	"github.com/ConsenSysQuorum/node-manager/log"
+	"github.com/ConsenSysQuorum/node-manager/p2p"
+	"github.com/ConsenSysQuorum/node-manager/privatetx"
+	proc "github.com/ConsenSysQuorum/node-manager/process"
 )
 
 const CONSENSUS_WAIT_TIME = 60
@@ -80,10 +77,10 @@ func NewNodeControl(cfg *config.Node) *NodeControl {
 
 	setHttpClients(cfg, node)
 
-	if cfg.BasicConfig.QuorumClient.BcClntProcess.IsShell() {
-		node.bcclntProcess = proc.NewShellProcess(node.bcclntHttpClient, cfg.BasicConfig.QuorumClient.BcClntProcess, true)
-	} else if cfg.BasicConfig.QuorumClient.BcClntProcess.IsDocker() {
-		node.bcclntProcess = proc.NewDockerProcess(node.bcclntHttpClient, cfg.BasicConfig.QuorumClient.BcClntProcess, true)
+	if cfg.BasicConfig.BlockchainClient.BcClntProcess.IsShell() {
+		node.bcclntProcess = proc.NewShellProcess(node.bcclntHttpClient, cfg.BasicConfig.BlockchainClient.BcClntProcess, true)
+	} else if cfg.BasicConfig.BlockchainClient.BcClntProcess.IsDocker() {
+		node.bcclntProcess = proc.NewDockerProcess(node.bcclntHttpClient, cfg.BasicConfig.BlockchainClient.BcClntProcess, true)
 	}
 
 	if node.WithPrivMan() {
@@ -104,8 +101,8 @@ func NewNodeControl(cfg *config.Node) *NodeControl {
 }
 
 func setHttpClients(cfg *config.Node, node *NodeControl) {
-	if cfg.BasicConfig.QuorumClient.BcClntTLSConfig != nil {
-		node.bcclntHttpClient = core.NewHttpClient(cfg.BasicConfig.QuorumClient.BcClntTLSConfig.TlsCfg)
+	if cfg.BasicConfig.BlockchainClient.BcClntTLSConfig != nil {
+		node.bcclntHttpClient = core.NewHttpClient(cfg.BasicConfig.BlockchainClient.BcClntTLSConfig.TlsCfg)
 	} else {
 		node.bcclntHttpClient = core.NewHttpClient(nil)
 	}

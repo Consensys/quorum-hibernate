@@ -17,7 +17,7 @@ func TestRaftConsensus_ValidateShutdown_Minter_Invalid(t *testing.T) {
 
 	raft := NewRaftConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			QuorumClient: &config.QuorumClient{
+			BlockchainClient: &config.BlockchainClient{
 				BcClntRpcUrl: mockServer.URL,
 			},
 		},
@@ -34,7 +34,7 @@ func TestRaftConsensus_ValidateShutdown_Learner_Valid(t *testing.T) {
 
 	raft := NewRaftConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			QuorumClient: &config.QuorumClient{
+			BlockchainClient: &config.BlockchainClient{
 				BcClntRpcUrl: mockServer.URL,
 			},
 		},
@@ -77,7 +77,7 @@ func TestRaftConsensus_ValidateShutdown_Verifier_NotEnoughActivePeers_Invalid(t 
 
 			raft := NewRaftConsensus(&config.Node{
 				BasicConfig: &config.Basic{
-					QuorumClient: &config.QuorumClient{
+					BlockchainClient: &config.BlockchainClient{
 						BcClntRpcUrl: mockServer.URL,
 					},
 				},
@@ -106,7 +106,7 @@ func TestRaftConsensus_ValidateShutdown_GetRoleRpcError(t *testing.T) {
 
 	raft := NewRaftConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			QuorumClient: &config.QuorumClient{
+			BlockchainClient: &config.BlockchainClient{
 				BcClntRpcUrl: mockServer.URL,
 			},
 		},
@@ -130,7 +130,7 @@ func TestRaftConsensus_ValidateShutdown_GetClusterInfoRpcError(t *testing.T) {
 
 	raft := NewRaftConsensus(&config.Node{
 		BasicConfig: &config.Basic{
-			QuorumClient: &config.QuorumClient{
+			BlockchainClient: &config.BlockchainClient{
 				BcClntRpcUrl: mockServer.URL,
 			},
 		},

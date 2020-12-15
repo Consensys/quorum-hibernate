@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-type QuorumClient struct {
+type BlockchainClient struct {
 	ClientType      string     `toml:"type" json:"type"`           // client used by this node manager. it should be quorum or besu
 	Consensus       string     `toml:"consensus" json:"consensus"` // consensus used by blockchain client. ex: raft / istanbul / clique
 	BcClntRpcUrl    string     `toml:"rpcUrl" json:"rpcUrl"`       // RPC url of blockchain client managed by this node manager
@@ -20,27 +20,27 @@ type PrivacyManager struct {
 	PrivManProcess   *Process   `toml:"process" json:"process"`     // privacy manager process managed by this node manager
 }
 
-func (c *QuorumClient) IsRaft() bool {
+func (c *BlockchainClient) IsRaft() bool {
 	return strings.ToLower(c.Consensus) == "raft"
 }
 
-func (c *QuorumClient) IsIstanbul() bool {
+func (c *BlockchainClient) IsIstanbul() bool {
 	return strings.ToLower(c.Consensus) == "istanbul"
 }
 
-func (c *QuorumClient) IsClique() bool {
+func (c *BlockchainClient) IsClique() bool {
 	return strings.ToLower(c.Consensus) == "clique"
 }
 
-func (c *QuorumClient) IsGoQuorumClient() bool {
+func (c *BlockchainClient) IsGoQuorumClient() bool {
 	return strings.ToLower(c.ClientType) == "goquorum"
 }
 
-func (c *QuorumClient) IsBesuClient() bool {
+func (c *BlockchainClient) IsBesuClient() bool {
 	return strings.ToLower(c.ClientType) == "besu"
 }
 
-func (c *QuorumClient) IsValid() error {
+func (c *BlockchainClient) IsValid() error {
 	if c.Consensus == "" {
 		return errors.New("consensus is empty")
 	}
