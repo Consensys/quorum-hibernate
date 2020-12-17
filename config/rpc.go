@@ -14,10 +14,10 @@ type RPCServer struct {
 
 func (c RPCServer) IsValid() error {
 	if c.RpcAddr == "" {
-		return errors.New("rpcAddr is empty")
+		return errors.New("rpcAddress is empty")
 	}
 	if err := isValidUrl(c.RpcAddr); err != nil {
-		return fmt.Errorf("invalid rpcAddr: %v", err)
+		return fmt.Errorf("invalid rpcAddress: %v", err)
 	}
 	if c.TLSConfig != nil {
 		if err := c.TLSConfig.IsValid(); err != nil {

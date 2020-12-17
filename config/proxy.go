@@ -36,16 +36,16 @@ func (c Proxy) IsValid() error {
 		return namedValidationError{name: c.Name, errMsg: "invalid type. supports only http or ws"}
 	}
 	if c.ProxyAddr == "" {
-		return namedValidationError{name: c.Name, errMsg: "proxyAddr is empty"}
+		return namedValidationError{name: c.Name, errMsg: "proxyAddress is empty"}
 	}
 	if c.UpstreamAddr == "" {
-		return namedValidationError{name: c.Name, errMsg: "upstreamAddr is empty"}
+		return namedValidationError{name: c.Name, errMsg: "upstreamAddress is empty"}
 	}
 	if err := isValidUrl(c.ProxyAddr); err != nil {
-		return namedValidationError{name: c.Name, errMsg: fmt.Sprintf("invalid proxyAddr: %v", err)}
+		return namedValidationError{name: c.Name, errMsg: fmt.Sprintf("invalid proxyAddress: %v", err)}
 	}
 	if err := isValidUrl(c.UpstreamAddr); err != nil {
-		return namedValidationError{name: c.Name, errMsg: fmt.Sprintf("invalid upstreamAddr: %v", err)}
+		return namedValidationError{name: c.Name, errMsg: fmt.Sprintf("invalid upstreamAddress: %v", err)}
 	}
 	if len(c.ProxyPaths) == 0 {
 		return namedValidationError{name: c.Name, errMsg: "proxyPaths is empty"}
