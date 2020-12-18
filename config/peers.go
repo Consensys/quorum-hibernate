@@ -32,9 +32,6 @@ func (c Peer) IsValid() error {
 	if c.Name == "" {
 		return errors.New("name is empty")
 	}
-	if c.PrivManKey == "" {
-		return namedValidationError{name: c.Name, errMsg: "privManKey is empty"}
-	}
 	if c.RpcUrl == "" {
 		return namedValidationError{name: c.Name, errMsg: "rpcUrl is empty"}
 	}
