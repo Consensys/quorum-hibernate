@@ -174,7 +174,7 @@ func (pm *PeerManager) getConfigCount(nmCfgs []*config.Peer) int {
 	nodeManagerCount := 0
 	for _, n := range nmCfgs {
 		//skip self
-		if n.PrivManKey == pm.cfg.BasicConfig.PrivacyManager.PrivManKey {
+		if pm.cfg.BasicConfig.PrivacyManager != nil && n.PrivManKey == pm.cfg.BasicConfig.PrivacyManager.PrivManKey {
 			continue
 		}
 		nodeManagerCount++
@@ -222,7 +222,7 @@ func (pm *PeerManager) peerStatus() (int, []NodeStatusInfo) {
 
 	for _, n := range nmCfgs {
 		//skip self
-		if n.PrivManKey == pm.cfg.BasicConfig.PrivacyManager.PrivManKey {
+		if pm.cfg.BasicConfig.PrivacyManager != nil && n.PrivManKey == pm.cfg.BasicConfig.PrivacyManager.PrivManKey {
 			continue
 		}
 		wg.Add(1)
