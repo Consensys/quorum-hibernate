@@ -7,7 +7,7 @@ import (
 )
 
 type BlockchainClient struct {
-	ClientType      string     `toml:"type" json:"type"`           // client used by this node manager. it should be quorum or besu
+	ClientType      string     `toml:"type" json:"type"`           // client used by this node manager. it should be goquorum or besu
 	Consensus       string     `toml:"consensus" json:"consensus"` // consensus used by blockchain client. ex: raft / istanbul / clique
 	BcClntRpcUrl    string     `toml:"rpcUrl" json:"rpcUrl"`       // RPC url of blockchain client managed by this node manager
 	BcClntTLSConfig *ClientTLS `toml:"tlsConfig" json:"tlsConfig"` // blockchain client TLS config
