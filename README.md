@@ -1,83 +1,158 @@
 # Node Manager
 
-Node Manger is a proxy tool that monitors inactivity in `blockchain client` and `privacy manager` and stops them when they are inactive.
-When it receives request from a client, it will bring up blockchain client and privacy manager if they are down.
+Node Manager is a tool that monitors activity in a blockchain client and Quorum privacy manager node pair, stops them after a configurable period of inactivity, and restarts them on incoming requests.
 
-## Usage 
+Node Manager acts as a proxy for the blockchain client and privacy manager nodes.  When Node Manager receives a request from a client, it will bring up the blockchain client and privacy manager nodes if they are down, and forward the request to the relevant node.
 
-### Pre-requisites
+Clients should submit requests to the corresponding Node Manager proxy servers instead of directly to the blockchain client or privacy manager nodes.
 
-### Up & Running
-
-#### Using Binary
-
-##### Build
+## Build
 
 ```bash
-go build [-o node-manager]
+go install
 ```
 
-##### Run
+## Run
 
-- Running with a custom configuration path
 ```bash
-./node-manager --config <path to toml config file> --verbosity <verbose level>
+node-manager --config path/to/config.json --verbosity 3
 ```
 
-sample node config file
+| Flag | Description |
+| --- | --- |
+| `--config` | Path to `.json` or `.toml` configuration file |
+| `--verbosity` | Logging level (`0` = `ERROR`, `1` = `WARN`, `2` = `INFO`, `3` = `DEBUG`) |
 
-```$xslt
-[basicConfig]
-#node manager name
-name = "node1"
-#blockchain client RPC URL
-bcClntRpcUrl = "http://localhost:22000"
-privManUpcheckUrl = "http://localhost:9001/upcheck"
-privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
-consensus = "raft"
-clientType = "quorum"
-nodeManagerConfigFile = "./test/shell/nm1.toml"
-upcheckPollingInterval = 1
-#blockchain client/privacy manager inactivity timeout seconds
-inactivityTime = 60
+## Config
 
-#blockchain client's http/ws services and privacy manager's http that need to be exposed as proxy services
-proxies = [
-    { name = "geth-rpc", type = "http", proxyAddr = "localhost:9091", upstreamAddr = "http://localhost:22000", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
-    { name = "geth-graphql", type = "http", proxyAddr = "localhost:9191", upstreamAddr = "http://localhost:8547/graphql", proxyPaths = ["/graphql"], readTimeout = 15, writeTimeout = 15 },
-    { name = "geth-ws", type = "ws", proxyAddr = "localhost:9291", upstreamAddr = "ws://localhost:23000", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
-    { name = "tessera", type = "http", proxyAddr = "localhost:9391", upstreamAddr = "http://127.0.0.1:9001", proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], readTimeout = 15, writeTimeout = 15 },
-]
+Two config files are required: [Node Manager](#Node-Manager-config-file) and [Peers](#Peers-config-file).  `json` and `toml` formats are supported.  Samples can be found in [`config/node_test.go`](config/node_test.go) and [`config/peers_test.go`](config/peers_test.go).
 
-#rpc server details of node manager
-[basicConfig.server]
-# The interface + port the application should bind to
-rpcAddr = "localhost:8081"
-rpcCorsList = ["*"]
-rpcvHosts = ["*"]
+### Node Manager config file
 
-#blockchain client's process control config
-[basicConfig.bcClntProcess]
-name = "geth"
-controlType = "shell"
-stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
-startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"]
+| Field  | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | Name for the node manager |
+| `disableStrictMode` | `bool` | Strict mode prevents blockchain client nodes involved in the consensus from being hibernated.  This protects against an essential node being shut down and preventing the chain from progressing. |
+| `upcheckPollingInterval` | `int` | Interval (in seconds) for performing an upcheck on the blockchain client and privacy manager to determine if they have been started/stopped by a third party (i.e. not node manager) |
+| `peersConfigFile` | `string` | Path to a [Peers config file](#Peers-config-file) |
+| `inactivityTime` | `int` | Inactivity period (in seconds) to allow on either the blockchain client or privacy manager before hibernating both |
+| `resyncTime` | `int` | Time (in seconds) after which a hibernating node pair should be restarted to allow the node to sync with the chain.  Regularly syncing a node with the chain during periods of inactivity will reduce the time needed to prepare the node when receiving a client request. |
+| `server` | `object` | See [server](#server) |
+| `proxies` | `[]object` | See [proxy](#proxy) |
+| `blockchainClient` | `object` | See [blockchainClient](#blockchainClient) |
+| `privacyManager` | `object` | See [privacyManager](#privacyManager) |
 
-#privacy manager process control config
-[basicConfig.privManProcess]
-name = "tessera"
-controlType = "shell"
-stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"]
-startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"]
-```
+#### server
 
-sample node manager config file
+The RPC server that exposes Node Manager's API.
 
-```$xslt
-nodeManagers = [
-    { name = "node1", privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", rpcUrl = "http://localhost:8081" },
-    { name = "node2", privManKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", rpcUrl = "http://localhost:8082" },
-    { name = "node3", privManKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8083" },
-    { name = "node4", privManKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8084" }
-]
-```
+| Field  | Type | Description |
+| --- | --- | --- |
+| `rpcAddress` | `string` | Listen address for the Node Manager API |
+| `rpcCorsList` | `[]string` | List of domains from which to accept cross origin requests (browser enforced) |
+| `rpcvHosts` | `[]string` |  List of virtual hostnames from which to accept requests (server enforced) |
+| `tlsConfig` | `object` | See [serverTLS](#serverTLS) |
+
+#### proxy
+
+The proxy server for a single blockchain client or privacy manager service.  Multiple proxies can be configured.
+
+| Field  | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | Name of the proxy server |
+| `type` | `string` | `http` or `ws` |
+| `proxyAddress` | `string` | Listen address for the proxy server |
+| `upstreamAddress` | `string` | Address of the blockchain client or privacy manager service |
+| `proxyPaths` | `[]string` | Paths the proxy server should listen on (`/` listens on all paths) |
+| `ignorePathsForActivity` | `[]string` | Paths that should not reset the inactivity timer if called  |
+| `readTimeout` | `int` | Read timeout |
+| `writeTimeout` | `int` | Write timeout |
+| `proxyTlsConfig` | `object` | See [serverTLS](#serverTLS) |
+| `clientTlsConfig` | `object` | See [clientTLS](#clientTLS) |
+
+#### blockchainClient
+
+The blockchain client to be managed by the Node Manager.
+
+| Field  | Type | Description |
+| --- | --- | --- |
+| `type` | `string` | `goquorum` or `besu` |
+| `consensus` | `string` | `raft`, `istanbul`, or `clique` |
+| `rpcUrl` | `string` | RPC URL of blockchain client.  Used when performing consensus checks. |
+| `process` | `object` | See [process](#process) |
+| `tlsConfig` | `object` | See [clientTLS](#clientTLS) |
+
+#### privacyManager
+
+The privacy manager to be managed by the Node Manager.
+
+| Field  | Type | Description |
+| --- | --- | --- |
+| `publicKey` | `string` | Privacy manager's base64-encoded public key |
+| `process` | `object` | See [process](#process) |
+| `tlsConfig` | `object` | See [clientTLS](#clientTLS) |
+
+##### process
+
+The blockchain client or privacy manager process.  Can be a standalone shell process or a Docker container. 
+
+| Field  | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | `bcclnt` or `privman` |
+| `controlType` | `string` | `shell` or `docker` |
+| `containerId` | `string` | Docker container ID.  Required if `controlType = docker` |
+| `startCommand` | `[]string` | Shell command to start process.  Required if `controlType = shell` |
+| `stopCommand` | `[]string` | Shell command to stop process.  Required if `controlType = shell` |
+| `upcheckConfig` | `object` | See [upcheckConfig](#upcheckConfig) |
+
+##### upcheckConfig
+
+How Node Manager should determine whether the process is running or not.
+
+| Field  | Type | Description |
+| --- | --- | --- |
+| `upcheckUrl` | `string` | Process upcheck URL |
+| `returnType` | `string` | `string` or `rpcresult`. Provides support for REST upcheck endpoints and RPC endpoints |
+| `method` | `string` | `GET` or `POST`. HTTP request method required for upcheck endpoint  |
+| `body` | `string` | Body of RPC upcheck request  |
+| `expected` | `string` | Expected response if `returnType = string`. |
+
+##### serverTLS
+
+1-way and mutual (2-way) TLS can be configured as required.
+
+| Field  | Type | Description |
+| --- | --- | --- |
+| `keyFile` | `string` | Path to `.pem` encoded key file |
+| `certificateFile` | `string` | Path to `.pem` encoded certificate file |
+| `clientCaCertificateFile` | `string` | Path to `.pem` encoded CA certificate file to validate client |
+
+##### clientTLS
+
+1-way and mutual (2-way) TLS can be configured as required.
+
+| Field  | Type | Description |
+| --- | --- | --- |
+| `insecureSkipVerify` | `bool` | Skip verification of server certificate if `true` |
+| `caCertificateFile` | `string` | Path to `.pem` encoded CA certificate file to validate server |
+| `keyFile` | `string` | Path to `.pem` encoded key file |
+| `certificateFile` | `string` | Path to `.pem` encoded certificate file |
+
+#### Peers config file
+
+> TODO Description/explanation of separate peers config file
+
+| Field  | Type | Description |
+| --- | --- | --- |
+| `peers` | `[]object` | See [peer](#peer) |
+
+##### peer
+
+Another active Node Manager in the network.  Multiple peers can be configured.
+
+| Field  | Type | Description |
+| --- | --- | --- |
+| `name` | `string` | Name of the peer |
+| `privacyManagerKey` | `string` | Public key of the peer's privacy manager |
+| `rpcUrl` | `string` | URL of the peer's RPC server |
+| `tlsConfig` | `object` | See [clientTLS](#clientTLS) |
