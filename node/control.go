@@ -381,7 +381,7 @@ func (n *NodeControl) StopClient() bool {
 
 	if peersStatus, err = n.nm.ValidatePeers(); err != nil {
 		n.SetNodeStatus(core.OK)
-		log.Error("StopClient - node cannot be shutdown, p2p validation failed")
+		log.Error("StopClient - node cannot be shutdown, p2p validation failed", "err", err)
 		return false
 	}
 	log.Info("StopClient - all checks passed for shutdown", "peerStatus", peersStatus)
