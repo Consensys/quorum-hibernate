@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"fmt"
 	"io/ioutil"
 )
 
@@ -26,13 +25,13 @@ func (c *ServerTLS) SetTLSConfig() error {
 
 func (c *ServerTLS) IsValid() error {
 	if c.CertFile == "" {
-		return errors.New("serverTLSConfig - cert file is empty")
+		return newFieldErr("certificateFile", isEmptyErr)
 	}
 	if c.KeyFile == "" {
-		return errors.New("serverTLSConfig - key file is empty")
+		return newFieldErr("keyFile", isEmptyErr)
 	}
 	if err := c.SetTLSConfig(); err != nil {
-		return fmt.Errorf("serverTLSConfig - %v", err)
+		return err
 	}
 	return nil
 }
@@ -85,13 +84,16 @@ func (c *ClientTLS) SetTLSConfig() error {
 
 func (c *ClientTLS) IsValid() error {
 	if c.CACertFile == "" {
-		return errors.New("ClientTLS - caCertificateFile is empty")
+		return newFieldErr("caCertificateFile", isEmptyErr)
 	}
-	if (c.CertFile == "" && c.KeyFile != "") || (c.CertFile != "" && c.KeyFile == "") {
-		return errors.New("ClientTLS - certificateFile and keyFile must be set together")
+	if c.CertFile != "" && c.KeyFile == "" {
+		return newFieldErr("keyFile", errors.New("must be set as certificateFile is set"))
+	}
+	if c.KeyFile != "" && c.CertFile == "" {
+		return newFieldErr("certificateFile", errors.New("must be set as keyFile is set"))
 	}
 	if err := c.SetTLSConfig(); err != nil {
-		return fmt.Errorf("ClientTLS - %v", err)
+		return err
 	}
 	return nil
 }

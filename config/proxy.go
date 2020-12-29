@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -30,42 +29,42 @@ func (c Proxy) IsWS() bool {
 // IsValid returns nil if the Proxy is valid else returns error
 func (c Proxy) IsValid() error {
 	if c.Name == "" {
-		return errors.New("name is empty")
+		return newFieldErr("name", isEmptyErr)
 	}
 	if !c.IsWS() && !c.IsHttp() {
-		return namedValidationError{name: c.Name, errMsg: "invalid type. supports only http or ws"}
+		return newFieldErr("type", errors.New("must be http or ws"))
 	}
 	if c.ProxyAddr == "" {
-		return namedValidationError{name: c.Name, errMsg: "proxyAddress is empty"}
+		return newFieldErr("proxyAddress", isEmptyErr)
 	}
 	if c.UpstreamAddr == "" {
-		return namedValidationError{name: c.Name, errMsg: "upstreamAddress is empty"}
+		return newFieldErr("upstreamAddress", isEmptyErr)
 	}
 	if err := isValidUrl(c.ProxyAddr); err != nil {
-		return namedValidationError{name: c.Name, errMsg: fmt.Sprintf("invalid proxyAddress: %v", err)}
+		return newFieldErr("proxyAddress", err)
 	}
 	if err := isValidUrl(c.UpstreamAddr); err != nil {
-		return namedValidationError{name: c.Name, errMsg: fmt.Sprintf("invalid upstreamAddress: %v", err)}
+		return newFieldErr("upstreamAddress", err)
 	}
 	if len(c.ProxyPaths) == 0 {
-		return namedValidationError{name: c.Name, errMsg: "proxyPaths is empty"}
+		return newFieldErr("proxyPaths", isEmptyErr)
 	}
 	if c.ReadTimeout == 0 {
-		return namedValidationError{name: c.Name, errMsg: "readTimeout is zero"}
+		return newFieldErr("readTimeout", isNotGreaterThanZeroErr)
 	}
 	if c.WriteTimeout == 0 {
-		return namedValidationError{name: c.Name, errMsg: "writeTimeout is zero"}
+		return newFieldErr("writeTimeout", isNotGreaterThanZeroErr)
 	}
 
 	if c.ProxyServerTLSConfig != nil {
 		if err := c.ProxyServerTLSConfig.IsValid(); err != nil {
-			return err
+			return newFieldErr("proxyTlsConfig", err)
 		}
 	}
 
 	if c.ClientTLSConfig != nil {
 		if err := c.ClientTLSConfig.IsValid(); err != nil {
-			return err
+			return newFieldErr("clientTlsConfig", err)
 		}
 	}
 

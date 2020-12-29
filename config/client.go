@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -42,39 +41,39 @@ func (c *BlockchainClient) IsBesuClient() bool {
 
 func (c *BlockchainClient) IsValid() error {
 	if c.Consensus == "" {
-		return errors.New("consensus is empty")
-	}
-
-	if c.IsGoQuorumClient() && !c.IsRaft() && !c.IsClique() && !c.IsIstanbul() {
-		return errors.New("invalid consensus name. supports only raft or istanbul or clique")
-	}
-
-	if c.IsBesuClient() && !c.IsClique() {
-		return errors.New("invalid consensus name. supports only clique")
+		return newFieldErr("consensus", isEmptyErr)
 	}
 
 	if c.ClientType == "" {
-		return errors.New("clientType is empty")
+		return newFieldErr("clientType", isEmptyErr)
 	}
 	if !c.IsGoQuorumClient() && !c.IsBesuClient() {
-		return errors.New("invalid clientType. supports only goquorum or besu")
+		return newFieldErr("clientType", errors.New("must be goquorum or besu"))
 	}
 
-	if c.BcClntProcess == nil {
-		return errors.New("bcClntProcess is empty")
+	if c.IsGoQuorumClient() && !c.IsRaft() && !c.IsClique() && !c.IsIstanbul() {
+		return newFieldErr("consensus", errors.New("must be raft, istanbul, or clique"))
+	}
+
+	if c.IsBesuClient() && !c.IsClique() {
+		return newFieldErr("consensus", errors.New("must be clique"))
 	}
 
 	if c.BcClntRpcUrl == "" {
-		return errors.New("bcClntRpcUrl is empty")
+		return newFieldErr("rpcUrl", isEmptyErr)
+	}
+
+	if c.BcClntProcess == nil {
+		return newFieldErr("process", isEmptyErr)
 	}
 
 	if err := c.BcClntProcess.IsValid(); err != nil {
-		return fmt.Errorf("invalid bcClntProcess: %v", err)
+		return newFieldErr("process", err)
 	}
 
 	if c.BcClntTLSConfig != nil {
 		if err := c.BcClntTLSConfig.IsValid(); err != nil {
-			return err
+			return newFieldErr("tlsConfig", err)
 		}
 	}
 
@@ -82,24 +81,18 @@ func (c *BlockchainClient) IsValid() error {
 }
 
 func (c *PrivacyManager) IsValid() error {
-	if c.PrivManKey != "" && c.PrivManProcess == nil {
-		return errors.New("privManProcess details are empty")
+	if c.PrivManKey == "" {
+		return newFieldErr("publicKey", isEmptyErr)
 	}
-
-	if c.PrivManProcess != nil {
-
-		if c.PrivManKey == "" {
-			return errors.New("privManKey is empty")
-		}
-
-		if err := c.PrivManProcess.IsValid(); err != nil {
-			return fmt.Errorf("invalid privManProcess: %v", err)
-		}
+	if c.PrivManProcess == nil {
+		return newFieldErr("process", isEmptyErr)
 	}
-
+	if err := c.PrivManProcess.IsValid(); err != nil {
+		return newFieldErr("process", err)
+	}
 	if c.PrivManTLSConfig != nil {
 		if err := c.PrivManTLSConfig.IsValid(); err != nil {
-			return err
+			return newFieldErr("tlsConfig", err)
 		}
 	}
 

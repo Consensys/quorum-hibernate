@@ -1,10 +1,5 @@
 package config
 
-import (
-	"errors"
-	"fmt"
-)
-
 type RPCServer struct {
 	RpcAddr     string     `toml:"rpcAddress" json:"rpcAddress"`
 	RPCCorsList []string   `toml:"rpcCorsList" json:"rpcCorsList"`
@@ -14,14 +9,14 @@ type RPCServer struct {
 
 func (c RPCServer) IsValid() error {
 	if c.RpcAddr == "" {
-		return errors.New("rpcAddress is empty")
+		return newFieldErr("rpcAddress", isEmptyErr)
 	}
 	if err := isValidUrl(c.RpcAddr); err != nil {
-		return fmt.Errorf("invalid rpcAddress: %v", err)
+		return newFieldErr("rpcAddress", err)
 	}
 	if c.TLSConfig != nil {
 		if err := c.TLSConfig.IsValid(); err != nil {
-			return err
+			return newFieldErr("tlsConfig", err)
 		}
 	}
 	return nil

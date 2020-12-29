@@ -33,7 +33,7 @@ func main() {
 	log.Debug("main - config file", "path", configFile)
 	nodeConfig, err := readNodeConfigFromFile(configFile)
 	if err != nil {
-		log.Error("main - loading config file failed", "err", err)
+		log.Error("unable to load config", "err", err)
 		return
 	}
 	log.Debug("main - node config", "basic", nodeConfig.BasicConfig, "nms", nodeConfig.Peers)
@@ -97,18 +97,19 @@ func readNodeConfigFromFile(configFile string) (*config.Node, error) {
 		return nil, err
 	}
 
+	log.Debug("readNodeConfigFromFile - loading node manager config file")
 	nmConfig, err := nmReader.Read()
 	if err != nil {
-		log.Error("readNodeConfigFromFile - loading node config file failed", "configfile", configFile, "err", err)
 		return nil, err
 	}
-	log.Info("readNodeConfigFromFile - node config file read successfully")
 
+	log.Debug("readNodeConfigFromFile - validating node manager config file")
 	// validate config rules
 	if err = nmConfig.IsValid(); err != nil {
 		return nil, err
 	}
 
+	log.Debug("readNodeConfigFromFile - loading peers config file")
 	peersReader, err := config.NewPeersReader(nmConfig.PeersConfigFile)
 	if err != nil {
 		return nil, err
@@ -116,10 +117,9 @@ func readNodeConfigFromFile(configFile string) (*config.Node, error) {
 
 	peersConfig, err := peersReader.Read()
 	if err != nil {
-		log.Error("readNodeConfigFromFile - loading peers config failed", "err", err)
 		return nil, err
 	}
-	log.Info("readNodeConfigFromFile - peers config file read successfully")
+	log.Debug("readNodeConfigFromFile - validating peers config file")
 
 	if err := peersConfig.IsValid(); err != nil {
 		return nil, err

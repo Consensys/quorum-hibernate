@@ -1,16 +1,11 @@
 package config
 
-import (
-	"errors"
-	"fmt"
-)
-
 type PeerArr []*Peer
 
 func (a *PeerArr) IsValid() error {
-	for _, c := range *a {
+	for i, c := range *a {
 		if err := c.IsValid(); err != nil {
-			return err
+			return newArrFieldErr("peers", i, err)
 		}
 	}
 	return nil
@@ -30,17 +25,17 @@ type Peer struct {
 // IsValid returns nil if the Peer is valid else returns error
 func (c Peer) IsValid() error {
 	if c.Name == "" {
-		return errors.New("name is empty")
+		return newFieldErr("name", isEmptyErr)
 	}
 	if c.RpcUrl == "" {
-		return namedValidationError{name: c.Name, errMsg: "rpcUrl is empty"}
+		return newFieldErr("rpcUrl", isEmptyErr)
 	}
 	if err := isValidUrl(c.RpcUrl); err != nil {
-		return namedValidationError{name: c.Name, errMsg: fmt.Sprintf("invalid rpcUrl: %v", err)}
+		return newFieldErr("rpcUrl", err)
 	}
 	if c.TLSConfig != nil {
 		if err := c.TLSConfig.IsValid(); err != nil {
-			return err
+			return newFieldErr("tlsConfig", err)
 		}
 	}
 	return nil
