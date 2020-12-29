@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"io/ioutil"
 )
 
@@ -30,8 +31,10 @@ func (c *ServerTLS) IsValid() error {
 	if c.KeyFile == "" {
 		return errors.New("serverTLSConfig - key file is empty")
 	}
-	err := c.SetTLSConfig()
-	return err
+	if err := c.SetTLSConfig(); err != nil {
+		return fmt.Errorf("serverTLSConfig - %v", err)
+	}
+	return nil
 }
 
 func (c *ServerTLS) TLSConfig() (*tls.Config, error) {
@@ -87,8 +90,10 @@ func (c *ClientTLS) IsValid() error {
 	if (c.CertFile == "" && c.KeyFile != "") || (c.CertFile != "" && c.KeyFile == "") {
 		return errors.New("ClientTLS - certificateFile and keyFile must be set together")
 	}
-	err := c.SetTLSConfig()
-	return err
+	if err := c.SetTLSConfig(); err != nil {
+		return fmt.Errorf("ClientTLS - %v", err)
+	}
+	return nil
 }
 
 func (c *ClientTLS) TLSConfig() (*tls.Config, error) {
