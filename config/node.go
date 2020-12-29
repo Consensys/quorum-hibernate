@@ -60,16 +60,3 @@ func (c Node) IsConsensusValid(client *http.Client) error {
 	}
 	return nil
 }
-
-func (c Node) IsValid() error {
-	if c.BasicConfig == nil {
-		return errors.New("basicConfig is nil")
-	}
-	if err := c.BasicConfig.IsValid(); err != nil {
-		return fmt.Errorf("invalid basicConfig: %v", err)
-	}
-	if err := c.Peers.IsValid(); err != nil {
-		return fmt.Errorf("invalid nodeManagers config: %v", err)
-	}
-	return nil
-}
