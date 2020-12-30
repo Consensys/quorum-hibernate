@@ -45,10 +45,10 @@ func (c *BlockchainClient) IsValid() error {
 	}
 
 	if c.ClientType == "" {
-		return newFieldErr("clientType", isEmptyErr)
+		return newFieldErr("type", isEmptyErr)
 	}
 	if !c.IsGoQuorumClient() && !c.IsBesuClient() {
-		return newFieldErr("clientType", errors.New("must be goquorum or besu"))
+		return newFieldErr("type", errors.New("must be goquorum or besu"))
 	}
 
 	if c.IsGoQuorumClient() && !c.IsRaft() && !c.IsClique() && !c.IsIstanbul() {

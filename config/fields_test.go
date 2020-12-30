@@ -4,13 +4,18 @@ package config
 // These are used in tests to verify error messages match json/toml field names
 // to ensure error messages are not misleading
 const (
+	typeField                   = "type"
+	consensusField              = "consensus"
+	rpcUrlField                 = "rpcUrl"
+	tlsConfigField              = "tlsConfig"
+	processField                = "process"
+	publicKeyField              = "publicKey"
 	nameField                   = "name"
 	controlTypeField            = "controlType"
 	containerIdField            = "containerId"
 	stopCommandField            = "stopCommand"
 	startCommandField           = "startCommand"
 	upcheckConfigField          = "upcheckConfig"
-	typeField                   = "type"
 	proxyAddressField           = "proxyAddress"
 	upstreamAddressField        = "upstreamAddress"
 	proxyPathsField             = "proxyPaths"
@@ -22,7 +27,6 @@ const (
 	rpcAddressField             = "rpcAddress"
 	rpcCorsListField            = "rpcCorsList"
 	rpcvHostsField              = "rpcvHosts"
-	tlsConfigField              = "tlsConfig"
 	keyFileField                = "keyFile"
 	certificateFileField        = "certificateFile"
 	clientCaCertificateField    = "clientCaCertificateFile"

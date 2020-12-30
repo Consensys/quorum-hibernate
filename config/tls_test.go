@@ -159,6 +159,14 @@ func TestServerTLS_Load(t *testing.T) {
 	require.True(t, false, "implement me")
 }
 
+func TestClientTLS_IsValid_MinimumValid(t *testing.T) {
+	c := minimumValidClientTLS()
+
+	err := c.IsValid()
+
+	require.NoError(t, err)
+}
+
 func TestClientTLS_IsValid_CaCertificateFile(t *testing.T) {
 	c := minimumValidClientTLS()
 	c.CACertFile = ""

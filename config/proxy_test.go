@@ -286,7 +286,7 @@ func TestProxy_IsValid_ProxyTLSConfig(t *testing.T) {
 	require.EqualError(t, err, fmt.Sprintf("%v.%v %v", proxyTlsConfigField, certificateFileField, "is empty"))
 }
 
-func TestProxy_IsValid_clientTLSConfig(t *testing.T) {
+func TestProxy_IsValid_ClientTLSConfig(t *testing.T) {
 	c := minimumValidProxy()
 	c.ClientTLSConfig = &ClientTLS{}
 
