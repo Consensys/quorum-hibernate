@@ -172,7 +172,7 @@ upcheckConfig = { url = "http://localhost:9001/upcheck", method = "GET", body = 
 				InactivityTime:       60,
 				DisableStrictMode:    true,
 				Server: &RPCServer{
-					RpcAddr:     "localhost:8081",
+					RPCAddr:     "localhost:8081",
 					RPCCorsList: []string{"*"},
 					RPCVHosts:   []string{"*"},
 				},

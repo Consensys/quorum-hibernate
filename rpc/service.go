@@ -35,7 +35,7 @@ func NewRPCService(qn *node.NodeControl, config *config.RPCServer, backendErrorC
 	return &RPCService{
 		qn:          qn,
 		cors:        config.RPCCorsList,
-		httpAddress: config.RpcAddr,
+		httpAddress: config.RPCAddr,
 		errCh:       backendErrorChan,
 	}
 }
