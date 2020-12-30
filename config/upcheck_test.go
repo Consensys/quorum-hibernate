@@ -1,8 +1,19 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
+	"github.com/naoina/toml"
 	"github.com/stretchr/testify/require"
 	"testing"
+)
+
+const (
+	urlField        = "url"
+	returnTypeField = "returnType"
+	methodField     = "method"
+	bodyField       = "body"
+	expectedField   = "expected"
 )
 
 func minimumValidUpcheck() Upcheck {
@@ -13,6 +24,58 @@ func minimumValidUpcheck() Upcheck {
 		Body:       "",
 		Expected:   "status = up",
 	}
+}
+
+func TestUpcheck_Unmarshal_Json(t *testing.T) {
+	template := `
+{
+	"%v": "http://url",
+	"%v": "string",
+	"%v": "GET",
+	"%v": "some-body",
+	"%v": "status = up"
+}
+`
+	conf := fmt.Sprintf(template, urlField, returnTypeField, methodField, bodyField, expectedField)
+
+	want := Upcheck{
+		UpcheckUrl: "http://url",
+		ReturnType: "string",
+		Method:     "GET",
+		Body:       "some-body",
+		Expected:   "status = up",
+	}
+
+	var got Upcheck
+	err := json.Unmarshal([]byte(conf), &got)
+
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestUpcheck_Unmarshal_Toml(t *testing.T) {
+	template := `
+%v = "http://url"
+%v = "string"
+%v = "GET"
+%v = "some-body"
+%v = "status = up"
+`
+	conf := fmt.Sprintf(template, urlField, returnTypeField, methodField, bodyField, expectedField)
+
+	want := Upcheck{
+		UpcheckUrl: "http://url",
+		ReturnType: "string",
+		Method:     "GET",
+		Body:       "some-body",
+		Expected:   "status = up",
+	}
+
+	var got Upcheck
+	err := toml.Unmarshal([]byte(conf), &got)
+
+	require.NoError(t, err)
+	require.Equal(t, want, got)
 }
 
 func TestUpcheck_IsValid_MinimumValid(t *testing.T) {
@@ -31,7 +94,7 @@ func TestUpcheck_IsValid_Url(t *testing.T) {
 	err := c.IsValid()
 
 	require.IsType(t, &fieldErr{}, err)
-	require.EqualError(t, err, "url is empty")
+	require.EqualError(t, err, urlField+" is empty")
 }
 
 func TestUpcheck_IsValid_ReturnType(t *testing.T) {
@@ -41,12 +104,12 @@ func TestUpcheck_IsValid_ReturnType(t *testing.T) {
 		{
 			name:       "not set",
 			returnType: "",
-			wantErrMsg: "returnType must be rpcresult or string",
+			wantErrMsg: returnTypeField + " must be rpcresult or string",
 		},
 		{
 			name:       "not valid",
 			returnType: "notvalid",
-			wantErrMsg: "returnType must be rpcresult or string",
+			wantErrMsg: returnTypeField + " must be rpcresult or string",
 		},
 		{
 			name:       "rpcresult",
@@ -94,12 +157,12 @@ func TestUpcheck_IsValid_Method(t *testing.T) {
 		{
 			name:       "not set",
 			method:     "",
-			wantErrMsg: "method must be POST or GET",
+			wantErrMsg: methodField + " must be POST or GET",
 		},
 		{
 			name:       "not valid",
 			method:     "notvalid",
-			wantErrMsg: "method must be POST or GET",
+			wantErrMsg: methodField + " must be POST or GET",
 		},
 		{
 			name:       "GET",
@@ -148,7 +211,7 @@ func TestUpcheck_IsValid_Expected(t *testing.T) {
 			name:       "not set and string result",
 			returnType: "string",
 			expected:   "",
-			wantErrMsg: "expected must be set as returnType is string",
+			wantErrMsg: expectedField + " must be set as returnType is string",
 		},
 		{
 			name:       "set and string result",

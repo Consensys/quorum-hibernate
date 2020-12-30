@@ -1,8 +1,19 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
+	"github.com/naoina/toml"
 	"github.com/stretchr/testify/require"
 	"testing"
+)
+
+const (
+	keyFileField             = "keyFile"
+	certificateFileField     = "certificateFile"
+	clientCaCertificateField = "clientCaCertificateFile"
+	caCertificateFileField   = "caCertificateFile"
+	insecureSkipVerifyField  = "insecureSkipVerify"
 )
 
 func minimumValidServerTLS() ServerTLS {
@@ -22,6 +33,98 @@ func minimumValidClientTLS() ClientTLS {
 	}
 }
 
+func TestServerTLS_Unmarshal_Json(t *testing.T) {
+	template := `
+{
+	"%v": "/path/to/key.pem",
+	"%v": "/path/to/cert.pem",
+	"%v": "/path/to/ca.pem"
+}
+`
+	conf := fmt.Sprintf(template, keyFileField, certificateFileField, clientCaCertificateField)
+
+	want := ServerTLS{
+		KeyFile:          "/path/to/key.pem",
+		CertFile:         "/path/to/cert.pem",
+		ClientCaCertFile: "/path/to/ca.pem",
+	}
+
+	var got ServerTLS
+	err := json.Unmarshal([]byte(conf), &got)
+
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestServerTLS_Unmarshal_Toml(t *testing.T) {
+	template := `
+	%v = "/path/to/key.pem"
+	%v = "/path/to/cert.pem"
+	%v = "/path/to/ca.pem"
+`
+	conf := fmt.Sprintf(template, keyFileField, certificateFileField, clientCaCertificateField)
+
+	want := ServerTLS{
+		KeyFile:          "/path/to/key.pem",
+		CertFile:         "/path/to/cert.pem",
+		ClientCaCertFile: "/path/to/ca.pem",
+	}
+
+	var got ServerTLS
+	err := toml.Unmarshal([]byte(conf), &got)
+
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestClientTLS_Unmarshal_Json(t *testing.T) {
+	template := `
+{
+	"%v": "/path/to/key.pem",
+	"%v": "/path/to/cert.pem",
+	"%v": "/path/to/ca.pem",
+	"%v": true
+}
+`
+	conf := fmt.Sprintf(template, keyFileField, certificateFileField, caCertificateFileField, insecureSkipVerifyField)
+
+	want := ClientTLS{
+		KeyFile:            "/path/to/key.pem",
+		CertFile:           "/path/to/cert.pem",
+		CACertFile:         "/path/to/ca.pem",
+		InsecureSkipVerify: true,
+	}
+
+	var got ClientTLS
+	err := json.Unmarshal([]byte(conf), &got)
+
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestClientTLS_Unmarshal_Toml(t *testing.T) {
+	template := `
+%v = "/path/to/key.pem"
+%v = "/path/to/cert.pem"
+%v = "/path/to/ca.pem"
+%v = true
+`
+	conf := fmt.Sprintf(template, keyFileField, certificateFileField, caCertificateFileField, insecureSkipVerifyField)
+
+	want := ClientTLS{
+		KeyFile:            "/path/to/key.pem",
+		CertFile:           "/path/to/cert.pem",
+		CACertFile:         "/path/to/ca.pem",
+		InsecureSkipVerify: true,
+	}
+
+	var got ClientTLS
+	err := toml.Unmarshal([]byte(conf), &got)
+
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
 func TestServerTLS_IsValid_MinimumValid(t *testing.T) {
 	c := minimumValidServerTLS()
 
@@ -37,7 +140,7 @@ func TestServerTLS_IsValid_CertificateFile(t *testing.T) {
 	err := c.IsValid()
 
 	require.IsType(t, &fieldErr{}, err)
-	require.EqualError(t, err, "certificateFile is empty")
+	require.EqualError(t, err, certificateFileField+" is empty")
 }
 
 func TestServerTLS_IsValid_KeyFile(t *testing.T) {
@@ -47,7 +150,7 @@ func TestServerTLS_IsValid_KeyFile(t *testing.T) {
 	err := c.IsValid()
 
 	require.IsType(t, &fieldErr{}, err)
-	require.EqualError(t, err, "keyFile is empty")
+	require.EqualError(t, err, keyFileField+" is empty")
 }
 
 func TestServerTLS_Load(t *testing.T) {
@@ -61,7 +164,7 @@ func TestClientTLS_IsValid_CaCertificateFile(t *testing.T) {
 	err := c.IsValid()
 
 	require.IsType(t, &fieldErr{}, err)
-	require.EqualError(t, err, "caCertificateFile is empty")
+	require.EqualError(t, err, caCertificateFileField+" is empty")
 }
 
 func TestClientTLS_IsValid_CertificateAndKeyFile(t *testing.T) {
@@ -78,13 +181,13 @@ func TestClientTLS_IsValid_CertificateAndKeyFile(t *testing.T) {
 			name:       "only keyFile set",
 			certFile:   "",
 			keyFile:    "/path/to/key.pem",
-			wantErrMsg: "certificateFile must be set as keyFile is set",
+			wantErrMsg: fmt.Sprintf("%v must be set as %v is set", certificateFileField, keyFileField),
 		},
 		{
 			name:       "only certificateFile set",
 			certFile:   "/path/to/cert.pem",
 			keyFile:    "",
-			wantErrMsg: "keyFile must be set as certificateFile is set",
+			wantErrMsg: fmt.Sprintf("%v must be set as %v is set", keyFileField, certificateFileField),
 		},
 	}
 
