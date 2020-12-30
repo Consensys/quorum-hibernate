@@ -11,7 +11,7 @@ type Process struct {
 	ContainerId  string   `toml:"containerId" json:"containerId"`     // docker container id. required if controlType is docker
 	StopCommand  []string `toml:"stopCommand" json:"stopCommand"`     // stop command. required if controlType is shell
 	StartCommand []string `toml:"startCommand" json:"startCommand"`   // start command. required if controlType is shell
-	UpcheckCfg   Upcheck  `toml:"upcheckConfig" json:"upcheckConfig"` // Upcheck config
+	UpcheckCfg   *Upcheck `toml:"upcheckConfig" json:"upcheckConfig"` // Upcheck config
 }
 
 func (c Process) IsShell() bool {
@@ -32,19 +32,25 @@ func (c Process) IsPrivacyManager() bool {
 
 func (c Process) IsValid() error {
 	if !c.IsDocker() && !c.IsShell() {
-		return errors.New("invalid controlType. supports only shell or docker")
+		return newFieldErr("controlType", errors.New("must be shell or docker"))
 	}
 	if !c.IsBcClient() && !c.IsPrivacyManager() {
-		return errors.New("invalid name. supports only bcclnt or privman")
+		return newFieldErr("name", errors.New("must be bcclnt or privman"))
 	}
 	if c.IsDocker() && c.ContainerId == "" {
-		return errors.New("containerId is empty for docker controlType")
+		return newFieldErr("containerId", errors.New("must be set as controlType is docker"))
 	}
-	if c.IsShell() && (len(c.StartCommand) == 0 || len(c.StopCommand) == 0) {
-		return errors.New("startCommand or stopCommand is empty for shell controlType")
+	if c.IsShell() && len(c.StartCommand) == 0 {
+		return newFieldErr("startCommand", errors.New("must be set as controlType is shell"))
+	}
+	if c.IsShell() && len(c.StopCommand) == 0 {
+		return newFieldErr("stopCommand", errors.New("must be set as controlType is shell"))
+	}
+	if c.UpcheckCfg == nil {
+		return newFieldErr("upcheckConfig", isEmptyErr)
 	}
 	if err := c.UpcheckCfg.IsValid(); err != nil {
-		return err
+		return newFieldErr("upcheckConfig", err)
 	}
 	return nil
 }

@@ -7,7 +7,6 @@ import (
 	"syscall"
 
 	"github.com/ConsenSysQuorum/node-manager/config"
-
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
 	"github.com/ConsenSysQuorum/node-manager/proxy"
@@ -34,7 +33,7 @@ func main() {
 	log.Debug("main - config file", "path", configFile)
 	nodeConfig, err := readNodeConfigFromFile(configFile)
 	if err != nil {
-		log.Error("main - loading config file failed", "err", err)
+		log.Error("unable to load config", "err", err)
 		return
 	}
 	log.Debug("main - node config", "basic", nodeConfig.BasicConfig, "nms", nodeConfig.Peers)
@@ -46,8 +45,8 @@ func main() {
 	waitForShutdown(rpcBackendErrCh, proxyBackendErrCh)
 }
 
-func Start(nodeConfig config.Node, err error, proxyBackendErrCh chan error, rpcBackendErrCh chan error) bool {
-	nmApp.node = node.NewNodeControl(&nodeConfig)
+func Start(nodeConfig *config.Node, err error, proxyBackendErrCh chan error, rpcBackendErrCh chan error) bool {
+	nmApp.node = node.NewNodeControl(nodeConfig)
 	if nmApp.proxyServers, err = proxy.MakeProxyServices(nmApp.node, proxyBackendErrCh); err != nil {
 		log.Error("Start - creating proxies failed", "err", err)
 		return false
@@ -92,41 +91,41 @@ func waitForShutdown(rpcBackendErrCh chan error, proxyBackendErrCh chan error) {
 	}
 }
 
-func readNodeConfigFromFile(configFile string) (config.Node, error) {
+func readNodeConfigFromFile(configFile string) (*config.Node, error) {
 	nmReader, err := config.NewNodeManagerReader(configFile)
 	if err != nil {
-		return config.Node{}, err
+		return nil, err
 	}
 
+	log.Debug("readNodeConfigFromFile - loading node manager config file")
 	nmConfig, err := nmReader.Read()
 	if err != nil {
-		log.Error("readNodeConfigFromFile - loading node config file failed", "configfile", configFile, "err", err)
-		return config.Node{}, err
+		return nil, err
 	}
-	log.Info("readNodeConfigFromFile - node config file read successfully")
 
+	log.Debug("readNodeConfigFromFile - validating node manager config file")
 	// validate config rules
 	if err = nmConfig.IsValid(); err != nil {
-		return config.Node{}, err
+		return nil, err
 	}
 
+	log.Debug("readNodeConfigFromFile - loading peers config file")
 	peersReader, err := config.NewPeersReader(nmConfig.PeersConfigFile)
 	if err != nil {
-		return config.Node{}, err
+		return nil, err
 	}
 
 	peersConfig, err := peersReader.Read()
 	if err != nil {
-		log.Error("readNodeConfigFromFile - loading peers config failed", "err", err)
-		return config.Node{}, err
+		return nil, err
 	}
-	log.Info("readNodeConfigFromFile - peers config file read successfully")
+	log.Debug("readNodeConfigFromFile - validating peers config file")
 
 	if err := peersConfig.IsValid(); err != nil {
-		return config.Node{}, err
+		return nil, err
 	}
 
-	return config.Node{
+	return &config.Node{
 		BasicConfig: &nmConfig,
 		Peers:       peersConfig,
 	}, nil

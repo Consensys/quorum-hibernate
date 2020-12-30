@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 )
 
 type Basic struct {
@@ -44,54 +43,54 @@ func (c Basic) IsBesuClient() bool {
 
 func (c Basic) IsValid() error {
 	if c.Name == "" {
-		return errors.New("name is empty")
+		return newFieldErr("name", isEmptyErr)
 	}
 
 	if c.PeersConfigFile == "" {
-		return errors.New("peersConfigFile is empty")
+		return newFieldErr("peersConfigFile", isEmptyErr)
 	}
 
 	if c.UpchkPollingInterval <= 0 {
-		return errors.New("upcheckPollingInterval must be greater than zero")
+		return newFieldErr("upcheckPollingInterval", isNotGreaterThanZeroErr)
 	}
 
 	if c.InactivityTime < 60 {
-		return errors.New("inactivityTime must be greater than or equal to 60 (seconds)")
+		return newFieldErr("inactivityTime", errors.New("must be >= 60"))
 	}
 
 	if c.IsResyncTimerSet() && c.ResyncTime < c.InactivityTime {
-		return errors.New("resyncTime must be reasonably greater than the inactivityTime")
+		return newFieldErr("resyncTime", errors.New("must be > inactivityTime"))
 	}
 
 	if c.Server == nil {
-		return errors.New("server is empty")
+		return newFieldErr("server", isEmptyErr)
 	}
 
 	if c.BlockchainClient == nil {
-		return errors.New("blockchainClient is empty")
+		return newFieldErr("blockchainClient", isEmptyErr)
 	}
 
 	if err := c.BlockchainClient.IsValid(); err != nil {
-		return fmt.Errorf("invalid blockchainClient: %v", err)
+		return newFieldErr("blockchainClient", err)
 	}
 
 	if c.PrivacyManager != nil {
 		if err := c.PrivacyManager.IsValid(); err != nil {
-			return fmt.Errorf("invalid privManProcess: %v", err)
+			return newFieldErr("privacyManager", err)
 		}
 	}
 
 	if err := c.Server.IsValid(); err != nil {
-		return err
+		return newFieldErr("server", err)
 	}
 
 	if len(c.Proxies) == 0 {
-		return errors.New("proxies is empty")
+		return newFieldErr("proxies", isEmptyErr)
 	}
 
-	for _, n := range c.Proxies {
+	for i, n := range c.Proxies {
 		if err := n.IsValid(); err != nil {
-			return fmt.Errorf("invalid proxies config: %v", err)
+			return newArrFieldErr("proxies", i, err)
 		}
 	}
 

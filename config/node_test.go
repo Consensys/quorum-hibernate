@@ -76,7 +76,7 @@ name = "bcclnt"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"]
-upcheckConfig = { upcheckUrl = "http://localhost:22000", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
+upcheckConfig = { url = "http://localhost:22000", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
 
 [privacyManager]
 publicKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8="
@@ -86,7 +86,7 @@ name = "privman"
 controlType = "shell"
 stopCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"]
 startCommand = ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"]
-upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", body = "", returnType = "string", expected = "I'm up!"}
+upcheckConfig = { url = "http://localhost:9001/upcheck", method = "GET", body = "", returnType = "string", expected = "I'm up!"}
 `,
 		},
 		{
@@ -119,7 +119,7 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 			"stopCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"],
 			"startCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"],
 			"upcheckConfig": { 
-				"upcheckUrl": "http://localhost:22000", 
+				"url": "http://localhost:22000", 
 				"method": "POST", 
 				"body": "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}", 
 				"returnType": "rpcresult"
@@ -134,7 +134,7 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 			"stopCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"],
 			"startCommand": ["bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"],
 			"upcheckConfig": { 
-				"upcheckUrl": "http://localhost:9001/upcheck", 
+				"url": "http://localhost:9001/upcheck", 
 				"method": "GET", 
 				"body": "",
 				"returnType": "string", 
@@ -187,7 +187,7 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 						ContainerId:  "",
 						StopCommand:  []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopNode.sh", "22000"},
 						StartCommand: []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startNode.sh", "1"},
-						UpcheckCfg: Upcheck{
+						UpcheckCfg: &Upcheck{
 							UpcheckUrl: "http://localhost:22000",
 							Method:     "POST",
 							Body:       "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",
@@ -204,7 +204,7 @@ upcheckConfig = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", 
 						ContainerId:  "",
 						StopCommand:  []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/stopTessera.sh", "2"},
 						StartCommand: []string{"bash", "/Users/maniam/tmp/quorum-examples/examples/7nodes/startTessera.sh", "2"},
-						UpcheckCfg: Upcheck{
+						UpcheckCfg: &Upcheck{
 							UpcheckUrl: "http://localhost:9001/upcheck",
 							Method:     "GET",
 							Body:       "",
