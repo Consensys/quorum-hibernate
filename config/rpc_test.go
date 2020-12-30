@@ -8,13 +8,6 @@ import (
 	"testing"
 )
 
-const (
-	rpcAddressField  = "rpcAddress"
-	rpcCorsListField = "rpcCorsList"
-	rpcvHostsField   = "rpcvHosts"
-	tlsConfigField   = "tlsConfig"
-)
-
 func minimumValidRPCServer() RPCServer {
 	return RPCServer{
 		RPCAddr:     "http://url",

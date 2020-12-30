@@ -8,14 +8,6 @@ import (
 	"testing"
 )
 
-const (
-	urlField        = "url"
-	returnTypeField = "returnType"
-	methodField     = "method"
-	bodyField       = "body"
-	expectedField   = "expected"
-)
-
 func minimumValidUpcheck() Upcheck {
 	return Upcheck{
 		UpcheckUrl: "http://url",

@@ -8,14 +8,6 @@ import (
 	"testing"
 )
 
-const (
-	keyFileField             = "keyFile"
-	certificateFileField     = "certificateFile"
-	clientCaCertificateField = "clientCaCertificateFile"
-	caCertificateFileField   = "caCertificateFile"
-	insecureSkipVerifyField  = "insecureSkipVerify"
-)
-
 func minimumValidServerTLS() ServerTLS {
 	return ServerTLS{
 		KeyFile:          "/path/to/key.pem",

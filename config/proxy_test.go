@@ -8,19 +8,6 @@ import (
 	"testing"
 )
 
-const (
-	nameField                   = "name"
-	typeField                   = "type"
-	proxyAddressField           = "proxyAddress"
-	upstreamAddressField        = "upstreamAddress"
-	proxyPathsField             = "proxyPaths"
-	ignorePathsForActivityField = "ignorePathsForActivity"
-	readTimeoutField            = "readTimeout"
-	writeTimeoutField           = "writeTimeout"
-	proxyTlsConfigField         = "proxyTlsConfig"
-	clientTlsConfigField        = "clientTlsConfig"
-)
-
 func minimumValidProxy() Proxy {
 	return Proxy{
 		Name:                   "myproxy",
