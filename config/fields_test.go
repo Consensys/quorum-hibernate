@@ -46,4 +46,6 @@ const (
 	methodField                 = "method"
 	bodyField                   = "body"
 	expectedField               = "expected"
+	peersField                  = "peers"
+	privacyManagerKeyField      = "privacyManagerKey"
 )
