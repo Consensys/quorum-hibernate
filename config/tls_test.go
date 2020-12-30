@@ -33,96 +33,106 @@ func minimumValidClientTLS() ClientTLS {
 	}
 }
 
-func TestServerTLS_Unmarshal_Json(t *testing.T) {
-	template := `
+func TestServerTLS_Unmarshal(t *testing.T) {
+	tests := []struct {
+		name, configTemplate string
+	}{
+		{
+			name: "json",
+			configTemplate: `
 {
 	"%v": "/path/to/key.pem",
 	"%v": "/path/to/cert.pem",
 	"%v": "/path/to/ca.pem"
-}
-`
-	conf := fmt.Sprintf(template, keyFileField, certificateFileField, clientCaCertificateField)
-
-	want := ServerTLS{
-		KeyFile:          "/path/to/key.pem",
-		CertFile:         "/path/to/cert.pem",
-		ClientCaCertFile: "/path/to/ca.pem",
+}`,
+		},
+		{
+			name: "toml",
+			configTemplate: `
+%v = "/path/to/key.pem"
+%v = "/path/to/cert.pem"
+%v = "/path/to/ca.pem"`,
+		},
 	}
 
-	var got ServerTLS
-	err := json.Unmarshal([]byte(conf), &got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conf := fmt.Sprintf(tt.configTemplate, keyFileField, certificateFileField, clientCaCertificateField)
 
-	require.NoError(t, err)
-	require.Equal(t, want, got)
-}
+			want := ServerTLS{
+				KeyFile:          "/path/to/key.pem",
+				CertFile:         "/path/to/cert.pem",
+				ClientCaCertFile: "/path/to/ca.pem",
+			}
 
-func TestServerTLS_Unmarshal_Toml(t *testing.T) {
-	template := `
-	%v = "/path/to/key.pem"
-	%v = "/path/to/cert.pem"
-	%v = "/path/to/ca.pem"
-`
-	conf := fmt.Sprintf(template, keyFileField, certificateFileField, clientCaCertificateField)
+			var (
+				got ServerTLS
+				err error
+			)
 
-	want := ServerTLS{
-		KeyFile:          "/path/to/key.pem",
-		CertFile:         "/path/to/cert.pem",
-		ClientCaCertFile: "/path/to/ca.pem",
+			if tt.name == "json" {
+				err = json.Unmarshal([]byte(conf), &got)
+			} else if tt.name == "toml" {
+				err = toml.Unmarshal([]byte(conf), &got)
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, want, got)
+		})
 	}
-
-	var got ServerTLS
-	err := toml.Unmarshal([]byte(conf), &got)
-
-	require.NoError(t, err)
-	require.Equal(t, want, got)
 }
 
-func TestClientTLS_Unmarshal_Json(t *testing.T) {
-	template := `
+func TestClientTLS_Unmarshal(t *testing.T) {
+	tests := []struct {
+		name, configTemplate string
+	}{
+		{
+			name: "json",
+			configTemplate: `
 {
 	"%v": "/path/to/key.pem",
 	"%v": "/path/to/cert.pem",
 	"%v": "/path/to/ca.pem",
 	"%v": true
-}
-`
-	conf := fmt.Sprintf(template, keyFileField, certificateFileField, caCertificateFileField, insecureSkipVerifyField)
-
-	want := ClientTLS{
-		KeyFile:            "/path/to/key.pem",
-		CertFile:           "/path/to/cert.pem",
-		CACertFile:         "/path/to/ca.pem",
-		InsecureSkipVerify: true,
-	}
-
-	var got ClientTLS
-	err := json.Unmarshal([]byte(conf), &got)
-
-	require.NoError(t, err)
-	require.Equal(t, want, got)
-}
-
-func TestClientTLS_Unmarshal_Toml(t *testing.T) {
-	template := `
+}`,
+		},
+		{
+			name: "toml",
+			configTemplate: `
 %v = "/path/to/key.pem"
 %v = "/path/to/cert.pem"
 %v = "/path/to/ca.pem"
-%v = true
-`
-	conf := fmt.Sprintf(template, keyFileField, certificateFileField, caCertificateFileField, insecureSkipVerifyField)
-
-	want := ClientTLS{
-		KeyFile:            "/path/to/key.pem",
-		CertFile:           "/path/to/cert.pem",
-		CACertFile:         "/path/to/ca.pem",
-		InsecureSkipVerify: true,
+%v = true`,
+		},
 	}
 
-	var got ClientTLS
-	err := toml.Unmarshal([]byte(conf), &got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 
-	require.NoError(t, err)
-	require.Equal(t, want, got)
+			conf := fmt.Sprintf(tt.configTemplate, keyFileField, certificateFileField, caCertificateFileField, insecureSkipVerifyField)
+
+			want := ClientTLS{
+				KeyFile:            "/path/to/key.pem",
+				CertFile:           "/path/to/cert.pem",
+				CACertFile:         "/path/to/ca.pem",
+				InsecureSkipVerify: true,
+			}
+
+			var (
+				got ClientTLS
+				err error
+			)
+
+			if tt.name == "json" {
+				err = json.Unmarshal([]byte(conf), &got)
+			} else if tt.name == "toml" {
+				err = toml.Unmarshal([]byte(conf), &got)
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, want, got)
+		})
+	}
 }
 
 func TestServerTLS_IsValid_MinimumValid(t *testing.T) {

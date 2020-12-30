@@ -26,56 +26,59 @@ func minimumValidUpcheck() Upcheck {
 	}
 }
 
-func TestUpcheck_Unmarshal_Json(t *testing.T) {
-	template := `
+func TestUpcheck_Unmarshal(t *testing.T) {
+	tests := []struct {
+		name, configTemplate string
+	}{
+		{
+			name: "json",
+			configTemplate: `
 {
 	"%v": "http://url",
 	"%v": "string",
 	"%v": "GET",
 	"%v": "some-body",
 	"%v": "status = up"
-}
-`
-	conf := fmt.Sprintf(template, urlField, returnTypeField, methodField, bodyField, expectedField)
-
-	want := Upcheck{
-		UpcheckUrl: "http://url",
-		ReturnType: "string",
-		Method:     "GET",
-		Body:       "some-body",
-		Expected:   "status = up",
-	}
-
-	var got Upcheck
-	err := json.Unmarshal([]byte(conf), &got)
-
-	require.NoError(t, err)
-	require.Equal(t, want, got)
-}
-
-func TestUpcheck_Unmarshal_Toml(t *testing.T) {
-	template := `
+}`,
+		},
+		{
+			name: "toml",
+			configTemplate: `
 %v = "http://url"
 %v = "string"
 %v = "GET"
 %v = "some-body"
-%v = "status = up"
-`
-	conf := fmt.Sprintf(template, urlField, returnTypeField, methodField, bodyField, expectedField)
-
-	want := Upcheck{
-		UpcheckUrl: "http://url",
-		ReturnType: "string",
-		Method:     "GET",
-		Body:       "some-body",
-		Expected:   "status = up",
+%v = "status = up"`,
+		},
 	}
 
-	var got Upcheck
-	err := toml.Unmarshal([]byte(conf), &got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conf := fmt.Sprintf(tt.configTemplate, urlField, returnTypeField, methodField, bodyField, expectedField)
 
-	require.NoError(t, err)
-	require.Equal(t, want, got)
+			want := Upcheck{
+				UpcheckUrl: "http://url",
+				ReturnType: "string",
+				Method:     "GET",
+				Body:       "some-body",
+				Expected:   "status = up",
+			}
+
+			var (
+				got Upcheck
+				err error
+			)
+
+			if tt.name == "json" {
+				err = json.Unmarshal([]byte(conf), &got)
+			} else if tt.name == "toml" {
+				err = toml.Unmarshal([]byte(conf), &got)
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, want, got)
+		})
+	}
 }
 
 func TestUpcheck_IsValid_MinimumValid(t *testing.T) {

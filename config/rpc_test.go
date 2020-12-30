@@ -20,55 +20,60 @@ func minimumValidRPCServer() RPCServer {
 		RPCAddr:     "http://url",
 		RPCCorsList: nil,
 		RPCVHosts:   nil,
+		TLSConfig:   nil,
 	}
 }
 
-func TestRPCServer_Unmarshal_Json(t *testing.T) {
-	template := `
+func TestRPCServer_Unmarshal(t *testing.T) {
+	tests := []struct {
+		name, configTemplate string
+	}{
+		{
+			name: "json",
+			configTemplate: `
 {
 	"%v": "http://url",
 	"%v": ["http://other"],
 	"%v": ["http://another"],
 	"%v": {}
-}
-`
-	conf := fmt.Sprintf(template, rpcAddressField, rpcCorsListField, rpcvHostsField, tlsConfigField)
-
-	want := RPCServer{
-		RPCAddr:     "http://url",
-		RPCCorsList: []string{"http://other"},
-		RPCVHosts:   []string{"http://another"},
-		TLSConfig:   &ServerTLS{},
+}`,
+		},
+		{
+			name: "toml",
+			configTemplate: `
+%v = "http://url"
+%v = ["http://other"]
+%v = ["http://another"]
+%v = {}`,
+		},
 	}
 
-	var got RPCServer
-	err := json.Unmarshal([]byte(conf), &got)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conf := fmt.Sprintf(tt.configTemplate, rpcAddressField, rpcCorsListField, rpcvHostsField, tlsConfigField)
 
-	require.NoError(t, err)
-	require.Equal(t, want, got)
-}
+			want := RPCServer{
+				RPCAddr:     "http://url",
+				RPCCorsList: []string{"http://other"},
+				RPCVHosts:   []string{"http://another"},
+				TLSConfig:   &ServerTLS{},
+			}
 
-func TestRPCServer_Unmarshal_Toml(t *testing.T) {
-	template := `
-	%v = "http://url"
-	%v = ["http://other"]
-	%v = ["http://another"]
-	%v = {}
-`
-	conf := fmt.Sprintf(template, rpcAddressField, rpcCorsListField, rpcvHostsField, tlsConfigField)
+			var (
+				got RPCServer
+				err error
+			)
 
-	want := RPCServer{
-		RPCAddr:     "http://url",
-		RPCCorsList: []string{"http://other"},
-		RPCVHosts:   []string{"http://another"},
-		TLSConfig:   &ServerTLS{},
+			if tt.name == "json" {
+				err = json.Unmarshal([]byte(conf), &got)
+			} else if tt.name == "toml" {
+				err = toml.Unmarshal([]byte(conf), &got)
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, want, got)
+		})
 	}
-
-	var got RPCServer
-	err := toml.Unmarshal([]byte(conf), &got)
-
-	require.NoError(t, err)
-	require.Equal(t, want, got)
 }
 
 func TestRPCServer_IsValid_MinimumValid(t *testing.T) {
@@ -106,4 +111,14 @@ func TestRPCServer_IsValid_RPCAddress(t *testing.T) {
 			require.EqualError(t, err, tt.wantErr)
 		})
 	}
+}
+
+func TestRPCServer_IsValid_TLSConfig(t *testing.T) {
+	c := minimumValidRPCServer()
+	c.TLSConfig = &ServerTLS{}
+
+	err := c.IsValid()
+
+	require.IsType(t, &fieldErr{}, err)
+	require.EqualError(t, err, fmt.Sprintf("%v.%v %v", tlsConfigField, certificateFileField, "is empty"))
 }
