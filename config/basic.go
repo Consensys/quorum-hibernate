@@ -59,11 +59,15 @@ func (c Basic) IsValid() error {
 	}
 
 	if c.IsResyncTimerSet() && c.ResyncTime < c.InactivityTime {
-		return newFieldErr("resyncTime", errors.New("must be > inactivityTime"))
+		return newFieldErr("resyncTime", errors.New("must be >= inactivityTime"))
 	}
 
 	if c.Server == nil {
 		return newFieldErr("server", isEmptyErr)
+	}
+
+	if err := c.Server.IsValid(); err != nil {
+		return newFieldErr("server", err)
 	}
 
 	if c.BlockchainClient == nil {
@@ -78,10 +82,6 @@ func (c Basic) IsValid() error {
 		if err := c.PrivacyManager.IsValid(); err != nil {
 			return newFieldErr("privacyManager", err)
 		}
-	}
-
-	if err := c.Server.IsValid(); err != nil {
-		return newFieldErr("server", err)
 	}
 
 	if len(c.Proxies) == 0 {

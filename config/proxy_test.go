@@ -295,3 +295,57 @@ func TestProxy_IsValid_ClientTLSConfig(t *testing.T) {
 	require.IsType(t, &fieldErr{}, err)
 	require.EqualError(t, err, fmt.Sprintf("%v.%v %v", clientTlsConfigField, caCertificateFileField, "is empty"))
 }
+
+func TestProxy_IsHttp(t *testing.T) {
+	tests := []struct {
+		name, proxyType string
+		want            bool
+	}{
+		{
+			name:      "not http",
+			proxyType: "ws",
+			want:      false,
+		},
+		{
+			name:      "is http",
+			proxyType: "http",
+			want:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := Proxy{
+				Type: tt.proxyType,
+			}
+			require.Equal(t, tt.want, c.IsHttp())
+		})
+	}
+}
+
+func TestProxy_IsWs(t *testing.T) {
+	tests := []struct {
+		name, proxyType string
+		want            bool
+	}{
+		{
+			name:      "not ws",
+			proxyType: "http",
+			want:      false,
+		},
+		{
+			name:      "is ws",
+			proxyType: "ws",
+			want:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := Proxy{
+				Type: tt.proxyType,
+			}
+			require.Equal(t, tt.want, c.IsWS())
+		})
+	}
+}

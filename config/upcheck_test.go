@@ -245,3 +245,57 @@ func TestUpcheck_IsValid_Expected(t *testing.T) {
 		})
 	}
 }
+
+func TestUpcheck_IsRpcResult(t *testing.T) {
+	tests := []struct {
+		name, returnType string
+		want             bool
+	}{
+		{
+			name:       "not rpcresult",
+			returnType: "string",
+			want:       false,
+		},
+		{
+			name:       "is rpcresult",
+			returnType: "rpcresult",
+			want:       true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := Upcheck{
+				ReturnType: tt.returnType,
+			}
+			require.Equal(t, tt.want, c.IsRpcResult())
+		})
+	}
+}
+
+func TestUpcheck_IsStringResult(t *testing.T) {
+	tests := []struct {
+		name, returnType string
+		want             bool
+	}{
+		{
+			name:       "not string",
+			returnType: "rpcresult",
+			want:       false,
+		},
+		{
+			name:       "is string",
+			returnType: "string",
+			want:       true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := Upcheck{
+				ReturnType: tt.returnType,
+			}
+			require.Equal(t, tt.want, c.IsStringResult())
+		})
+	}
+}

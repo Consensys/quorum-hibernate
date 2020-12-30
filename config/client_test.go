@@ -329,6 +329,141 @@ func TestBlockchainClient_IsValid_TLSConfig(t *testing.T) {
 	require.EqualError(t, err, fmt.Sprintf("%v.%v %v", tlsConfigField, caCertificateFileField, "is empty"))
 }
 
+func TestBlockchainClient_IsRaft(t *testing.T) {
+	tests := []struct {
+		name, consensus string
+		want            bool
+	}{
+		{
+			name:      "not raft",
+			consensus: "istanbul",
+			want:      false,
+		},
+		{
+			name:      "raft",
+			consensus: "raft",
+			want:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := BlockchainClient{
+				Consensus: tt.consensus,
+			}
+			require.Equal(t, tt.want, c.IsRaft())
+		})
+	}
+}
+
+func TestBlockchainClient_IsIstanbul(t *testing.T) {
+	tests := []struct {
+		name, consensus string
+		want            bool
+	}{
+		{
+			name:      "not istanbul",
+			consensus: "raft",
+			want:      false,
+		},
+		{
+			name:      "istanbul",
+			consensus: "istanbul",
+			want:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := BlockchainClient{
+				Consensus: tt.consensus,
+			}
+			require.Equal(t, tt.want, c.IsIstanbul())
+		})
+	}
+}
+
+func TestBlockchainClient_IsClique(t *testing.T) {
+	tests := []struct {
+		name, consensus string
+		want            bool
+	}{
+		{
+			name:      "not clique",
+			consensus: "istanbul",
+			want:      false,
+		},
+		{
+			name:      "clique",
+			consensus: "clique",
+			want:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := BlockchainClient{
+				Consensus: tt.consensus,
+			}
+			require.Equal(t, tt.want, c.IsClique())
+		})
+	}
+}
+
+func TestBlockchainClient_IsGoQuorumClient(t *testing.T) {
+	tests := []struct {
+		name, client string
+		want         bool
+	}{
+		{
+			name:   "not goquorum",
+			client: "besu",
+			want:   false,
+		},
+		{
+			name:   "is goquorum",
+			client: "goquorum",
+			want:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := BlockchainClient{
+				ClientType: tt.client,
+			}
+			require.Equal(t, tt.want, c.IsGoQuorumClient())
+		})
+	}
+}
+
+func TestBlockchainClient_IsBesuClient(t *testing.T) {
+	tests := []struct {
+		name, client string
+		want         bool
+	}{
+		{
+			name:   "not besu",
+			client: "goquorum",
+			want:   false,
+		},
+		{
+			name:   "is besu",
+			client: "besu",
+			want:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := BlockchainClient{
+				ClientType: tt.client,
+			}
+			require.Equal(t, tt.want, c.IsBesuClient())
+		})
+	}
+}
+
 func TestPrivacyManager_IsValid_MinimumValid(t *testing.T) {
 	c := minimumValidPrivacyManager()
 

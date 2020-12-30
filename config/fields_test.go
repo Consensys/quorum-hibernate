@@ -4,13 +4,22 @@ package config
 // These are used in tests to verify error messages match json/toml field names
 // to ensure error messages are not misleading
 const (
+	nameField                   = "name"
+	disableStrictModeField      = "disableStrictMode"
+	upcheckPollingIntervalField = "upcheckPollingInterval"
+	peersConfigFileField        = "peersConfigFile"
+	inactivityTimeField         = "inactivityTime"
+	resyncTimeField             = "resyncTime"
+	blockchainClientField       = "blockchainClient"
+	privacyManagerField         = "privacyManager"
+	serverField                 = "server"
+	proxiesField                = "proxies"
 	typeField                   = "type"
 	consensusField              = "consensus"
 	rpcUrlField                 = "rpcUrl"
 	tlsConfigField              = "tlsConfig"
 	processField                = "process"
 	publicKeyField              = "publicKey"
-	nameField                   = "name"
 	controlTypeField            = "controlType"
 	containerIdField            = "containerId"
 	stopCommandField            = "stopCommand"

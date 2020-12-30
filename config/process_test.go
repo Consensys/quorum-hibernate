@@ -241,3 +241,111 @@ func TestProcess_IsValid_UpcheckConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestProcess_IsShell(t *testing.T) {
+	tests := []struct {
+		name, controlType string
+		want              bool
+	}{
+		{
+			name:        "not shell",
+			controlType: "docker",
+			want:        false,
+		},
+		{
+			name:        "is shell",
+			controlType: "shell",
+			want:        true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := Process{
+				ControlType: tt.controlType,
+			}
+			require.Equal(t, tt.want, c.IsShell())
+		})
+	}
+}
+
+func TestProcess_IsDocker(t *testing.T) {
+	tests := []struct {
+		name, controlType string
+		want              bool
+	}{
+		{
+			name:        "not docker",
+			controlType: "shell",
+			want:        false,
+		},
+		{
+			name:        "is docker",
+			controlType: "docker",
+			want:        true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := Process{
+				ControlType: tt.controlType,
+			}
+			require.Equal(t, tt.want, c.IsDocker())
+		})
+	}
+}
+
+func TestProcess_IsBcClient(t *testing.T) {
+	tests := []struct {
+		name, processName string
+		want              bool
+	}{
+		{
+			name:        "not bcclnt",
+			processName: "privman",
+			want:        false,
+		},
+		{
+			name:        "is bcclnt",
+			processName: "bcclnt",
+			want:        true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := Process{
+				Name: tt.processName,
+			}
+			require.Equal(t, tt.want, c.IsBcClient())
+		})
+	}
+}
+
+func TestProcess_IsPrivacyManager(t *testing.T) {
+	tests := []struct {
+		name, processName string
+		want              bool
+	}{
+		{
+			name:        "not privman",
+			processName: "bcclnt",
+			want:        false,
+		},
+		{
+			name:        "is privman",
+			processName: "privman",
+			want:        true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := Process{
+				Name: tt.processName,
+			}
+			require.Equal(t, tt.want, c.IsPrivacyManager())
+		})
+	}
+}
