@@ -8,17 +8,22 @@ import (
 	"testing"
 )
 
+const (
+	certFile = "resources/cert.pem"
+	keyFile  = "resources/key.pem"
+)
+
 func minimumValidServerTLS() ServerTLS {
 	return ServerTLS{
-		KeyFile:          "/path/to/key.pem",
-		CertFile:         "/path/to/cert.pem",
+		KeyFile:          keyFile,
+		CertFile:         certFile,
 		ClientCaCertFile: "",
 	}
 }
 
 func minimumValidClientTLS() ClientTLS {
 	return ClientTLS{
-		CACertFile:         "/path/to/cert.pem",
+		CACertFile:         certFile,
 		KeyFile:            "",
 		CertFile:           "",
 		InsecureSkipVerify: false,
@@ -135,7 +140,7 @@ func TestServerTLS_IsValid_MinimumValid(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestServerTLS_IsValid_CertificateFile(t *testing.T) {
+func TestServerTLS_IsValid_CertificateFile_NotSet(t *testing.T) {
 	c := minimumValidServerTLS()
 	c.CertFile = ""
 
@@ -145,7 +150,16 @@ func TestServerTLS_IsValid_CertificateFile(t *testing.T) {
 	require.EqualError(t, err, certificateFileField+" is empty")
 }
 
-func TestServerTLS_IsValid_KeyFile(t *testing.T) {
+func TestServerTLS_IsValid_CertificateFile_NotFound(t *testing.T) {
+	c := minimumValidServerTLS()
+	c.CertFile = "notfound.pem"
+
+	err := c.IsValid()
+
+	require.EqualError(t, err, "open notfound.pem: no such file or directory")
+}
+
+func TestServerTLS_IsValid_KeyFile_NotSet(t *testing.T) {
 	c := minimumValidServerTLS()
 	c.KeyFile = ""
 
@@ -155,8 +169,32 @@ func TestServerTLS_IsValid_KeyFile(t *testing.T) {
 	require.EqualError(t, err, keyFileField+" is empty")
 }
 
-func TestServerTLS_Load(t *testing.T) {
-	require.True(t, false, "implement me")
+func TestServerTLS_IsValid_KeyFile_NotFound(t *testing.T) {
+	c := minimumValidServerTLS()
+	c.KeyFile = "notfound.pem"
+
+	err := c.IsValid()
+
+	require.EqualError(t, err, "open notfound.pem: no such file or directory")
+}
+
+func TestServerTLS_IsValid_ClientCACertificateFile_NotFound(t *testing.T) {
+	c := minimumValidServerTLS()
+	c.ClientCaCertFile = "notfound.pem"
+
+	err := c.IsValid()
+
+	require.EqualError(t, err, "open notfound.pem: no such file or directory")
+}
+
+func TestServerTLS_IsValid_LoadsConfig(t *testing.T) {
+	c := minimumValidServerTLS()
+
+	require.Nil(t, c.TlsCfg)
+
+	c.IsValid()
+
+	require.NotNil(t, c.TlsCfg)
 }
 
 func TestClientTLS_IsValid_MinimumValid(t *testing.T) {
@@ -167,7 +205,7 @@ func TestClientTLS_IsValid_MinimumValid(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestClientTLS_IsValid_CaCertificateFile(t *testing.T) {
+func TestClientTLS_IsValid_CaCertificateFile_NotSet(t *testing.T) {
 	c := minimumValidClientTLS()
 	c.CACertFile = ""
 
@@ -177,25 +215,34 @@ func TestClientTLS_IsValid_CaCertificateFile(t *testing.T) {
 	require.EqualError(t, err, caCertificateFileField+" is empty")
 }
 
-func TestClientTLS_IsValid_CertificateAndKeyFile(t *testing.T) {
+func TestClientTLS_IsValid_CaCertificateFile_NotFound(t *testing.T) {
+	c := minimumValidClientTLS()
+	c.CACertFile = "notfound.pem"
+
+	err := c.IsValid()
+
+	require.EqualError(t, err, "open notfound.pem: no such file or directory")
+}
+
+func TestClientTLS_IsValid_CertificateAndKeyFile_NotSetCombinations(t *testing.T) {
 	tests := []struct {
 		name, certFile, keyFile, wantErrMsg string
 	}{
 		{
 			name:       "both set",
-			certFile:   "/path/to/cert.pem",
-			keyFile:    "/path/to/key.pem",
+			certFile:   certFile,
+			keyFile:    keyFile,
 			wantErrMsg: "",
 		},
 		{
 			name:       "only keyFile set",
 			certFile:   "",
-			keyFile:    "/path/to/key.pem",
+			keyFile:    keyFile,
 			wantErrMsg: fmt.Sprintf("%v must be set as %v is set", certificateFileField, keyFileField),
 		},
 		{
 			name:       "only certificateFile set",
-			certFile:   "/path/to/cert.pem",
+			certFile:   certFile,
 			keyFile:    "",
 			wantErrMsg: fmt.Sprintf("%v must be set as %v is set", keyFileField, certificateFileField),
 		},
@@ -219,6 +266,32 @@ func TestClientTLS_IsValid_CertificateAndKeyFile(t *testing.T) {
 	}
 }
 
-func TestClientTLS_Load(t *testing.T) {
-	require.True(t, false, "implement me")
+func TestClientTLS_IsValid_CertificateFile_NotFound(t *testing.T) {
+	c := minimumValidClientTLS()
+	c.CertFile = "notfound.pem"
+	c.KeyFile = keyFile
+
+	err := c.IsValid()
+
+	require.EqualError(t, err, "open notfound.pem: no such file or directory")
+}
+
+func TestClientTLS_IsValid_KeyFile_NotFound(t *testing.T) {
+	c := minimumValidClientTLS()
+	c.KeyFile = "notfound.pem"
+	c.CertFile = certFile
+
+	err := c.IsValid()
+
+	require.EqualError(t, err, "open notfound.pem: no such file or directory")
+}
+
+func TestClientTLS_IsValid_LoadsConfig(t *testing.T) {
+	c := minimumValidClientTLS()
+
+	require.Nil(t, c.TlsCfg)
+
+	c.IsValid()
+
+	require.NotNil(t, c.TlsCfg)
 }
