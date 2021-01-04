@@ -11,9 +11,7 @@ func (c RPCServer) IsValid() error {
 	if c.RpcAddr == "" {
 		return newFieldErr("rpcAddress", isEmptyErr)
 	}
-	if err := isValidUrl(c.RpcAddr); err != nil {
-		return newFieldErr("rpcAddress", err)
-	}
+
 	if c.TLSConfig != nil {
 		if err := c.TLSConfig.IsValid(); err != nil {
 			return newFieldErr("tlsConfig", err)
