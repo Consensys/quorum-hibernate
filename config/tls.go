@@ -54,7 +54,13 @@ func (c *ServerTLS) TLSConfig() (*tls.Config, error) {
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		// Support only TLS1.2 & Above
-		MinVersion:               tls.VersionTLS12,
+		MinVersion: tls.VersionTLS12,
+		CurvePreferences: []tls.CurveID{
+			tls.CurveP521,
+			tls.CurveP384,
+			tls.CurveP256,
+			tls.X25519,
+		},
 		CipherSuites:             cipherSuitesOrDefault(c.CipherSuites),
 		PreferServerCipherSuites: true,
 	}
@@ -112,9 +118,10 @@ func (c *ClientTLS) IsValid() error {
 
 func (c *ClientTLS) TLSConfig() (*tls.Config, error) {
 	// copied from SecurityPlugin/tls.go::NewHttpClient
-	tlsConfig := new(tls.Config)
-	tlsConfig.InsecureSkipVerify = c.InsecureSkipVerify
-	tlsConfig.CipherSuites = cipherSuitesOrDefault(c.CipherSuites)
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: c.InsecureSkipVerify,
+		CipherSuites:       cipherSuitesOrDefault(c.CipherSuites),
+	}
 
 	if !c.InsecureSkipVerify {
 		var caPem []byte
@@ -159,8 +166,8 @@ func cipherSuitesOrDefault(configured []string) []uint16 {
 
 	var cipherSuites []uint16
 
-	for _, cc := range supportedCipherSuites {
-		for _, n := range names {
+	for _, n := range names {
+		for _, cc := range supportedCipherSuites {
 			if cc.Name == n && !cc.Insecure {
 				cipherSuites = append(cipherSuites, cc.ID)
 			}
