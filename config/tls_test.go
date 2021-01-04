@@ -1,6 +1,7 @@
 package config
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/naoina/toml"
@@ -27,6 +28,16 @@ func minimumValidClientTLS() ClientTLS {
 		KeyFile:            "",
 		CertFile:           "",
 		InsecureSkipVerify: false,
+	}
+}
+
+func TestDefaultCipherSuites(t *testing.T) {
+	insecureCipherSuites := tls.InsecureCipherSuites()
+
+	for _, s := range defaultCipherSuites {
+		for _, insecure := range insecureCipherSuites {
+			require.NotEqual(t, insecure.Name, s, "%v should not be a default cipher suite as it is insecure", s)
+		}
 	}
 }
 

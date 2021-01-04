@@ -7,13 +7,11 @@ import (
 	"io/ioutil"
 )
 
-//TODO(cjh) a lot of this is copied from quorum-security-plugin-enterprise config/core.go and tls/tls.go with some small alterations.
-//  Might make sense to export this logic in the plugin, or move out to quorum-go-utils project
-
 type ServerTLS struct {
-	KeyFile          string `toml:"keyFile" json:"keyFile"`
-	CertFile         string `toml:"certificateFile" json:"certificateFile"`
-	ClientCaCertFile string `toml:"clientCaCertificateFile" json:"clientCaCertificateFile"`
+	KeyFile          string   `toml:"keyFile" json:"keyFile"`
+	CertFile         string   `toml:"certificateFile" json:"certificateFile"`
+	ClientCaCertFile string   `toml:"clientCaCertificateFile" json:"clientCaCertificateFile"`
+	CipherSuites     []string `toml:"cipherSuites" json:"cipherSuites"`
 	TlsCfg           *tls.Config
 }
 
@@ -36,6 +34,17 @@ func (c *ServerTLS) IsValid() error {
 	return nil
 }
 
+var (
+	// defaultCipherSuites are suites determined to be safe enough for use in most cases (256 bit keys, ECDH key sharing).
+	// These are the same ciphers used by default in the quorum security plugin.
+	defaultCipherSuites = []string{
+		"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+		"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+		"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+		"TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
+	}
+)
+
 func (c *ServerTLS) TLSConfig() (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)
 	if err != nil {
@@ -45,7 +54,9 @@ func (c *ServerTLS) TLSConfig() (*tls.Config, error) {
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		// Support only TLS1.2 & Above
-		MinVersion: tls.VersionTLS12,
+		MinVersion:               tls.VersionTLS12,
+		CipherSuites:             cipherSuitesOrDefault(c.CipherSuites),
+		PreferServerCipherSuites: true,
 	}
 
 	var caPem []byte
@@ -69,10 +80,11 @@ func (c *ServerTLS) TLSConfig() (*tls.Config, error) {
 }
 
 type ClientTLS struct {
-	CertFile           string `toml:"certificateFile" json:"certificateFile"`
-	KeyFile            string `toml:"keyFile" json:"keyFile"`
-	CACertFile         string `toml:"caCertificateFile" json:"caCertificateFile"`
-	InsecureSkipVerify bool   `toml:"insecureSkipVerify" json:"insecureSkipVerify"`
+	CertFile           string   `toml:"certificateFile" json:"certificateFile"`
+	KeyFile            string   `toml:"keyFile" json:"keyFile"`
+	CACertFile         string   `toml:"caCertificateFile" json:"caCertificateFile"`
+	InsecureSkipVerify bool     `toml:"insecureSkipVerify" json:"insecureSkipVerify"`
+	CipherSuites       []string `toml:"cipherSuites" json:"cipherSuites"`
 	TlsCfg             *tls.Config
 }
 
@@ -102,6 +114,8 @@ func (c *ClientTLS) TLSConfig() (*tls.Config, error) {
 	// copied from SecurityPlugin/tls.go::NewHttpClient
 	tlsConfig := new(tls.Config)
 	tlsConfig.InsecureSkipVerify = c.InsecureSkipVerify
+	tlsConfig.CipherSuites = cipherSuitesOrDefault(c.CipherSuites)
+
 	if !c.InsecureSkipVerify {
 		var caPem []byte
 		var err error
@@ -129,4 +143,29 @@ func (c *ClientTLS) TLSConfig() (*tls.Config, error) {
 		}
 	}
 	return tlsConfig, nil
+}
+
+// cipherSuitesOrDefault converts the provided cipher suite names to uint16 IDs if supported.
+// Defaults are used if no configured cipher suites are provided.
+func cipherSuitesOrDefault(configured []string) []uint16 {
+	supportedCipherSuites := tls.CipherSuites()
+
+	var names []string
+	if configured != nil {
+		names = configured
+	} else {
+		names = defaultCipherSuites
+	}
+
+	var cipherSuites []uint16
+
+	for _, cc := range supportedCipherSuites {
+		for _, n := range names {
+			if cc.Name == n && !cc.Insecure {
+				cipherSuites = append(cipherSuites, cc.ID)
+			}
+		}
+	}
+
+	return cipherSuites
 }
