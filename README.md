@@ -23,14 +23,14 @@ node-manager --config path/to/config.json --verbosity 3
 | `--config` | Path to `.json` or `.toml` configuration file |
 | `--verbosity` | Logging level (`0` = `ERROR`, `1` = `WARN`, `2` = `INFO`, `3` = `DEBUG`) |
 
-#### Using Docker
+## Using Docker
 
-##### Build
+### Build
 ```bash
 docker build . -t node-manager
 ```
 
-##### Run
+### Run
 
 - A configuration must be supplied to the Docker container. Refer to sample config files [config.toml](config.docker.local.toml) and [nodemanager.toml](nodemanger.docker.local.toml)
 ```bash

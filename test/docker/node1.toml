@@ -1,43 +1,61 @@
-[basicConfig]
 #node manager name
 name = "node1"
 #blockchain client RPC URL
-bcClntRpcUrl = "http://localhost:22000"
-privManKey = "BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo="
-consensus = "raft"
-clientType = "quorum"
 upcheckPollingInterval = 1
-nodeManagerConfigFile = "./test/docker/nm1.toml"
-runMode="NORMAL"
+peersConfigFile = "/nm1.toml"
 #geth/tessera inactivity timeout seconds
-inactivityTime = 60
+inactivityTime = 120
+disableStrictMode = true
+
+# docker run -p 8081:8081 -p 9091:9091 -p 9391:9391 -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,source=/Users/maniam/go/src/github.com/ConsenSysQuorum/node-manager/test/docker/node1.toml,target=/config.toml --mount type=bind,source=/Users/maniam/go/src/github.com/ConsenSysQuorum/node-manager/test/docker/nm1.toml,target=/nm1.toml amalrajmani/node-manager:v1 -config /config.toml
+#
+
+[[proxies]]
+    name = "geth-rpc"
+    type = "http"
+    proxyAddress = "0.0.0.0:9091"
+    upstreamAddress = "http://host.docker.internal:22000"
+    proxyPaths = ["/"]
+    readTimeout = 15
+    writeTimeout = 15
 
 
-#geth's http/ws services that need to be exposed as proxy services
-proxies = [
-    { name = "geth-rpc", type = "http", proxyAddr = "localhost:9091", upstreamAddr = "http://localhost:22000", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 },
-    { name = "tessera", type = "http", proxyAddr = "localhost:9391", upstreamAddr = "http://127.0.0.1:9001", proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], ignorePathsForActivity=["/upcheck", "/partyinfo", "/partyinfo/validate"], readTimeout = 15, writeTimeout = 15 },
-    { name = "geth-graphql", type = "http", proxyAddr = "localhost:9191", upstreamAddr = "http://localhost:8547", proxyPaths = ["/","/graphql"], readTimeout = 15, writeTimeout = 15 },
-    { name = "geth-ws", type = "ws", proxyAddr = "localhost:9291", upstreamAddr = "ws://localhost:23000", proxyPaths = ["/"], readTimeout = 15, writeTimeout = 15 }
-]
+[[proxies]]
+    name = "tessera"
+    type = "http"
+    proxyAddress = "0.0.0.0:9391"
+    upstreamAddress = "http://host.docker.internal:9001"
+    readTimeout = 15
+    writeTimeout = 15
+    proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"]
+    ignorePathsForActivity=["/upcheck", "/partyinfo", "/partyinfo/validate"]
+
 
 #rpc server details of node manager
-[basicConfig.server]
-# The interface + port the application should bind to
-rpcAddr = "localhost:8081"
-rpcCorsList = ["*"]
-rpcvHosts = ["*"]
+[server]
+    # The interface + port the application should bind to
+    rpcAddress = "0.0.0.0:8081"
+    rpcCorsList = ["*"]
+    rpcvHosts = ["*"]
+
+[blockchainClient]
+type = "goquorum"
+consensus = "raft"
+rpcUrl = "http://host.docker.internal:22000"
 
 #geth's process control config
-[basicConfig.bcClntProcess]
+[blockchainClient.process]
 name = "bcclnt"
-containerId = "c2d5e37f0908"
+containerId = "61ea4ada27fa"
 controlType = "docker"
-upcheckCfg = { upcheckUrl = "http://localhost:22000", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
+upcheckConfig = { url = "http://host.docker.internal:22000", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
 
 #tessera's process control config
-[basicConfig.privManProcess]
+[privacyManager]
+publicKey = "BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo="
+
+[privacyManager.process]
 name = "privman"
 controlType = "docker"
-containerId = "baa4aeffe806"
-upcheckCfg = { upcheckUrl = "http://localhost:9001/upcheck", method = "GET", body = "", returnType = "string", expected = "I'm up!"}
+containerId = "6e1c390fc2f5"
+upcheckConfig = { url = "http://host.docker.internal:9001/upcheck", method = "GET", body = "", returnType = "string", expected = "I'm up!"}
