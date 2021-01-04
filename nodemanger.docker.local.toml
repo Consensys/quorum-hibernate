@@ -1,0 +1,14 @@
+[[peers]]
+name = "node1"
+privacyManagerKey = "BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo="
+rpcUrl = "http://host.docker.internal:8081"
+
+[[peers]]
+name = "node2"
+privacyManagerKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc="
+rpcUrl = "http://host.docker.internal:8082"
+
+[[peers]]
+name = "node3"
+privacyManagerKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg="
+rpcUrl = "http://host.docker.internal:8083"

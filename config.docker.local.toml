@@ -1,0 +1,61 @@
+#node manager name
+name = "node1"
+#blockchain client RPC URL
+upcheckPollingInterval = 1
+peersConfigFile = "/nm1.toml"
+#geth/tessera inactivity timeout seconds
+inactivityTime = 120
+disableStrictMode = true
+
+# docker run -p 8081:8081 -p 9091:9091 -p 9391:9391 -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,source=/Users/maniam/go/src/github.com/ConsenSysQuorum/node-manager/test/docker/node1.toml,target=/config.toml --mount type=bind,source=/Users/maniam/go/src/github.com/ConsenSysQuorum/node-manager/test/docker/nm1.toml,target=/nm1.toml amalrajmani/node-manager:v1 -config /config.toml
+#
+
+[[proxies]]
+name = "geth-rpc"
+type = "http"
+proxyAddress = "0.0.0.0:9091"
+upstreamAddress = "http://host.docker.internal:22000"
+proxyPaths = ["/"]
+readTimeout = 15
+writeTimeout = 15
+
+
+[[proxies]]
+name = "tessera"
+type = "http"
+proxyAddress = "0.0.0.0:9391"
+upstreamAddress = "http://host.docker.internal:9001"
+readTimeout = 15
+writeTimeout = 15
+proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"]
+ignorePathsForActivity=["/upcheck", "/partyinfo", "/partyinfo/validate"]
+
+
+#rpc server details of node manager
+[server]
+# The interface + port the application should bind to
+rpcAddress = "0.0.0.0:8081"
+rpcCorsList = ["*"]
+rpcvHosts = ["*"]
+
+[blockchainClient]
+type = "goquorum"
+consensus = "raft"
+rpcUrl = "http://host.docker.internal:22000"
+
+#geth's process control config
+[blockchainClient.process]
+name = "bcclnt"
+containerId = "61ea4ada27fa"
+controlType = "docker"
+upcheckConfig = { url = "http://host.docker.internal:22000", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
+
+#tessera's process control config
+[privacyManager]
+publicKey = "BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo="
+
+[privacyManager.process]
+name = "privman"
+controlType = "docker"
+containerId = "6e1c390fc2f5"
+upcheckConfig = { url = "http://host.docker.internal:9001/upcheck", method = "GET", body = "", returnType = "string", expected = "I'm up!"}
