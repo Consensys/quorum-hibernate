@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"crypto/tls"
+	golog "log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -10,7 +11,6 @@ import (
 	"time"
 
 	"github.com/ConsenSysQuorum/node-manager/config"
-
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
 )
@@ -63,6 +63,7 @@ func NewProxyServer(qn *node.NodeControl, pc *config.Proxy, errc chan error) (Pr
 		Addr:         ps.proxyCfg.ProxyAddr,
 		WriteTimeout: time.Duration(ps.proxyCfg.WriteTimeout) * time.Second,
 		ReadTimeout:  time.Duration(ps.proxyCfg.ReadTimeout) * time.Second,
+		ErrorLog:     golog.New(log.ErrWriter, "", 0),
 	}
 	if pc.ProxyServerTLSConfig != nil {
 		ps.srv.TLSConfig = pc.ProxyServerTLSConfig.TlsCfg
