@@ -1,9 +1,24 @@
-nodeManagers = [
-    { name = "node1", privManKey = "BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo=", rpcUrl = "http://localhost:8081" },
-    { name = "node2", privManKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", rpcUrl = "http://localhost:8082" },
-    { name = "node3", privManKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8083" },
-    { name = "node4", privManKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", rpcUrl = "http://localhost:8084" },
-    { name = "node5", privManKey = "R56gy4dn24YOjwyesTczYa8m5xhP6hF2uTMCju/1xkY=", rpcUrl = "http://localhost:8085" },
-    { name = "node6", privManKey = "UfNSeSGySeKg11DVNEnqrUtxYRVor4+CvluI8tVv62Y=", rpcUrl = "http://localhost:8086" },
-    { name = "node7", privManKey = "ROAZBWtSacxXQrOe3FGAqJDyJjFePR5ce4TSIzmJ0Bc=", rpcUrl = "http://localhost:8087" }
-]
+#peers = [
+#    { name = "node1", privacyManagerKey = "BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo=", rpcUrl = "http://localhost:8081" },
+#    { name = "node2", privacyManagerKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=", rpcUrl = "http://localhost:8082" },
+#    { name = "node3", privacyManagerKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=", rpcUrl = "http://localhost:8083" },
+#    { name = "node4", privacyManagerKey = "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=", rpcUrl = "http://localhost:8084" },
+#    { name = "node5", privacyManagerKey = "R56gy4dn24YOjwyesTczYa8m5xhP6hF2uTMCju/1xkY=", rpcUrl = "http://localhost:8085" },
+#    { name = "node6", privacyManagerKey = "UfNSeSGySeKg11DVNEnqrUtxYRVor4+CvluI8tVv62Y=", rpcUrl = "http://localhost:8086" },
+#    { name = "node7", privacyManagerKey = "ROAZBWtSacxXQrOe3FGAqJDyJjFePR5ce4TSIzmJ0Bc=", rpcUrl = "http://localhost:8087" }
+#]
+
+[[peers]]
+name = "node1"
+privacyManagerKey = "BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo="
+rpcUrl = "http://host.docker.internal:8081"
+
+[[peers]]
+name = "node2"
+privacyManagerKey = "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc="
+rpcUrl = "http://host.docker.internal:8082"
+
+[[peers]]
+name = "node3"
+privacyManagerKey = "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg="
+rpcUrl = "http://host.docker.internal:8083"
