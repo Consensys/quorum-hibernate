@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"net/url"
 	"strings"
 )
 
@@ -37,13 +38,13 @@ func (c Proxy) IsValid() error {
 	if c.ProxyAddr == "" {
 		return newFieldErr("proxyAddress", isEmptyErr)
 	}
-	if err := isValidUrl(c.ProxyAddr); err != nil {
+	if _, err := url.Parse(c.ProxyAddr); err != nil {
 		return newFieldErr("proxyAddress", err)
 	}
 	if c.UpstreamAddr == "" {
 		return newFieldErr("upstreamAddress", isEmptyErr)
 	}
-	if err := isValidUrl(c.UpstreamAddr); err != nil {
+	if _, err := url.Parse(c.UpstreamAddr); err != nil {
 		return newFieldErr("upstreamAddress", err)
 	}
 	if len(c.ProxyPaths) == 0 {
