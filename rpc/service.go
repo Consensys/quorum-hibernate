@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"sync"
@@ -66,6 +67,7 @@ func (r *RPCService) Start() error {
 		if err != nil {
 			return err
 		}
+		r.httpServer.TLSNextProto = make(map[string]func(*http.Server, *tls.Conn, http.Handler)) // disable HTTP/2 to prevent need to use ciphers with 128 bit keys
 	}
 
 	r.shutdownWg.Add(1)

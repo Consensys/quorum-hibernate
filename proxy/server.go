@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -65,6 +66,7 @@ func NewProxyServer(qn *node.NodeControl, pc *config.Proxy, errc chan error) (Pr
 	}
 	if pc.ProxyServerTLSConfig != nil {
 		ps.srv.TLSConfig = pc.ProxyServerTLSConfig.TlsCfg
+		ps.srv.TLSNextProto = make(map[string]func(*http.Server, *tls.Conn, http.Handler)) // disable HTTP/2 to prevent need to use ciphers with 128 bit keys
 	}
 	log.Info("ProxyServer - created proxy server for config", "cfg", *pc)
 	return ps, nil
