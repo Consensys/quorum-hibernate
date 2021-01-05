@@ -1,17 +1,19 @@
 package config
 
+import "net/url"
+
 type RPCServer struct {
-	RpcAddr     string     `toml:"rpcAddress" json:"rpcAddress"`
+	RPCAddr     string     `toml:"rpcAddress" json:"rpcAddress"`
 	RPCCorsList []string   `toml:"rpcCorsList" json:"rpcCorsList"`
 	RPCVHosts   []string   `toml:"rpcvHosts" json:"rpcvHosts"`
 	TLSConfig   *ServerTLS `toml:"tlsConfig" json:"tlsConfig"`
 }
 
 func (c RPCServer) IsValid() error {
-	if c.RpcAddr == "" {
+	if c.RPCAddr == "" {
 		return newFieldErr("rpcAddress", isEmptyErr)
 	}
-	if err := isValidUrl(c.RpcAddr); err != nil {
+	if _, err := url.Parse(c.RPCAddr); err != nil {
 		return newFieldErr("rpcAddress", err)
 	}
 	if c.TLSConfig != nil {

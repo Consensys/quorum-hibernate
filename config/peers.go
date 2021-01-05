@@ -1,5 +1,7 @@
 package config
 
+import "net/url"
+
 type PeerArr []*Peer
 
 func (a *PeerArr) IsValid() error {
@@ -30,7 +32,7 @@ func (c Peer) IsValid() error {
 	if c.RpcUrl == "" {
 		return newFieldErr("rpcUrl", isEmptyErr)
 	}
-	if err := isValidUrl(c.RpcUrl); err != nil {
+	if _, err := url.Parse(c.RpcUrl); err != nil {
 		return newFieldErr("rpcUrl", err)
 	}
 	if c.TLSConfig != nil {

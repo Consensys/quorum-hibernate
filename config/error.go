@@ -47,7 +47,7 @@ func (e *fieldErr) Error() string {
 
 func (e *arrFieldErr) Error() string {
 	switch e.cause.(type) {
-	case *fieldErr:
+	case *fieldErr, *arrFieldErr:
 		return fmt.Sprintf("%v[%v].%v", e.field, e.i, e.cause)
 	default:
 		return fmt.Sprintf("%v[%v] %v", e.field, e.i, e.cause)
