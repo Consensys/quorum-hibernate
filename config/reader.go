@@ -13,11 +13,24 @@ type NodeManagerReader interface {
 	Read() (Basic, error)
 }
 
+type PeersReader interface {
+	Read() (PeerArr, error)
+}
+
 func NewNodeManagerReader(f string) (NodeManagerReader, error) {
 	if strings.HasSuffix(f, ".toml") {
 		return tomlNodeManagerReader{file: f}, nil
 	} else if strings.HasSuffix(f, ".json") {
 		return jsonNodeManagerReader{file: f}, nil
+	}
+	return nil, errors.New("unsupported config file format")
+}
+
+func NewPeersReader(f string) (PeersReader, error) {
+	if strings.HasSuffix(f, ".toml") {
+		return tomlPeersReader{file: f}, nil
+	} else if strings.HasSuffix(f, ".json") {
+		return jsonPeersReader{file: f}, nil
 	}
 	return nil, errors.New("unsupported config file format")
 }
@@ -56,19 +69,6 @@ func (r jsonNodeManagerReader) Read() (Basic, error) {
 	}
 
 	return input, nil
-}
-
-type PeersReader interface {
-	Read() (PeerArr, error)
-}
-
-func NewPeersReader(f string) (PeersReader, error) {
-	if strings.HasSuffix(f, ".toml") {
-		return tomlPeersReader{file: f}, nil
-	} else if strings.HasSuffix(f, ".json") {
-		return jsonPeersReader{file: f}, nil
-	}
-	return nil, errors.New("unsupported config file format")
 }
 
 type tomlPeersReader struct {
