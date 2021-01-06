@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/naoina/toml"
 	"github.com/stretchr/testify/require"
+	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -51,7 +53,10 @@ func TestServerTLS_Unmarshal(t *testing.T) {
 {
 	"%v": "/path/to/key.pem",
 	"%v": "/path/to/cert.pem",
-	"%v": "/path/to/ca.pem"
+	"%v": "/path/to/ca.pem",
+	"%v": [
+		"myciphersuite"
+]
 }`,
 		},
 		{
@@ -59,18 +64,22 @@ func TestServerTLS_Unmarshal(t *testing.T) {
 			configTemplate: `
 %v = "/path/to/key.pem"
 %v = "/path/to/cert.pem"
-%v = "/path/to/ca.pem"`,
+%v = "/path/to/ca.pem"
+%v = [
+	"myciphersuite"
+]`,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			conf := fmt.Sprintf(tt.configTemplate, keyFileField, certificateFileField, clientCaCertificateField)
+			conf := fmt.Sprintf(tt.configTemplate, keyFileField, certificateFileField, clientCaCertificateField, cipherSuitesField)
 
 			want := ServerTLS{
 				KeyFile:          "/path/to/key.pem",
 				CertFile:         "/path/to/cert.pem",
 				ClientCaCertFile: "/path/to/ca.pem",
+				CipherSuites:     []string{"myciphersuite"},
 			}
 
 			var (
@@ -101,7 +110,10 @@ func TestClientTLS_Unmarshal(t *testing.T) {
 	"%v": "/path/to/key.pem",
 	"%v": "/path/to/cert.pem",
 	"%v": "/path/to/ca.pem",
-	"%v": true
+	"%v": true,
+	"%v": [
+		"myciphersuite"
+	]
 }`,
 		},
 		{
@@ -110,20 +122,24 @@ func TestClientTLS_Unmarshal(t *testing.T) {
 %v = "/path/to/key.pem"
 %v = "/path/to/cert.pem"
 %v = "/path/to/ca.pem"
-%v = true`,
+%v = true
+%v = [
+	"myciphersuite"
+]`,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			conf := fmt.Sprintf(tt.configTemplate, keyFileField, certificateFileField, caCertificateFileField, insecureSkipVerifyField)
+			conf := fmt.Sprintf(tt.configTemplate, keyFileField, certificateFileField, caCertificateFileField, insecureSkipVerifyField, cipherSuitesField)
 
 			want := ClientTLS{
 				KeyFile:            "/path/to/key.pem",
 				CertFile:           "/path/to/cert.pem",
 				CACertFile:         "/path/to/ca.pem",
 				InsecureSkipVerify: true,
+				CipherSuites:       []string{"myciphersuite"},
 			}
 
 			var (
@@ -198,14 +214,88 @@ func TestServerTLS_IsValid_ClientCACertificateFile_NotFound(t *testing.T) {
 	require.EqualError(t, err, "open notfound.pem: no such file or directory")
 }
 
-func TestServerTLS_IsValid_LoadsConfig(t *testing.T) {
+func TestServerTLS_IsValid_LoadsTLSConfig_Defaults(t *testing.T) {
 	c := minimumValidServerTLS()
 
 	require.Nil(t, c.TlsCfg)
 
-	c.IsValid()
+	_ = c.IsValid()
+
+	wantCipherSuites := []uint16{
+		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+	}
+
+	wantCurves := []tls.CurveID{
+		tls.CurveP521,
+		tls.CurveP384,
+		tls.CurveP256,
+		tls.X25519,
+	}
 
 	require.NotNil(t, c.TlsCfg)
+	require.Equal(t, wantCipherSuites, c.TlsCfg.CipherSuites)
+	require.Equal(t, uint16(tls.VersionTLS12), c.TlsCfg.MinVersion)
+	require.Equal(t, wantCurves, c.TlsCfg.CurvePreferences)
+	require.True(t, c.TlsCfg.PreferServerCipherSuites)
+	require.Nil(t, c.TlsCfg.ClientCAs)
+	require.Zero(t, c.TlsCfg.ClientAuth)
+	require.NotNil(t, c.TlsCfg.Certificates)
+}
+
+func TestServerTLS_IsValid_LoadsTLSConfig_ConfiguredCipherSuites(t *testing.T) {
+	c := minimumValidServerTLS()
+
+	c.CipherSuites = []string{
+		"TLS_CHACHA20_POLY1305_SHA256",
+		"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+		"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+	}
+
+	require.Nil(t, c.TlsCfg)
+
+	_ = c.IsValid()
+
+	wantCipherSuites := []uint16{
+		tls.TLS_CHACHA20_POLY1305_SHA256,
+		tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+		tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+	}
+
+	require.NotNil(t, c.TlsCfg)
+	require.Equal(t, wantCipherSuites, c.TlsCfg.CipherSuites)
+}
+
+func TestServerTLS_IsValid_LoadsTLSConfig_ClientCA(t *testing.T) {
+	c := minimumValidServerTLS()
+
+	c.ClientCaCertFile = certFile
+
+	require.Nil(t, c.TlsCfg)
+
+	_ = c.IsValid()
+
+	require.NotNil(t, c.TlsCfg.ClientCAs)
+	require.Equal(t, tls.RequireAndVerifyClientCert, c.TlsCfg.ClientAuth)
+}
+
+func TestServerTLS_IsValid_LoadsTLSConfig_EmptyClientCA(t *testing.T) {
+	c := minimumValidServerTLS()
+
+	f, err := ioutil.TempFile("", "emptyfile")
+	require.NoError(t, err)
+	defer os.Remove(f.Name())
+
+	c.ClientCaCertFile = f.Name()
+
+	require.Nil(t, c.TlsCfg)
+
+	_ = c.IsValid()
+
+	require.Nil(t, c.TlsCfg.ClientCAs)
+	require.Zero(t, c.TlsCfg.ClientAuth)
 }
 
 func TestClientTLS_IsValid_MinimumValid(t *testing.T) {
@@ -297,12 +387,60 @@ func TestClientTLS_IsValid_KeyFile_NotFound(t *testing.T) {
 	require.EqualError(t, err, "open notfound.pem: no such file or directory")
 }
 
-func TestClientTLS_IsValid_LoadsConfig(t *testing.T) {
+func TestClientTLS_IsValid_LoadsTLSConfig_Defaults(t *testing.T) {
 	c := minimumValidClientTLS()
 
 	require.Nil(t, c.TlsCfg)
 
-	c.IsValid()
+	_ = c.IsValid()
+
+	wantCipherSuites := []uint16{
+		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+	}
 
 	require.NotNil(t, c.TlsCfg)
+	require.Equal(t, wantCipherSuites, c.TlsCfg.CipherSuites)
+	require.Nil(t, c.TlsCfg.ClientCAs)
+	require.False(t, c.TlsCfg.InsecureSkipVerify)
+	require.NotNil(t, c.TlsCfg.RootCAs)
+	require.Nil(t, c.TlsCfg.Certificates)
+}
+
+func TestClientTLS_IsValid_LoadsTLSConfig_ConfiguredCipherSuites(t *testing.T) {
+	c := minimumValidClientTLS()
+
+	c.CipherSuites = []string{
+		"TLS_CHACHA20_POLY1305_SHA256",
+		"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+		"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+	}
+
+	require.Nil(t, c.TlsCfg)
+
+	_ = c.IsValid()
+
+	wantCipherSuites := []uint16{
+		tls.TLS_CHACHA20_POLY1305_SHA256,
+		tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+		tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+	}
+
+	require.NotNil(t, c.TlsCfg)
+	require.Equal(t, wantCipherSuites, c.TlsCfg.CipherSuites)
+}
+
+func TestClientTLS_IsValid_LoadsTLSConfig_InsecureSkipVerify(t *testing.T) {
+	c := minimumValidClientTLS()
+
+	c.InsecureSkipVerify = true
+
+	require.Nil(t, c.TlsCfg)
+
+	_ = c.IsValid()
+
+	require.NotNil(t, c.TlsCfg)
+	require.True(t, c.TlsCfg.InsecureSkipVerify)
 }
