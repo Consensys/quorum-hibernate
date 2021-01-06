@@ -27,7 +27,7 @@ func NewPeerManager(cfg *config.Node) *PeerManager {
 }
 
 func (pm *PeerManager) getConfigByPrivManKey(key string) *config.Peer {
-	for _, n := range pm.getLatestConfig() {
+	for _, n := range pm.readPeersConfig() {
 		if n.PrivManKey == key {
 			log.Debug("getConfigByPrivManKey - privacy manager key matched", "node", n)
 			return n
@@ -36,22 +36,22 @@ func (pm *PeerManager) getConfigByPrivManKey(key string) *config.Peer {
 	return nil
 }
 
-func (pm *PeerManager) getLatestConfig() []*config.Peer {
+func (pm *PeerManager) readPeersConfig() []*config.Peer {
 	newPeers, err := pm.configReader.Read()
 	if err != nil {
-		log.Error("getLatestConfig - error updating node manager config. will use old config", "path", pm.cfg.BasicConfig.PeersConfigFile, "err", err)
+		log.Error("readPeersConfig - error updating node manager config. will use old config", "path", pm.cfg.BasicConfig.PeersConfigFile, "err", err)
 		return pm.cfg.Peers
 	}
 	if err = newPeers.IsValid(); err != nil {
-		log.Error("getLatestConfig - error validation of node manager config failed.", "err", err)
+		log.Error("readPeersConfig - error validation of node manager config failed.", "err", err)
 		return pm.cfg.Peers
 	}
 
-	log.Debug("getLatestConfig - loaded new config", "cfg", newPeers)
+	log.Debug("readPeersConfig - loaded new config", "cfg", newPeers)
 	if len(newPeers) == 0 {
-		log.Warn("getLatestConfig - node manager list is empty after reload")
+		log.Warn("readPeersConfig - node manager list is empty after reload")
 	}
-	log.Debug("getLatestConfig - node manager config", "new cfg", newPeers)
+	log.Debug("readPeersConfig - node manager config", "new cfg", newPeers)
 	pm.cfg.Peers = newPeers
 	return pm.cfg.Peers
 }
@@ -155,7 +155,6 @@ func (pm *PeerManager) ValidatePeers() ([]NodeStatusInfo, error) {
 	if len(statusArr) != nodeManagerCount {
 		return statusArr, errors.New("some node managers did not respond")
 	}
-
 	shutdownInProgress := false
 	for _, n := range statusArr {
 		if n.Status == core.ShutdownInprogress || n.Status == core.ConsensusWait {
@@ -170,11 +169,11 @@ func (pm *PeerManager) ValidatePeers() ([]NodeStatusInfo, error) {
 	return statusArr, nil
 }
 
-func (pm *PeerManager) getConfigCount(nmCfgs []*config.Peer) int {
+func (pm *PeerManager) getPeersCount(nmCfgs []*config.Peer) int {
 	nodeManagerCount := 0
 	for _, n := range nmCfgs {
 		//skip self
-		if pm.cfg.BasicConfig.PrivacyManager != nil && n.PrivManKey == pm.cfg.BasicConfig.PrivacyManager.PrivManKey {
+		if pm.isPeerSelf(n.Name) {
 			continue
 		}
 		nodeManagerCount++
@@ -194,8 +193,8 @@ func (pm *PeerManager) peerStatus() (int, []NodeStatusInfo) {
 	var wg = sync.WaitGroup{}
 	var resDoneCh = make(chan bool, 1)
 	var resCh = make(chan PeerNodeStatusResult, 1)
-	nmCfgs := pm.getLatestConfig()
-	expResCnt := pm.getConfigCount(nmCfgs)
+	peersConfig := pm.readPeersConfig()
+	expResCnt := pm.getPeersCount(peersConfig)
 
 	if expResCnt == 0 {
 		return 0, nil
@@ -220,9 +219,9 @@ func (pm *PeerManager) peerStatus() (int, []NodeStatusInfo) {
 		}
 	}()
 
-	for _, n := range nmCfgs {
-		//skip self
-		if pm.cfg.BasicConfig.PrivacyManager != nil && n.PrivManKey == pm.cfg.BasicConfig.PrivacyManager.PrivManKey {
+	for _, n := range peersConfig {
+		// skip self
+		if pm.isPeerSelf(n.Name) {
 			continue
 		}
 		wg.Add(1)
@@ -247,4 +246,8 @@ func (pm *PeerManager) peerStatus() (int, []NodeStatusInfo) {
 	<-resDoneCh
 	log.Info("peerStatus - completed", "status", statusArr)
 	return expResCnt, statusArr
+}
+
+func (pm *PeerManager) isPeerSelf(peerName string) bool {
+	return peerName != "" && peerName == pm.cfg.BasicConfig.Name
 }
