@@ -43,6 +43,13 @@ docker run -p 8081:8081 -p 9091:9091 -p 9391:9391 -v /var/run/docker.sock:/var/r
 ```
 Note: `-v /var/run/docker.sock:/var/run/docker.sock` is required to start/stop blockchain client/privacy manager running as docker container.
 
+## Design
+
+#### Architecture
+
+![Architecture & Design](node-manager-arch.jpg)
+
+
 ## Config
 
 Two config files are required: [Node Manager](#Node-Manager-config-file) and [Peers](#Peers-config-file).  `json` and `toml` formats are supported.  Samples can be found in [`config/node_test.go`](config/node_test.go) and [`config/peers_test.go`](config/peers_test.go).
