@@ -74,7 +74,7 @@ Note: `-v /var/run/docker.sock:/var/run/docker.sock` is required to start/stop b
 
 ## Config
 
-Two config files are required: [Node Manager](#Node-Manager-config-file) and [Peers](#Peers-config-file).  `json` and `toml` formats are supported.  Samples can be found in [`config/reader_test.go`](config/reader_test.go) and [`config/peers_test.go`](config/peers_test.go).
+Two config files are required: [Node Manager](#Node-Manager-config-file) and [Peers](#Peers-config-file).  `json` and `toml` formats are supported.  Samples can be found in [`config/reader_test.go`](config/reader_test.go).
 
 ### Node Manager config file
 
