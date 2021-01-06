@@ -33,9 +33,9 @@ You can run node manager, block chain client and privacy manger in any of the fo
 
 #### TLS
 
-It supports both 1-way and mutual (2-way) TLS between user and node manager. 
-It supports both 1-way and mutual (2-way) TLS between node manager and tessera.
-The TLS between node manager and quorum is 1-way.
+- It supports both 1-way and mutual (2-way) TLS between user and node manager. 
+- It supports both 1-way and mutual (2-way) TLS between node manager and tessera.
+- The TLS between node manager and quorum is 1-way.
 
 
 ## Build
