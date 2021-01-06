@@ -126,6 +126,7 @@ How Node Manager should determine whether the process is running or not.
 | `keyFile` | `string` | Path to `.pem` encoded key file |
 | `certificateFile` | `string` | Path to `.pem` encoded certificate file |
 | `clientCaCertificateFile` | `string` | Path to `.pem` encoded CA certificate file to validate client |
+| `cipherSuites` | `[]string` | (Optional) List of cipher suites to use in TLS.  If not set, [defaults](#cipher-suites) will be used. |
 
 ##### clientTLS
 
@@ -137,6 +138,15 @@ How Node Manager should determine whether the process is running or not.
 | `caCertificateFile` | `string` | Path to `.pem` encoded CA certificate file to validate server |
 | `keyFile` | `string` | Path to `.pem` encoded key file |
 | `certificateFile` | `string` | Path to `.pem` encoded certificate file |
+| `cipherSuites` | `[]string` | (Optional) List of cipher suites to use in TLS.  If not set, [defaults](#cipher-suites) will be used. |
+
+##### Cipher Suites
+The TLS cipher suites used by default are:
+
+* TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+* TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+* TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+* TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
 
 #### Peers config file
 
