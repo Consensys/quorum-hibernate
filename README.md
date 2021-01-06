@@ -6,6 +6,38 @@ Node Manager acts as a proxy for the blockchain client and privacy manager nodes
 
 Clients should submit requests to the corresponding Node Manager proxy servers instead of directly to the blockchain client or privacy manager nodes.
 
+User's request to node manager will fail under the following scenarios.
+
+| Scenario  | error message received by user | action required |
+| --- | --- | --- |
+| node manager receives a request from user while block chain client and privacy manager are being shut down by it due to inactivity. | `node is being shutdown, try after sometime` | Retry after some time. |  
+| node manager receives a request from user while block chain client and privacy manager are being started up by it due to activity. | `node is being started, try after sometime` | Retry after some time. |  
+| node manager receives a private transaction request from user and participant node(of the transaction) managed by node manager is down. | `Some participant nodes are down` | Retry after some time. |  
+| node manager receives a request from user when starting/stopping of block chain client or privacy manager by node manager failed. | `node is not ready to accept request` | Cause of failure should be investigated, fixed and node manager restarted. |  
+ 
+## Design
+
+#### Architecture
+
+![Architecture & Design](node-manager-arch.jpg)
+
+#### Usage
+Node manager must run in the same host where block chain client and privacy manager are running.
+You can run node manager, block chain client and privacy manger in any of the following ways.
+
+| Node Manager  | Quorum/Besu | Privacy Manager(Tessera) |
+| --- | --- | --- |
+| host process | host process | host process |
+| host process | docker | docker |
+| docker | docker | docker |
+
+#### TLS
+
+It supports both 1-way and mutual (2-way) TLS between user and node manager. 
+It supports both 1-way and mutual (2-way) TLS between node manager and tessera.
+The TLS between node manager and quorum is 1-way.
+
+
 ## Build
 
 ```bash
@@ -43,16 +75,9 @@ docker run -p 8081:8081 -p 9091:9091 -p 9391:9391 -v /var/run/docker.sock:/var/r
 ```
 Note: `-v /var/run/docker.sock:/var/run/docker.sock` is required to start/stop blockchain client/privacy manager running as docker container.
 
-## Design
-
-#### Architecture
-
-![Architecture & Design](node-manager-arch.jpg)
-
-
 ## Config
 
-Two config files are required: [Node Manager](#Node-Manager-config-file) and [Peers](#Peers-config-file).  `json` and `toml` formats are supported.  Samples can be found in [`config/node_test.go`](config/node_test.go) and [`config/peers_test.go`](config/peers_test.go).
+Two config files are required: [Node Manager](#Node-Manager-config-file) and [Peers](#Peers-config-file).  `json` and `toml` formats are supported.  Samples can be found in [`config/reader_test.go`](config/reader_test.go) and [`config/peers_test.go`](config/peers_test.go).
 
 ### Node Manager config file
 
@@ -138,7 +163,7 @@ How Node Manager should determine whether the process is running or not.
 
 | Field  | Type | Description |
 | --- | --- | --- |
-| `upcheckUrl` | `string` | Process upcheck URL |
+| `url` | `string` | Process upcheck URL |
 | `returnType` | `string` | `string` or `rpcresult`. Provides support for REST upcheck endpoints and RPC endpoints |
 | `method` | `string` | `GET` or `POST`. HTTP request method required for upcheck endpoint  |
 | `body` | `string` | Body of RPC upcheck request  |
@@ -167,7 +192,10 @@ How Node Manager should determine whether the process is running or not.
 
 #### Peers config file
 
-> TODO Description/explanation of separate peers config file
+It contains list of other node managers in the network. This config can be updated whenever there is a change. 
+It is used by node manager to check the status of other node managers when it decides to shut down.
+Node manager always reads the latest information from this config before performing the checks. Any updates
+ to the config file takes effect immediately.
 
 | Field  | Type | Description |
 | --- | --- | --- |
