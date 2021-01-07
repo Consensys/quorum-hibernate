@@ -68,5 +68,5 @@ You can run node manager, block chain client and privacy manger as host process 
 | docker | docker | docker | 
  
 
-## Run and configuration
-Refer [here](CONFIG.md) for run & configuration
+## Build, Run and Configuration
+Refer [here](CONFIG.md) for build, run & configuration details.
