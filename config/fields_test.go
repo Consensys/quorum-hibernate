@@ -40,6 +40,7 @@ const (
 	certificateFileField        = "certificateFile"
 	clientCaCertificateField    = "clientCaCertificateFile"
 	caCertificateFileField      = "caCertificateFile"
+	cipherSuitesField           = "cipherSuites"
 	insecureSkipVerifyField     = "insecureSkipVerify"
 	urlField                    = "url"
 	returnTypeField             = "returnType"

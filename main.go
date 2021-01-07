@@ -137,4 +137,5 @@ func Shutdown() {
 	}
 	nmApp.rpcService.Stop()
 	nmApp.node.Stop()
+	log.ErrWriter.Close()
 }
