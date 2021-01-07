@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -14,10 +15,13 @@ const (
 	DebugLevel            //3
 )
 
+var ErrWriter *io.PipeWriter
+
 func init() {
 	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
 	logrus.SetLevel(logrus.InfoLevel)
 	logrus.SetOutput(os.Stdout)
+	ErrWriter = logrus.StandardLogger().WriterLevel(logrus.ErrorLevel)
 }
 
 func Error(args ...interface{}) {

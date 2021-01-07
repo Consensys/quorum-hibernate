@@ -2,13 +2,14 @@ package rpc
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	golog "log"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/ConsenSysQuorum/node-manager/config"
-
 	"github.com/ConsenSysQuorum/node-manager/log"
 	"github.com/ConsenSysQuorum/node-manager/node"
 	"github.com/gorilla/rpc/v2"
@@ -57,6 +58,7 @@ func (r *RPCService) Start() error {
 		ReadTimeout:  ReadTimeout,
 		WriteTimeout: WriteTimeout,
 		IdleTimeout:  IdleTimeout,
+		ErrorLog:     golog.New(log.ErrWriter, "", 0),
 	}
 
 	tlsCfg := r.qn.GetNodeConfig().BasicConfig.Server.TLSConfig
@@ -66,6 +68,7 @@ func (r *RPCService) Start() error {
 		if err != nil {
 			return err
 		}
+		r.httpServer.TLSNextProto = make(map[string]func(*http.Server, *tls.Conn, http.Handler)) // disable HTTP/2 to prevent need to use ciphers with 128 bit keys
 	}
 
 	r.shutdownWg.Add(1)
