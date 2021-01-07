@@ -5,10 +5,18 @@ import "net/url"
 type PeerArr []*Peer
 
 func (a *PeerArr) IsValid() error {
+	nameList := make(map[string]bool, len(*a))
 	for i, c := range *a {
+		// check if the name is duplicate
+		if _, ok := nameList[c.Name]; ok {
+			return newArrFieldErr("peers", i, isDuplicate)
+		}
+
+		// validate peer entry
 		if err := c.IsValid(); err != nil {
 			return newArrFieldErr("peers", i, err)
 		}
+		nameList[c.Name] = true
 	}
 	return nil
 }

@@ -7,6 +7,7 @@ import (
 
 var (
 	isEmptyErr              = errors.New("is empty")
+	isDuplicate             = errors.New("node name is duplicate")
 	isNotGreaterThanZeroErr = errors.New("must be > 0")
 )
 

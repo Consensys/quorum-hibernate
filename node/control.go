@@ -269,6 +269,7 @@ func (n *NodeControl) startClientStatusMonitor() {
 		var (
 			isClientUp bool
 			timer      = time.NewTicker(time.Duration(n.config.BasicConfig.UpchkPollingInterval) * time.Second)
+			init       = false
 		)
 		defer timer.Stop()
 
@@ -276,7 +277,12 @@ func (n *NodeControl) startClientStatusMonitor() {
 		for {
 			select {
 			case <-timer.C:
-				isClientUp = n.CheckClientUpStatus(false)
+				if !init {
+					isClientUp = n.CheckClientUpStatus(true)
+					init = true
+				} else {
+					isClientUp = n.CheckClientUpStatus(false)
+				}
 				log.Debug("clientStatusMonitor", "isClientUp", isClientUp)
 				continue
 			case <-n.clntStatMonStopCh:
@@ -375,7 +381,7 @@ func (n *NodeControl) StopClient() bool {
 	// consensus is ok. check with network to prevent multiple nodes
 	// going down at the same time
 	w := core.RandomInt(10, 5000)
-	log.Info("StopClient - waiting for p2p validation try", "wait time in seconds", w)
+	log.Info("StopClient - waiting for p2p validation try", "wait time in milliseconds", w)
 	time.Sleep(time.Duration(w) * time.Millisecond)
 	n.SetNodeStatus(core.ShutdownInprogress)
 
