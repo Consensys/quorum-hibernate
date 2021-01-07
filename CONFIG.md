@@ -164,7 +164,7 @@ The TLS cipher suites used by default are:
 #### Peers config file
 
 It contains list of other node managers in the network. This config can be updated whenever there is a change. 
-It is used by node manager to check the status of other node managers when it decides to shut down.
+It is used by node manager to check the status of other node managers when it decides to stop the nodes.
 Node manager always reads the latest information from this config before performing the checks. Any updates
  to the config file takes effect immediately.
 
