@@ -38,9 +38,7 @@ func (c Proxy) IsValid() error {
 	if c.ProxyAddr == "" {
 		return newFieldErr("proxyAddress", isEmptyErr)
 	}
-	if _, err := url.Parse(c.ProxyAddr); err != nil {
-		return newFieldErr("proxyAddress", err)
-	}
+
 	if c.UpstreamAddr == "" {
 		return newFieldErr("upstreamAddress", isEmptyErr)
 	}
