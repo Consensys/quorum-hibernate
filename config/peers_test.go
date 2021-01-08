@@ -90,9 +90,13 @@ func TestPeerArr_IsValid_MinimumValid(t *testing.T) {
 
 func TestPeerArr_IsValid(t *testing.T) {
 	validPeer := minimumValidPeer()
+	validPeer.Name = "mypeer1"
 
 	invalidPeer := minimumValidPeer()
 	invalidPeer.RpcUrl = ""
+	invalidPeer.Name = "mypeer2"
+
+	validPeer1 := minimumValidPeer()
 
 	tests := []struct {
 		name       string
@@ -109,14 +113,29 @@ func TestPeerArr_IsValid(t *testing.T) {
 			peers:      PeerArr{&validPeer, &invalidPeer},
 			wantErrMsg: fmt.Sprintf("%v[1].%v is empty", peersField, rpcUrlField),
 		},
+		{
+			name:       "duplicate peers",
+			peers:      PeerArr{&validPeer, &validPeer},
+			wantErrMsg: fmt.Sprintf("%v[1] node name is duplicate", "peers"),
+		},
+		{
+			name:       "no error",
+			peers:      PeerArr{&validPeer, &validPeer1},
+			wantErrMsg: "",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.peers.IsValid()
 
-			require.IsType(t, &arrFieldErr{}, err)
-			require.EqualError(t, err, tt.wantErrMsg)
+			if tt.wantErrMsg == "" {
+				require.NoError(t, err)
+			} else {
+				require.IsType(t, &arrFieldErr{}, err)
+				require.EqualError(t, err, tt.wantErrMsg)
+			}
+
 		})
 	}
 

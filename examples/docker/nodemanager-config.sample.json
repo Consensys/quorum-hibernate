@@ -1,0 +1,47 @@
+{
+  "name": "node1",
+  "upcheckPollingInterval": 1,
+  "peersConfigFile": "./test/shell/nm1.toml",
+  "inactivityTime": 60,
+  "disableStrictMode": true,
+  "proxies": [
+    { "name": "geth-rpc", "type": "http", "proxyAddress": "0.0.0.0:9091", "upstreamAddress": "http://host.docker.internal:22000", "proxyPaths": ["/"], "readTimeout": 15, "writeTimeout": 15 },
+    { "name": "geth-graphql", "type": "http", "proxyAddress": "0.0.0.0:9191", "upstreamAddress": "http://host.docker.internal:8547/graphql", "proxyPaths": ["/graphql"], "readTimeout": 15, "writeTimeout": 15 },
+    { "name": "geth-ws", "type": "ws", "proxyAddress": "0.0.0.0:9291", "upstreamAddress": "ws://host.docker.internal:23000", "proxyPaths": ["/"], "readTimeout": 15, "writeTimeout": 15 },
+    { "name": "tessera", "type": "http", "proxyAddress": "0.0.0.0:9391", "upstreamAddress": "http://host.docker.internal:9001", "proxyPaths": ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"], "readTimeout": 15, "writeTimeout": 15 }
+  ],
+  "server": {
+    "rpcAddress": "0.0.0.0:8081",
+    "rpcCorsList": ["*"],
+    "rpcvHosts": ["*"]
+  },
+  "blockchainClient": {
+    "type": "goquorum",
+    "consensus": "raft",
+    "rpcUrl": "http://host.docker.internal:22000",
+    "process": {
+      "name": "bcclnt",
+      "controlType": "docker",
+      "upcheckConfig": {
+        "url": "http://host.docker.internal:22000",
+        "method": "POST",
+        "body": "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",
+        "returnType": "rpcresult"
+      }
+    }
+  },
+  "privacyManager": {
+    "publicKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
+    "process": {
+      "name": "privman",
+      "controlType": "docker",
+      "upcheckConfig": {
+        "url": "http://host.docker.internal:9001/upcheck",
+        "method": "GET",
+        "body": "",
+        "returnType": "string",
+        "expected": "I'm up!"
+      }
+    }
+  }
+}
