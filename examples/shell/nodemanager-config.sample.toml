@@ -1,0 +1,57 @@
+#node manager name
+name = "node1"
+#blockchain client RPC URL
+upcheckPollingInterval = 1
+peersConfigFile = "../../../peers.toml"
+#geth/tessera inactivity timeout seconds
+inactivityTime = 60
+
+[[proxies]]
+    name = "geth-rpc"
+    type = "http"
+    proxyAddress = "localhost:9091"
+    upstreamAddress = "http://localhost:22000"
+    proxyPaths = ["/"]
+    readTimeout = 15
+    writeTimeout = 15
+
+[[proxies]]
+    name = "tessera"
+    type = "http"
+    proxyAddress = "localhost:9391"
+    upstreamAddress = "http://localhost:9001"
+    readTimeout = 15
+    writeTimeout = 15
+    proxyPaths = ["/version", "/upcheck", "/resend", "/push", "/partyinfo", "/partyinfo-mirror", "/partyinfo/validate"]
+    ignorePathsForActivity=["/upcheck", "/partyinfo", "/partyinfo/validate"]
+
+#rpc server details of node manager
+[server]
+    # The interface + port the application should bind to
+    rpcAddress = "localhost:8081"
+    rpcCorsList = ["*"]
+    rpcvHosts = ["*"]
+
+[blockchainClient]
+    type = "goquorum"
+    consensus = "istanbul"
+    rpcUrl = "http://localhost:22000"
+
+#geth's process control config
+[blockchainClient.process]
+    name = "bcclnt"
+    controlType = "shell"
+    stopCommand = ["bash", "./scripts/stop-node.sh", "22000"]
+    startCommand = ["bash", "./scripts/istanbul-start.sh", "1"]
+    upcheckConfig = { url = "http://localhost:22000", method = "POST", body = "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",returnType = "rpcresult"}
+
+#tessera's process control config
+[privacyManager]
+    publicKey = "BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo="
+
+    [privacyManager.process]
+        name = "privman"
+        controlType = "shell"
+        stopCommand = ["bash", "./scripts/stop-tessera.sh", "1"]
+        startCommand = ["bash", "/scripts/start-tessera.sh", "1"]
+        upcheckConfig = { url = "http://localhost:9001/upcheck", method = "GET", body = "", returnType = "string", expected = "I'm up!"}
