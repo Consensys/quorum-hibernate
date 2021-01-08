@@ -96,7 +96,7 @@ func TestPeerArr_IsValid(t *testing.T) {
 	invalidPeer.RpcUrl = ""
 	invalidPeer.Name = "mypeer2"
 
-	validPeer1 := minimumValidPeer()
+	anotherValidPeer := minimumValidPeer()
 
 	tests := []struct {
 		name       string
@@ -116,11 +116,11 @@ func TestPeerArr_IsValid(t *testing.T) {
 		{
 			name:       "duplicate peers",
 			peers:      PeerArr{&validPeer, &validPeer},
-			wantErrMsg: fmt.Sprintf("%v[1] node name is duplicate", "peers"),
+			wantErrMsg: fmt.Sprintf("%v[1].%v must be unique", peersField, nameField),
 		},
 		{
 			name:       "no error",
-			peers:      PeerArr{&validPeer, &validPeer1},
+			peers:      PeerArr{&validPeer, &anotherValidPeer},
 			wantErrMsg: "",
 		},
 	}
