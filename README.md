@@ -1,28 +1,42 @@
 # Node Manager
 
 ## Introduction
-Node Manager is a tool that monitors activity in a blockchain client and Quorum privacy manager node pair, stops them after a configurable period of inactivity, and restarts them on incoming requests.
+In large networks it is possible that some of the nodes in the network have low transaction volumes and probably do not receive or initiate transactions for days. However, the node keeps running incurring the infrastructure cost. One of the requirements has been to proactively monitor the transaction traffic at a node and stop the node if its inactive for long.
 
-Node Manager acts as a proxy for the blockchain client and privacy manager nodes.  When Node Manager receives a request from a client, it will bring up the blockchain client and privacy manager nodes if they are down, and forward the request to the relevant node.
+Node manager is designed to cater to above requirement. The tool is built to:
 
-Clients should submit requests to the corresponding Node Manager proxy servers instead of directly to the blockchain client or privacy manager nodes.
+* Monitor a linked blockchain client and privacy manager for inactivity
+* Hibernate the linked blockchain client and privacy manager if its inactive beyond certain configured time
+* Restart the blockchain client and privacy manager upon new transaction/calls 
 
-## Features
-- node manager supports block chain clients goQuorum & Besu and privacy manager Tessera. 
-- You can use node manager to manage all nodes(one node manager per block chain client & privacy manager pair) or some nodes in your network.
-- Periodic sync
-    - You can configure node manager to bring up the nodes periodically for syncing up with network. This would prevent nodes from going out of sync during hibernation.
-- TLS
-    - 1-way and 2-way (mutual) TLS can be configured on each of Node Manager's servers, clients, and proxies.  
+Node Manager acts as a proxy for the blockchain client and privacy manager nodes. When running with node manager it is expected that all clients would submit requests to the corresponding node manager proxy servers instead of directly to the blockchain client or privacy manager nodes.
+
 
 ## Design
 
 ### Architecture
-![Architecture & Design](node-manager-arch.jpg)
+The diagram below depicts a network of 3 nodes with node manager running on each node.
 
-### Sample request processing flow
+![Architecture & Design](images/node-manager-arch.jpg)
+
+Each node manager acts as a proxy for the linked blockchain client and privacy managers and monitors the activity on these. The node manager also communicates with other node managers to retrieve the remote node status.
+
+### Sample request processing flow when local and remote nodes are down
+
 Processing of private transaction request between nodes A and B. Both nodes are managed by node manager.
-![request flow](workflow.jpeg)
+![request flow](images/workflow.jpeg)
+
+
+## Key Features
+
+- Supports both pure and hybrid deployment models. 
+- Periodic sync
+    - You can configure node manager to bring up the nodes periodically for syncing up with network. This would prevent nodes from going out of sync during hibernation.
+- TLS
+    - 1-way and 2-way (mutual) TLS can be configured on each of Node Manager's servers, clients, and proxies.  
+- node manager supports block chain clients goQuorum & Besu and privacy manager Tessera. 
+
+
 
 
 ### Private transaction handling flow
