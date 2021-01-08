@@ -101,7 +101,7 @@ func (c *ClientTLS) SetTLSConfig() error {
 }
 
 func (c *ClientTLS) IsValid() error {
-	if c.CACertFile == "" {
+	if !c.InsecureSkipVerify && c.CACertFile == "" {
 		return newFieldErr("caCertificateFile", isEmptyErr)
 	}
 	if c.CertFile != "" && c.KeyFile == "" {

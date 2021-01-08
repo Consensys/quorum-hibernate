@@ -307,13 +307,39 @@ func TestClientTLS_IsValid_MinimumValid(t *testing.T) {
 }
 
 func TestClientTLS_IsValid_CaCertificateFile_NotSet(t *testing.T) {
-	c := minimumValidClientTLS()
-	c.CACertFile = ""
+	tests := []struct {
+		name               string
+		insecureSkipVerify bool
+		wantErrMsg         string
+	}{
+		{
+			name:               "insecureSkipVerify disabled",
+			insecureSkipVerify: false,
+			wantErrMsg:         caCertificateFileField + " is empty",
+		},
+		{
+			name:               "insecureSkipVerify enabled",
+			insecureSkipVerify: true,
+			wantErrMsg:         "",
+		},
+	}
 
-	err := c.IsValid()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := minimumValidClientTLS()
+			c.InsecureSkipVerify = tt.insecureSkipVerify
+			c.CACertFile = ""
 
-	require.IsType(t, &fieldErr{}, err)
-	require.EqualError(t, err, caCertificateFileField+" is empty")
+			err := c.IsValid()
+
+			if tt.wantErrMsg == "" {
+				require.NoError(t, err)
+			} else {
+				require.IsType(t, &fieldErr{}, err)
+				require.EqualError(t, err, tt.wantErrMsg)
+			}
+		})
+	}
 }
 
 func TestClientTLS_IsValid_CaCertificateFile_NotFound(t *testing.T) {

@@ -9,7 +9,7 @@ func (a *PeerArr) IsValid() error {
 	for i, c := range *a {
 		// check if the name is duplicate
 		if _, ok := nameList[c.Name]; ok {
-			return newArrFieldErr("peers", i, isDuplicate)
+			return newArrFieldErr("peers", i, newFieldErr("name", isNotUniqueErr))
 		}
 
 		// validate peer entry
