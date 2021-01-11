@@ -1,11 +1,46 @@
 # Node Manager Design
 
-## Architecture
-The diagram below depicts a network of 3 nodes with Node Manager running on each node.
+## What does Node Manager do?
 
 ![Architecture & Design](images/node-manager-arch.jpg)
 
-Each Node Manager acts as a proxy for the linked blockchain client and privacy managers and monitors the activity on these. The Node Manager also communicates with other Node Managers to retrieve the remote node status.
+The above diagram depicts a simple 3 node privacy-enabled network where each node uses Node Manager.
+
+Each Node Manager:
+
+* Acts as a proxy for its linked Blockchain Client and Privacy Manager.  As all incoming traffic goes through Node Manager, it is able to monitor the activity on the linked nodes. 
+  
+* Communicates with other Node Managers to retrieve the statuses of their linked nodes.
+
+### Node hibernation flow
+
+The below diagram depicts the flow for hibernating a node upon configured inactivity time.
+
+![node hibernation flow](images/node-hibernation-flow.jpg)
+
+* **1.1:** Node Manager monitors the activity/inactivity of the linked blockchain client and privacy manager.
+
+* **1.2:** If the node has been inactive for more than configured time, Node Manager initiates the process to check if the node can be hibernated.
+
+* **1.2.1 to 1.2.3:** Node Manager makes a RPC api call to fetch the network and consensus status for the network to validate if the node can hibernate. This validation ensures that the network is still operation even when the current node hibernates. Please refer [here](./Design.md#consensus-validations-prior-to-hibernating-the-node) for details of validation.
+  * If the validation is successful, Node Manager proceeds to hibernate the node.
+  * If not, aborts the hibernation process, resets the inactivity timer and waits for the next inactivity trigger to attempt hibernation again.
+
+* **1.3 to 1.3.3:** In a race condition, it is possible that multiple Node Managers trigger node hibernation at the same time and thus break the minimum number of nodes requirement for the network to be operational. To avoid such a scenario, in this step, Node Manager reaches out to other Node Managers to check if any remote Node Managers have initiated node hibernation.
+  * If yes, then it aborts the hibernation process, resets the inactivity timer and waits for the next inactivity trigger to attempt hibernation again.
+  * If no, it proceeds the next step of hibernating the node
+
+* **1.4:** Node Manager initiates the hibernation of local blockchain client and privacy manager.
+
+### Consensus validations prior to hibernating the node
+The Node Manager can be brought up in Strict mode (by default) or Normal mode ( by setting `DisableStrictMode` to `true` in config). The below table explains the consensus validation logic applied to ensure that the overall network is still operational when the current node goes down.
+
+| BC Client | Consensus Engine | Strict Mode | Normal Mode |
+| :---: | :---: | :--- | :--- |
+| GoQuorum | Raft | - If the node is a **minter or peer**, it cannot be hibernated. <br /> <br /> - For a **learner** node, hibernation is allowed | - **Minter** node cannot hibernate <br /> <br /> - Maximum ***49%*** of **peer** nodes can hibernate <br /> <br />- **Learner** node can hibernate
+| GoQuorum | Istanbul | - **Validator** nodes cannot hibernate <br /> <br /> - **Non-validator** nodes can hibernate | - Maximum ***f*** validator nodes can hibernate in a network with ***3f + 1*** validator nodes <br /> <br /> - Non-validator nodes can hibernate
+| GoQuorum | Clique | - **Signer** nodes cannot hibernate <br /> <br /> - **Non-signer** nodes can hibernate | - Maximum ***49%*** of signer nodes can hibernate <br /> <br /> - **Non-signer** nodes can always hibernate
+| Besu | Clique | - **Signer** nodes cannot hibernate <br /> <br /> - **Non-signer** nodes can hibernate | - Maximum ***49%*** of signer nodes can hibernate <br /> <br /> - **Non-signer** nodes can always hibernate
 
 ### Request flow when local and remote nodes are down
 
@@ -31,37 +66,6 @@ The flow is as described below:
 * **1.4.1 to 1.4.8:** This is standard private transaction processing flow of GoQuorum. Once the private transaction is processed, GoQuorum responds back to Node Manager `A` with response.
 
 * **1.4.9, 1.4.10:** Node Manager `A` receives the response for the  transaction and responds back to client
-
-
-### Node hibernation flow
-
-The below diagram depicts the flow for hibernating a node upon configured inactivity time.
-
-![node hibernation flow](images/node-hibernation-flow.jpg)
-
-* **1.1:** Node Manager monitors the activity/inactivity of the linked blockchain client and privacy manager.
-
-* **1.2:** If the node has been inactive for more than configured time, Node Manager initiates the process to check if the node can be hibernated.
-
-* **1.2.1 to 1.2.3:** Node Manager makes a RPC api call to fetch the network and consensus status for the network to validate if the node can hibernate. This validation ensures that the network is still operation even when the current node hibernates. Please refer [here](./Design.md#consensus-validations-prior-to-hibernating-the-node) for details of validation. 
-    * If the validation is successful, Node Manager proceeds to hibernate the node. 
-    * If not, aborts the hibernation process, resets the inactivity timer and waits for the next inactivity trigger to attempt hibernation again.
-    
-* **1.3 to 1.3.3:** In a race condition, it is possible that multiple Node Managers trigger node hibernation at the same time and thus break the minimum number of nodes requirement for the network to be operational. To avoid such a scenario, in this step, Node Manager reaches out to other Node Managers to check if any remote Node Managers have initiated node hibernation. 
-    * If yes, then it aborts the hibernation process, resets the inactivity timer and waits for the next inactivity trigger to attempt hibernation again. 
-    * If no, it proceeds the next step of hibernating the node
-    
-* **1.4:** Node Manager initiates the hibernation of local blockchain client and privacy manager.
-
-### Consensus validations prior to hibernating the node
- The Node Manager can be brought up in Strict mode (by default) or Normal mode ( by setting `DisableStrictMode` to `true` in config). The below table explains the consensus validation logic applied to ensure that the overall network is still operational when the current node goes down. 
-
-| BC Client | Consensus Engine | Strict Mode | Normal Mode |
-| :---: | :---: | :--- | :--- |
-| GoQuorum | Raft | - If the node is a **minter or peer**, it cannot be hibernated. <br /> <br /> - For a **learner** node, hibernation is allowed | - **Minter** node cannot hibernate <br /> <br /> - Maximum ***49%*** of **peer** nodes can hibernate <br /> <br />- **Learner** node can hibernate
-| GoQuorum | Istanbul | - **Validator** nodes cannot hibernate <br /> <br /> - **Non-validator** nodes can hibernate | - Maximum ***f*** validator nodes can hibernate in a network with ***3f + 1*** validator nodes <br /> <br /> - Non-validator nodes can hibernate
-| GoQuorum | Clique | - **Signer** nodes cannot hibernate <br /> <br /> - **Non-signer** nodes can hibernate | - Maximum ***49%*** of signer nodes can hibernate <br /> <br /> - **Non-signer** nodes can always hibernate
-| Besu | Clique | - **Signer** nodes cannot hibernate <br /> <br /> - **Non-signer** nodes can hibernate | - Maximum ***49%*** of signer nodes can hibernate <br /> <br /> - **Non-signer** nodes can always hibernate
 
 ### Error handling for user
 User requests to Node Manager will fail under the following scenarios.
