@@ -10,18 +10,19 @@ Node manager must run in the same host where block chain client and privacy mana
 | Docker | Docker | Docker | 
  
  
-## Build
-Clone the repo and build with the below command
+## Up & Running
+
+### Using Binary
+
+#### Build
 
 ```bash
 go install
 ```
 
+#### Run
+
 Ensure that `node-manager` is there in `$PATH` 
-
-## Run
-
-To run a a host process use the below command.
 
 ```bash
 node-manager --config path/to/config.json --verbosity 3
@@ -32,29 +33,32 @@ node-manager --config path/to/config.json --verbosity 3
 | `--config` | Path to `.json` or `.toml` configuration file |
 | `--verbosity` | Logging level (`0` = `ERROR`, `1` = `WARN`, `2` = `INFO`, `3` = `DEBUG`) |
 
-## Using Docker
 
-### Build
+### Using Docker
+
+#### Build
+
 ```bash
 docker build . -t node-manager
 ```
+#### Run
 
-### Run
-
-- A configuration must be supplied to the Docker container. Refer to sample config files [config.toml](config.docker.local.toml) and [nodemanager.toml](nodemanger.docker.local.toml)
+Configuration files must be supplied to the Docker container. Refer to sample config files [config.toml](config.docker.local.toml) and [nodemanager.toml](nodemanger.docker.local.toml)
 ```bash
 docker run -p <port mapping> -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,source=<path to config>,target=/config.toml node-manager:latest
 
 ```
-example
+
+**Example**
 ```bash
 docker run -p 8081:8081 -p 9091:9091 -p 9391:9391 -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,source=/usr/john/node1.toml,target=/config.toml --mount type=bind,source=/usr/john/nm1.toml,target=/nm1.toml node-manager:latest -config /config.toml
 ```
 **Note:** `-v /var/run/docker.sock:/var/run/docker.sock` is required to start/stop blockchain client/privacy manager running as docker container.
 
-## Config
 
-Two config files are required: [Node Manager](#Node-Manager-config-file) and [Peers](#Peers-config-file).  `json` and `toml` formats are supported.  Samples can be found in [`config/reader_test.go`](config/reader_test.go).
+## Configuration
+
+For starting Node Manager, two configuration files are required: [node manager config](#Node-Manager-config-file) and [peers config](#Peers-config-file). Both `json` and `toml` formats are supported.  Samples can be found in [here](../examples/README.md).
 
 ### Node Manager config file
 
