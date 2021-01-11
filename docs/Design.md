@@ -68,7 +68,7 @@ In more detail:
 * **1.2:** If the local GoQuorum or Tessera are down, Node Manager *A* wakes them up.
 
 * **1.3.1 to 1.3.4:** Node Manager *A* asks Node Manager *B* for its status. Node Manager *B* checks the status of its linked GoQuorum and Tessera. 
-  * If they are down Node Manager *B* initiates its wake up process. Node Manager *A* aborts the private transaction send.  Node Manager *B* should be given enough time for its wake up to complete before the private transation is resent. 
+  * If they are down Node Manager *B* initiates its wake up process. Node Manager *A* aborts the private transaction send. See [User Errors and Actions](#User-Errors-and-Actions) for more info.
   * If they are up Node Manager *B* responds appropriately.  Node Manager *A* continue the private transaction send. 
 
 * **1.4:** Once all nodes are up, Node Manager *A* forwards the request to Node *A*'s GoQuorum for processing.
@@ -77,14 +77,14 @@ In more detail:
 
 * **1.4.9, 1.4.10:** Node Manager *A* receives the response for the transaction and returns it to the client.
 
-## Error handling for user
-User requests to Node Manager will fail under the following scenarios.
+## User Errors and Actions
+User-submitted requests to Node Manager will fail in the following scenarios:
 
-| Scenario  | Error message received by user | Action required |
+| Scenario  | Error | Action |
 | --- | --- | --- |
-| Node Manager receives a request from user while block chain client and privacy manager are being stopped by it due to inactivity. | 500 (Internal Server Error) - `node is being shutdown, try after sometime` | Retry after some time. |  
-| Node Manager receives a request from user while block chain client and privacy manager are being started up by it due to activity. | 500 (Internal Server Error) - `node is being started, try after sometime` | Retry after some time. |  
-| Node Manager receives a private transaction request from user and participant node(of the transaction) managed by Node Manager is down. | 500 (Internal Server Error) - `Some participant nodes are down` | Retry after some time. |  
-| Node Manager receives a request from user when starting/stopping of block chain client or privacy manager by Node Manager failed. | 500 (Internal Server Error) - `node is not ready to accept request` | Investigate the cause of failure and fix the issue. |  
+| User sends request when Node Manager is hibernating the Blockchain Client and Privacy Manager | 500 (Internal Server Error) - `node is being shutdown, try after sometime` | Retry after some time. |  
+| User sends request when Node Manager is starting the Blockchain Client and Privacy Manager | 500 (Internal Server Error) - `node is being started, try after sometime` | Retry after some time. |  
+| User sends a private transaction request when at least one of the remote recipients is hibernated by Node Manager | 500 (Internal Server Error) - `Some participant nodes are down` | Retry after some time. |  
+| User sends request after Node Manager has encountered an issue during hibernation/waking up of Blockchain Client or Privacy Manager | 500 (Internal Server Error) - `node is not ready to accept request` | Investigate the cause of Node Manager's failure and fix the issue. |  
 
-Node Manager will consider its peer is down and proceed with processing if it is not able to get a response from its peer Node Manager when it tries to check the status for stopping nodes or handling private transaction.
+*Note: Node Manager will consider a peer to be hibernated if it does not receive a response the peer's status during private transaction processing.*
