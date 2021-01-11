@@ -63,3 +63,14 @@ The below diagram depicts the flow for hibernating a node upon configured inacti
 | GoQuorum | Clique | - **Signer** nodes cannot hibernate <br /> <br /> - **Non-signer** nodes can hibernate | - Maximum ***49%*** of signer nodes can hibernate <br /> <br /> - **Non-signer** nodes can always hibernate
 | Besu | Clique | - **Signer** nodes cannot hibernate <br /> <br /> - **Non-signer** nodes can hibernate | - Maximum ***49%*** of signer nodes can hibernate <br /> <br /> - **Non-signer** nodes can always hibernate
 
+### Error handling for user
+User requests to Node Manager will fail under the following scenarios.
+
+| Scenario  | Error message received by user | Action required |
+| --- | --- | --- |
+| Node Manager receives a request from user while block chain client and privacy manager are being stopped by it due to inactivity. | 500 (Internal Server Error) - `node is being shutdown, try after sometime` | Retry after some time. |  
+| Node Manager receives a request from user while block chain client and privacy manager are being started up by it due to activity. | 500 (Internal Server Error) - `node is being started, try after sometime` | Retry after some time. |  
+| Node Manager receives a private transaction request from user and participant node(of the transaction) managed by Node Manager is down. | 500 (Internal Server Error) - `Some participant nodes are down` | Retry after some time. |  
+| Node Manager receives a request from user when starting/stopping of block chain client or privacy manager by Node Manager failed. | 500 (Internal Server Error) - `node is not ready to accept request` | Investigate the cause of failure and fix the issue. |  
+
+Node Manager will consider its peer is down and proceed with processing if it is not able to get a response from its peer Node Manager when it tries to check the status for stopping nodes or handling private transaction.
