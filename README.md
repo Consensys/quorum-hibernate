@@ -20,11 +20,34 @@ Node Manager acts as a proxy for the blockchain client and privacy manager nodes
     - **GoQuorum** and **Besu** block chain clients
     - **Tessera** as privacy manager
 
+### Build & Run
+
+```bash
+node-manager --config path/to/config.json --verbosity 3
+```
+
+| Flag | Description |
+| :---: | :--- |
+| `--config` | Path to `.json` or `.toml` [configuration file](docs/Config.md) |
+| `--verbosity` | Logging level (`0` = `ERROR`, `1` = `WARN`, `2` = `INFO`, `3` = `DEBUG`) |
+
+Alternatively the [`quorumengineering/node-manager`](https://hub.docker.com/r/quorumengineering/node-manager) Docker image can be used, for example:
+
+```bash
+docker run \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -p 8081:8081 -p 9091:9091 -p 9391:9391 \
+    --mount type=bind,source=/usr/john/node1.toml,target=/config.toml --mount type=bind,source=/usr/john/nm1.toml,target=/nm1.toml \
+    quorumengineering/node-manager:latest -config /config.toml
+```
+
+*Note: `-v /var/run/docker.sock:/var/run/docker.sock` allows the Node Manager container to start/stop Blockchain Client/Privacy Manager containers.*
+
 ### Design
 Refer [here](docs/Design.md) for Node Manager design and flows.
 
-### Build, Run and Configuration
-Refer [here](docs/CONFIG.md) for build, run & configuration details.
+### Configuration
+Refer [here](docs/Config.md) for configuration details.
 
 ### Examples
 Refer [here](examples/README.md) for sample configuration files and start scripts
