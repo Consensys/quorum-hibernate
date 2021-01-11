@@ -50,6 +50,6 @@ See [docs/deployment.md](docs/deployment.md) for details on adding and using Nod
 See [docs/how-it-works.md](docs/how-it-works.md) for an overview of the processes used by Node Manager and common errors.
 
 ## Sample Configurations
-See [examples](examples) for sample configuration files for various network types.
+See [docs/samples](docs/samples) for sample configuration files for various network types.
 
 
