@@ -15,7 +15,11 @@
 1. Construct the Node Manager config as required by the existing deployment 
 1. Start Node Manager
 1. If using Tessera: Update Tessera's server configs so that `serverAddress` is the corresponding Node Manager proxy address, and `bindingAddress` is the "internal" address that Node Manager will forward requests to. See [Tessera's Server Addresses docs](https://docs.tessera.consensys.net/en/latest/HowTo/Configure/TesseraAPI/#server-addresses) for more info. 
-1. Update/inform clients to use the proxy addresses for all requests.  **If clients continue to use the direct Blockchain Client and Privacy Manager API addresses Node Manager will be unable to accurately determine activity which will likely lead to inconsistent behaviour.**
+1. Update/inform clients to use the proxy addresses for all requests.  
+   
+**If clients continue to use the direct Blockchain Client and Privacy Manager API addresses instead of Node Manager's proxy addresses, Node Manager will be unable to accurately determine activity. This will likely lead to inconsistent behaviour.**
+
+
 
 ## Understanding Client Errors
 The following table describes scenarios where user-submitted requests are expected to fail.  The Action describes the necessary steps to continue:

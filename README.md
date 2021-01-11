@@ -1,24 +1,21 @@
 # Node Manager
 
 ## Introduction
-In large networks it is possible that some nodes in the network have low transaction volumes and probably do not receive or initiate transactions for days. However, the node keeps running incurring the infrastructure cost. One of the requirements has been to proactively monitor the transaction traffic at a node and stop the node if its inactive for long.
+In large networks it is likely that some nodes do not receive or initiate transactions for extended periods of time. These nodes incur a potentially unwanted infrastructure cost. 
 
-Node Manager is designed to cater to above requirement. The tool is built to:
-
-* Monitor a linked Blockchain Client and Privacy Manager for inactivity
-* Hibernate the linked Blockchain Client and Privacy Manager if its inactive beyond certain configured time
-* Restart the Blockchain Client and Privacy Manager upon new transaction/calls 
-
-Node Manager acts as a proxy for the Blockchain Client and Privacy Manager nodes. When running with Node Manager it is expected that all clients would submit requests to the corresponding Node Manager proxy servers instead of directly to the Blockchain Client or Privacy Manager nodes.
+Node Manager provides a solution to this problem by monitoring a node's API traffic and stopping (hibernating) the node if it has not had any API activity for a significant period of time.
 
 ## Features
 
-- Node Manager supports both **pure** and **hybrid** deployment models. In a pure deployment model, all nodes have a Node Manager instance running. However, in hybrid deployment model, it is possible to have few nodes with Node Manager running and few without Node Manager.  
-- **Periodic sync** feature allows nodes to be brought up periodically to ensure that its synced with the network. 
-- **TLS**: 1-way and 2-way (mutual) TLS can be configured on each of Node Manager's servers, clients, and proxies.  
-- Currently supports: 
-    - **GoQuorum** and **Besu** Blockchain Clients
-    - **Tessera** as Privacy Manager
+* Monitors a linked Blockchain Client and Privacy Manager for inactivity.
+    * Supported Blockchain Clients: **GoQuorum** and **Besu**.
+    * Supported Privacy Managers: **Tessera**.
+* Acts as a proxy for the Blockchain Client and Privacy Manager.
+* Hibernates the linked Blockchain Client and Privacy Manager if the period of inactivity exceeds a configurable limit.
+* Restarts (wakes up) the Blockchain Client and Privacy Manager when new transaction or API requests are received.
+* Does not require the entire network to be using Node Managers.
+* Periodically wakes up the node (configurable) to allow it to sync with the network and ensure it does not fall too far behind. 
+* 1-way and 2-way (mutual) TLS supported on all of Node Manager's servers, clients, and proxies.
 
 ## Build & Run
 
@@ -43,14 +40,14 @@ docker run \
 
 *Note: `-v /var/run/docker.sock:/var/run/docker.sock` allows the Node Manager container to start/stop Blockchain Client/Privacy Manager containers.*
 
-## How It Works
-See [docs/how-it-works.md](docs/how-it-works.md) for an overview of the processes used by Node Manager and common errors.
-
 ## Configuration
 See [docs/config.md](docs/config.md) for a full description of all configuration options.
 
 ## Deployment/Usage
 See [docs/deployment.md](docs/deployment.md) for details on adding and using Node Manager in networks. 
+
+## How It Works
+See [docs/how-it-works.md](docs/how-it-works.md) for an overview of the processes used by Node Manager and common errors.
 
 ## Sample Configurations
 See [examples](examples) for sample configuration files for various network types.
