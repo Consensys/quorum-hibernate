@@ -1,4 +1,4 @@
-# Node Manager Design
+# Node Manager: Design & Processes
 
 ## What does Node Manager do?
 
@@ -12,7 +12,7 @@ Each Node Manager:
   
 * Communicates with other Node Managers to retrieve the statuses of their linked nodes.
 
-### Node hibernation flow
+## Process: Inactivity triggering hibernation
 
 The below diagram depicts the flow for hibernating a node upon configured inactivity time.
 
@@ -42,7 +42,7 @@ The Node Manager can be brought up in Strict mode (by default) or Normal mode ( 
 | GoQuorum | Clique | - **Signer** nodes cannot hibernate <br /> <br /> - **Non-signer** nodes can hibernate | - Maximum ***49%*** of signer nodes can hibernate <br /> <br /> - **Non-signer** nodes can always hibernate
 | Besu | Clique | - **Signer** nodes cannot hibernate <br /> <br /> - **Non-signer** nodes can hibernate | - Maximum ***49%*** of signer nodes can hibernate <br /> <br /> - **Non-signer** nodes can always hibernate
 
-### Request flow when local and remote nodes are down
+## Process: New activity triggering waking
 
 The below diagram depicts a private transaction flow for the following scenario:
 * Node `A` and Node `B` are both running a GoQuorum and Tessera nodes with individual Node Managers monitoring each node
@@ -67,7 +67,7 @@ The flow is as described below:
 
 * **1.4.9, 1.4.10:** Node Manager `A` receives the response for the  transaction and responds back to client
 
-### Error handling for user
+## Error handling for user
 User requests to Node Manager will fail under the following scenarios.
 
 | Scenario  | Error message received by user | Action required |
