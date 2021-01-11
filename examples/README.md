@@ -1,6 +1,6 @@
-# Examples
+# Example Configurations
 
-This contains the sample node manager and peers config files. 
+This directory contains samples for Node Manager configuration files. 
 
-* If the Blockchain Client and Privacy Manager are both running in docker containers, see [here](./docker) 
-* If the Blockchain Client is and Privacy Manager are running as host process, see [here](./shell)
+* See [docker](docker) for examples where both Blockchain Client and Privacy Manager are running in docker containers 
+* See [shell](shell) for examples where both Blockchain Client and Privacy Manager are running as shell processes

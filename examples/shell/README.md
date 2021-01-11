@@ -1,9 +1,9 @@
-# Running as host process
+# Sample Configs: Shell processes
 
-This contains the sample config files for node manager and peers in both `.toml` and `.json` form for bringing up node manager when the Blockchain Client and Privacy Manager are running as processes.
+This directory contains sample config files where Blockchain Client and Privacy Manager are running as shell processes.
 
-The node manager configuration requires start and stop scripts for the Blockchain Client and Privacy Manager as described [here](./../../docs/config.md/#process). For sample start and stop scripts:
-
-* If the Blockchain Client is GoQuorum, refer [this](scripts/goquorum) 
-* If the Blockchain Client is Besu, refer [this](scripts/besu)
-* If the Privacy Manager is Tessera, refer [this](scripts/tessera)
+* [nodemanager-config.sample.json](nodemanager-config.sample.json): Node Manager config file (json)
+* [nodemanager-config.sample.json](nodemanager-config.sample.json): Node Manager config file (toml)
+* [peers.sample.json](peers.sample.json): Peers config file (json)
+* [peers.sample.toml](peers.sample.toml): Peers config file (toml)
+* [scripts](scripts): The node manager configuration requires start and stop scripts for the Blockchain Client and Privacy Manager as described [here](./../../docs/config.md/#process)
