@@ -50,7 +50,7 @@ See [docs/how-it-works.md](docs/how-it-works.md) for an overview of the processe
 See [docs/config.md](docs/config.md) for a full description of all configuration options.
 
 ### Deployment/Usage
-See [docs/deployment.md](docs/deployment.md) for details on adding Node Manager to existing deployments. 
+See [docs/deployment.md](docs/deployment.md) for details on adding and using Node Manager in networks. 
 
 ### Examples
 See [examples](examples) for sample configuration files for various network types.
