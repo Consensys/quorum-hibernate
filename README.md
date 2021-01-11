@@ -5,11 +5,11 @@ In large networks it is possible that some nodes in the network have low transac
 
 Node Manager is designed to cater to above requirement. The tool is built to:
 
-* Monitor a linked blockchain client and privacy manager for inactivity
-* Hibernate the linked blockchain client and privacy manager if its inactive beyond certain configured time
-* Restart the blockchain client and privacy manager upon new transaction/calls 
+* Monitor a linked Blockchain Client and Privacy Manager for inactivity
+* Hibernate the linked Blockchain Client and Privacy Manager if its inactive beyond certain configured time
+* Restart the Blockchain Client and Privacy Manager upon new transaction/calls 
 
-Node Manager acts as a proxy for the blockchain client and privacy manager nodes. When running with Node Manager it is expected that all clients would submit requests to the corresponding Node Manager proxy servers instead of directly to the blockchain client or privacy manager nodes.
+Node Manager acts as a proxy for the Blockchain Client and Privacy Manager nodes. When running with Node Manager it is expected that all clients would submit requests to the corresponding Node Manager proxy servers instead of directly to the Blockchain Client or Privacy Manager nodes.
 
 ### Key Features
 
@@ -18,7 +18,7 @@ Node Manager acts as a proxy for the blockchain client and privacy manager nodes
 - **TLS**: 1-way and 2-way (mutual) TLS can be configured on each of Node Manager's servers, clients, and proxies.  
 - Currently supports: 
     - **GoQuorum** and **Besu** block chain clients
-    - **Tessera** as privacy manager
+    - **Tessera** as Privacy Manager
 
 ### Build & Run
 

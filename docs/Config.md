@@ -7,15 +7,15 @@ For starting Node Manager, two configuration files are required: [Node Manager c
 | Field  | Type | Description |
 | :---: | :---: | :--- |
 | `name` | `string` | Name for the Node Manager |
-| `disableStrictMode` | `bool` | Strict mode prevents blockchain client nodes involved in the consensus from being hibernated.  This protects against an essential node being shut down and preventing the chain from progressing. It is set to `false` by default. For `raft` consensus it is recommended to set it to `true` as there would be more `follower` nodes in the network. |
-| `upcheckPollingInterval` | `int` | Interval (in seconds) for performing an upcheck on the blockchain client and privacy manager to determine if they have been started/stopped by a third party (i.e. not Node Manager) |
+| `disableStrictMode` | `bool` | Strict mode prevents Blockchain Client nodes involved in the consensus from being hibernated.  This protects against an essential node being shut down and preventing the chain from progressing. It is set to `false` by default. For `raft` consensus it is recommended to set it to `true` as there would be more `follower` nodes in the network. |
+| `upcheckPollingInterval` | `int` | Interval (in seconds) for performing an upcheck on the Blockchain Client and Privacy Manager to determine if they have been started/stopped by a third party (i.e. not Node Manager) |
 | `peersConfigFile` | `string` | Path to a [Peers config file](#Peers-config-file) |
-| `inactivityTime` | `int` | Inactivity period (in seconds) to allow on either the blockchain client or privacy manager before hibernating both |
+| `inactivityTime` | `int` | Inactivity period (in seconds) to allow on either the Blockchain Client or Privacy Manager before hibernating both |
 | `resyncTime` | `int` | Time (in seconds) after which a hibernating node pair should be restarted to allow the node to sync with the chain.  Regularly syncing a node with the chain during periods of inactivity will reduce the time needed to prepare the node when receiving a client request. |
 | `server` | `object` | See [server](#server) |
 | `proxies` | `[]object` | See [proxy](#proxy) |
 | `blockchainClient` | `object` | See [blockchainClient](#blockchainClient) |
-| `privacyManager` | `object` | (Optional) See [privacyManager](#privacyManager). If privacy manager is not used, this can be ignored. |
+| `privacyManager` | `object` | (Optional) See [privacyManager](#privacyManager). If Privacy Manager is not used, this can be ignored. |
 
 #### server
 
@@ -30,14 +30,14 @@ The RPC server that exposes Node Manager's API.
 
 #### proxy
 
-The proxy server for a single blockchain client or privacy manager service.  Multiple proxies can be configured.
+The proxy server for a single Blockchain Client or Privacy Manager service.  Multiple proxies can be configured.
 
 | Field  | Type | Description |
 | :---: | :---: | :--- |
 | `name` | `string` | Name of the proxy server |
 | `type` | `string` | `http` or `ws` |
 | `proxyAddress` | `string` | Listen address for the proxy server |
-| `upstreamAddress` | `string` | Address of the blockchain client or privacy manager service |
+| `upstreamAddress` | `string` | Address of the Blockchain Client or Privacy Manager service |
 | `proxyPaths` | `[]string` | Paths the proxy server should listen on (`/` listens on all paths) |
 | `ignorePathsForActivity` | `[]string` | (Optional) Paths that should not reset the inactivity timer if called  |
 | `readTimeout` | `int` | Read timeout |
@@ -47,19 +47,19 @@ The proxy server for a single blockchain client or privacy manager service.  Mul
 
 #### blockchainClient
 
-The blockchain client to be managed by the Node Manager.
+The Blockchain Client to be managed by the Node Manager.
 
 | Field  | Type | Description |
 | :---: | :---: | :--- |
 | `type` | `string` | `goquorum` or `besu` |
 | `consensus` | `string` | `raft`, `istanbul`, or `clique` |
-| `rpcUrl` | `string` | RPC URL of blockchain client.  Used when performing consensus checks. |
+| `rpcUrl` | `string` | RPC URL of Blockchain Client.  Used when performing consensus checks. |
 | `process` | `object` | See [process](#process) |
 | `tlsConfig` | `object` | (Optional) See [clientTLS](#clientTLS) |
 
 #### privacyManager
 
-The privacy manager to be managed by the Node Manager.
+The Privacy Manager to be managed by the Node Manager.
 
 | Field  | Type | Description |
 | :---: | :---: | :--- |
@@ -69,7 +69,7 @@ The privacy manager to be managed by the Node Manager.
 
 ##### process
 
-The blockchain client or privacy manager process.  Can be a standalone shell process or a Docker container. 
+The Blockchain Client or Privacy Manager process.  Can be a standalone shell process or a Docker container. 
 
 | Field  | Type | Description |
 | :---: | :---: | :--- |
@@ -142,6 +142,6 @@ Another active Node Manager in the network.  Multiple peers can be configured.
 | Field  | Type | Description |
 | :--- | :---: | :--- |
 | `name` | `string` | Name of the peer |
-| `privacyManagerKey` | `string` | (Optional) Public key of the peer's privacy manager |
+| `privacyManagerKey` | `string` | (Optional) Public key of the peer's Privacy Manager |
 | `rpcUrl` | `string` | URL of the peer's RPC server |
 | `tlsConfig` | `object` | (Optional) See [clientTLS](#clientTLS) |
