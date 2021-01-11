@@ -1,4 +1,4 @@
-#Node manager
+# Node manager
 
 ## Supported Deployment Models
 Node manager must run in the same host where block chain client and privacy manager are running. Node manager, block chain client and privacy manger can be run as host process or docker container. The supported combination is as given below.

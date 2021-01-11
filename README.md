@@ -24,6 +24,9 @@ Node Manager acts as a proxy for the blockchain client and privacy manager nodes
 Refer [here](docs/Design.md) for node manager design and flows.
 
 ### Build, Run and Configuration
-Refer [here](CONFIG.md) for build, run & configuration details.
+Refer [here](docs/CONFIG.md) for build, run & configuration details.
+
+### Examples
+Refer [here](examples/README.md) for sample configuration files and start scripts
 
 
