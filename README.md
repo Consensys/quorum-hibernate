@@ -17,7 +17,7 @@ Node Manager acts as a proxy for the Blockchain Client and Privacy Manager nodes
 - **Periodic sync** feature allows nodes to be brought up periodically to ensure that its synced with the network. 
 - **TLS**: 1-way and 2-way (mutual) TLS can be configured on each of Node Manager's servers, clients, and proxies.  
 - Currently supports: 
-    - **GoQuorum** and **Besu** block chain clients
+    - **GoQuorum** and **Besu** Blockchain Clients
     - **Tessera** as Privacy Manager
 
 ### Build & Run
@@ -28,7 +28,7 @@ node-manager --config path/to/config.json --verbosity 3
 
 | Flag | Description |
 | :---: | :--- |
-| `--config` | Path to `.json` or `.toml` [configuration file](docs/Config.md) |
+| `--config` | Path to `.json` or `.toml` [configuration file](docs/config.md) |
 | `--verbosity` | Logging level (`0` = `ERROR`, `1` = `WARN`, `2` = `INFO`, `3` = `DEBUG`) |
 
 Alternatively the [`quorumengineering/node-manager`](https://hub.docker.com/r/quorumengineering/node-manager) Docker image can be used, for example:
@@ -43,13 +43,16 @@ docker run \
 
 *Note: `-v /var/run/docker.sock:/var/run/docker.sock` allows the Node Manager container to start/stop Blockchain Client/Privacy Manager containers.*
 
-### Design
-Refer [here](docs/Design.md) for Node Manager design and flows.
+### How It Works
+See [docs/how-it-works.md](docs/how-it-works.md) for an overview of the processes used by Node Manager and common errors.
 
 ### Configuration
-Refer [here](docs/Config.md) for configuration details.
+See [docs/config.md](docs/config.md) for a full description of all configuration options.
+
+### Deployment/Usage
+See [docs/deployment.md](docs/deployment.md) for details on adding Node Manager to existing deployments. 
 
 ### Examples
-Refer [here](examples/README.md) for sample configuration files and start scripts
+See [examples](examples) for sample configuration files for various network types.
 
 

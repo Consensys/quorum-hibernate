@@ -61,14 +61,14 @@ In more detail:
   
   Node Manager *A* parses the transaction request:
   * As the transaction is private, Node Manager *A* extracts the Privacy Manager public keys from the request's `privateFor` parameter. 
-  * Node Manager *A* then checks if the public keys match any remote Node Managers in its [Peers config](./Config.md#Peers-config-file).  If there are no matches, it assumes that the node is not managed by a Node Manager.
+  * Node Manager *A* then checks if the public keys match any remote Node Managers in its [Peers config](./config.md#Peers-config-file).  If there are no matches, it assumes that the node is not managed by a Node Manager.
 
 *  **1.1:** Node Manager *A* check if the local GoQuorum and Tessera are up. 
 
 * **1.2:** If the local GoQuorum or Tessera are down, Node Manager *A* wakes them up.
 
 * **1.3.1 to 1.3.4:** Node Manager *A* asks Node Manager *B* for its status. Node Manager *B* checks the status of its linked GoQuorum and Tessera. 
-  * If they are down Node Manager *B* initiates its wake up process. Node Manager *A* aborts the private transaction send. See [User Errors and Actions](#User-Errors-and-Actions) for more info.
+  * If they are down Node Manager *B* initiates its wake up process. Node Manager *A* aborts the private transaction send. See [User Errors and Actions](./deployment.md#User-Errors-and-Actions) for more info.
   * If they are up Node Manager *B* responds appropriately.  Node Manager *A* continue the private transaction send. 
 
 * **1.4:** Once all nodes are up, Node Manager *A* forwards the request to Node *A*'s GoQuorum for processing.
@@ -76,15 +76,3 @@ In more detail:
 * **1.4.1 to 1.4.8:** This is the standard private transaction processing flow for GoQuorum. Once the private transaction is processed, GoQuorum responds back to Node Manager *A* with the appropriate response.
 
 * **1.4.9, 1.4.10:** Node Manager *A* receives the response for the transaction and returns it to the client.
-
-## User Errors and Actions
-User-submitted requests to Node Manager will fail in the following scenarios:
-
-| Scenario  | Error | Action |
-| --- | --- | --- |
-| User sends request when Node Manager is hibernating the Blockchain Client and Privacy Manager | 500 (Internal Server Error) - `node is being shutdown, try after sometime` | Retry after some time. |  
-| User sends request when Node Manager is starting the Blockchain Client and Privacy Manager | 500 (Internal Server Error) - `node is being started, try after sometime` | Retry after some time. |  
-| User sends a private transaction request when at least one of the remote recipients is hibernated by Node Manager | 500 (Internal Server Error) - `Some participant nodes are down` | Retry after some time. |  
-| User sends request after Node Manager has encountered an issue during hibernation/waking up of Blockchain Client or Privacy Manager | 500 (Internal Server Error) - `node is not ready to accept request` | Investigate the cause of Node Manager's failure and fix the issue. |  
-
-*Note: Node Manager will consider a peer to be hibernated if it does not receive a response the peer's status during private transaction processing.*
