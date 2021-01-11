@@ -47,28 +47,35 @@ Node Manager ensures that hibernation would not result in a break in consensus. 
 
 ## Process: Waking of node after new activity
 
-The below diagram depicts a private transaction flow for the following scenario:
-* Node `A` and Node `B` are both running a GoQuorum and Tessera nodes with individual Node Managers monitoring each node
-* Because of inactivity both GoQuorum and Tessera nodes are down
-* Node Manager `A` receives a private transaction request 
-
 ![request flow](images/node-manager-flow.jpg)
 
-The flow is as described below:
+The above sequence diagram outlines the waking process for the following scenario:
 
-* **1.0:** A new RPC request for private transaction between GoQuorum Node `A` and `B` is sent to the Node Manager `A` (acting as a proxy for GoQuorum `A`). Node Manager `A` parses the transaction requests. For private transactions it extracts the privacy manager public keys from the `privateFor` argument of request. It then checks if there are entries in  [peers config](./CONFIG.md#Peers-config-file) for the public keys and identifies the remote Node Managers. If there are no entries, it assumes that the node is not managed by a Node Manager.
+1. Node *A* and Node *B* are both running Node Manager, GoQuorum Blockchain Client, and Tessera Privacy Manager
+2. All GoQuorum and Tessera nodes are hibernated due to inactivity
+3. Node Manager *A* (acting as a proxy for GoQuorum *A*) receives a new private transaction
 
-*  **1.1:** Node Manager `A` initiates the process to check if the local GoQuorum node and all recipient Tessera (Node `B`'s Tessera in this case) are up. 
+In more detail:
 
-* **1.2:** Node Manager `A` checks the status of local GoQuorum and Tessera. If these are down, triggers restart.
+* **1.0:** Node Manager *A* (acting as a proxy for GoQuorum *A*) receives a new private transaction for Nodes *A* and *B*. 
+  
+  Node Manager *A* parses the transaction request:
+  * As the transaction is private, Node Manager *A* extracts the Privacy Manager public keys from the request's `privateFor` parameter. 
+  * Node Manager *A* then checks if the public keys match any remote Node Managers in its [Peers config](./Config.md#Peers-config-file).  If there are no matches, it assumes that the node is not managed by a Node Manager.
 
-* **1.3.1 to 1.3.4:** Node Manager `A` sends a request to Node Manager `B` via RPC call to check the remote node status. Node Manager `B` checks the status of linked GoQuorum and Tessera nodes. If the nodes are down it initiates the restart and responds back with status.
+*  **1.1:** Node Manager *A* check if the local GoQuorum and Tessera are up. 
 
-* **1.4:** Once all nodes are up, Node Manager `A` forwards the request to Node `A`'s GoQuorum for processing.
+* **1.2:** If the local GoQuorum or Tessera are down, Node Manager *A* wakes them up.
 
-* **1.4.1 to 1.4.8:** This is standard private transaction processing flow of GoQuorum. Once the private transaction is processed, GoQuorum responds back to Node Manager `A` with response.
+* **1.3.1 to 1.3.4:** Node Manager *A* asks Node Manager *B* for its status. Node Manager *B* checks the status of its linked GoQuorum and Tessera. 
+  * If they are down Node Manager *B* initiates its wake up process. Node Manager *A* aborts the private transaction send.  Node Manager *B* should be given enough time for its wake up to complete before the private transation is resent. 
+  * If they are up Node Manager *B* responds appropriately.  Node Manager *A* continue the private transaction send. 
 
-* **1.4.9, 1.4.10:** Node Manager `A` receives the response for the  transaction and responds back to client
+* **1.4:** Once all nodes are up, Node Manager *A* forwards the request to Node *A*'s GoQuorum for processing.
+
+* **1.4.1 to 1.4.8:** This is the standard private transaction processing flow for GoQuorum. Once the private transaction is processed, GoQuorum responds back to Node Manager *A* with the appropriate response.
+
+* **1.4.9, 1.4.10:** Node Manager *A* receives the response for the transaction and returns it to the client.
 
 ## Error handling for user
 User requests to Node Manager will fail under the following scenarios.
