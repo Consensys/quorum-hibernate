@@ -37,8 +37,8 @@ Alternatively the [`quorumengineering/node-manager`](https://hub.docker.com/r/qu
 docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 8081:8081 -p 9091:9091 -p 9391:9391 \
-    --mount type=bind,source=/usr/john/node1.toml,target=/config.toml --mount type=bind,source=/usr/john/nm1.toml,target=/nm1.toml \
-    quorumengineering/node-manager:latest -config /config.toml
+    --mount type=bind,source=/path/to/nm.json,target=/config.json --mount type=bind,source=/path/to/peers.json,target=/peers.json \
+    quorumengineering/node-manager:latest -config /config.json
 ```
 
 *Note: `-v /var/run/docker.sock:/var/run/docker.sock` allows the Node Manager container to start/stop Blockchain Client/Privacy Manager containers.*
