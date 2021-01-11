@@ -1,4 +1,4 @@
-# Deploying Node Manager
+# Deploying and Using Node Manager
 
 Node Manager must run on the same host as the linked Blockchain Client and Privacy Manager.
 

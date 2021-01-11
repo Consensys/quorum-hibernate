@@ -1,8 +1,8 @@
-## Configuration
+# Configuration
 
 For starting Node Manager, two configuration files are required: [Node Manager config](#node-manager-config-file) and [peers config](#Peers-config-file). Both `json` and `toml` formats are supported.  Samples can be found in [here](../examples/README.md).
 
-### Node Manager config file
+## Node Manager config file
 
 | Field  | Type | Description |
 | :---: | :---: | :--- |
@@ -17,7 +17,7 @@ For starting Node Manager, two configuration files are required: [Node Manager c
 | `blockchainClient` | `object` | See [blockchainClient](#blockchainClient) |
 | `privacyManager` | `object` | (Optional) See [privacyManager](#privacyManager). If Privacy Manager is not used, this can be ignored. |
 
-#### server
+### server
 
 The RPC server that exposes Node Manager's API.
 
@@ -28,7 +28,7 @@ The RPC server that exposes Node Manager's API.
 | `rpcvHosts` | `[]string` |  List of virtual hostnames from which to accept requests (server enforced) |
 | `tlsConfig` | `object` | (Optional) See [serverTLS](#serverTLS) |
 
-#### proxy
+### proxy
 
 The proxy server for a single Blockchain Client or Privacy Manager service.  Multiple proxies can be configured.
 
@@ -45,7 +45,7 @@ The proxy server for a single Blockchain Client or Privacy Manager service.  Mul
 | `proxyTlsConfig` | `object` | (Optional) See [serverTLS](#serverTLS) |
 | `clientTlsConfig` | `object` | (Optional) See [clientTLS](#clientTLS) |
 
-#### blockchainClient
+### blockchainClient
 
 The Blockchain Client to be managed by the Node Manager.
 
@@ -57,7 +57,7 @@ The Blockchain Client to be managed by the Node Manager.
 | `process` | `object` | See [process](#process) |
 | `tlsConfig` | `object` | (Optional) See [clientTLS](#clientTLS) |
 
-#### privacyManager
+### privacyManager
 
 The Privacy Manager to be managed by the Node Manager.
 
@@ -67,7 +67,7 @@ The Privacy Manager to be managed by the Node Manager.
 | `process` | `object` | See [process](#process) |
 | `tlsConfig` | `object` | (Optional) See [clientTLS](#clientTLS) |
 
-##### process
+### process
 
 The Blockchain Client or Privacy Manager process.  Can be a standalone shell process or a Docker container. 
 
@@ -80,7 +80,7 @@ The Blockchain Client or Privacy Manager process.  Can be a standalone shell pro
 | `stopCommand` | `[]string` | Shell command to stop process.  Required if `controlType = shell` |
 | `upcheckConfig` | `object` | See [upcheckConfig](#upcheckConfig) |
 
-##### upcheckConfig
+### upcheckConfig
 
 How Node Manager should determine whether the process is running or not.
 
@@ -92,7 +92,7 @@ How Node Manager should determine whether the process is running or not.
 | `body` | `string` | Body of RPC upcheck request  |
 | `expected` | `string` | Expected response if `returnType = string`. |
 
-##### serverTLS
+### serverTLS
 
 1-way and mutual (2-way) TLS can be configured as required.
 
@@ -103,7 +103,7 @@ How Node Manager should determine whether the process is running or not.
 | `clientCaCertificateFile` | `string` | Path to `.pem` encoded CA certificate file to validate client |
 | `cipherSuites` | `[]string` | (Optional) List of cipher suites to use in TLS.  If not set, [defaults](#cipher-suites) will be used. |
 
-##### clientTLS
+### clientTLS
 
 1-way and mutual (2-way) TLS can be configured as required.
 
@@ -115,7 +115,7 @@ How Node Manager should determine whether the process is running or not.
 | `certificateFile` | `string` | Path to `.pem` encoded certificate file |
 | `cipherSuites` | `[]string` | (Optional) List of cipher suites to use in TLS.  If not set, [defaults](#cipher-suites) will be used. |
 
-##### Cipher Suites
+#### Cipher Suites
 The TLS cipher suites used by default are:
 
 * TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
@@ -123,7 +123,7 @@ The TLS cipher suites used by default are:
 * TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
 * TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
 
-#### Peers config file
+## Peers config file
 
 It contains list of other Node Managers in the network. This config can be updated whenever there is a change. 
 It is used by Node Manager to check the status of other Node Managers when it decides to stop the nodes.
@@ -135,7 +135,7 @@ Node Manager always reads the latest information from this config before perform
 | :---: | :---: | :--- |
 | `peers` | `[]object` | See [peer](#peer) for details |
 
-##### peer
+### peer
 
 Another active Node Manager in the network.  Multiple peers can be configured.
 
