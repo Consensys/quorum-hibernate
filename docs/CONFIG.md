@@ -1,18 +1,34 @@
 #Node manager
+
+## Supported Deployment Models
+Node manager must run in the same host where block chain client and privacy manager are running. Node manager, block chain client and privacy manger can be run as host process or docker container. The supported combination is as given below.
+
+| Node Manager  | Blockchain Client | Privacy Manager |
+| :---: | :---: | :---: |
+| Host process | Host process | Host process |
+| Host process | Docker | Docker |
+| Docker | Docker | Docker | 
+ 
+ 
 ## Build
+Clone the repo and build with the below command
 
 ```bash
 go install
 ```
 
+Ensure that `node-manager` is there in `$PATH` 
+
 ## Run
+
+To run a a host process use the below command.
 
 ```bash
 node-manager --config path/to/config.json --verbosity 3
 ```
 
 | Flag | Description |
-| --- | --- |
+| :---: | :--- |
 | `--config` | Path to `.json` or `.toml` configuration file |
 | `--verbosity` | Logging level (`0` = `ERROR`, `1` = `WARN`, `2` = `INFO`, `3` = `DEBUG`) |
 
@@ -34,7 +50,7 @@ example
 ```bash
 docker run -p 8081:8081 -p 9091:9091 -p 9391:9391 -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,source=/usr/john/node1.toml,target=/config.toml --mount type=bind,source=/usr/john/nm1.toml,target=/nm1.toml node-manager:latest -config /config.toml
 ```
-Note: `-v /var/run/docker.sock:/var/run/docker.sock` is required to start/stop blockchain client/privacy manager running as docker container.
+**Note:** `-v /var/run/docker.sock:/var/run/docker.sock` is required to start/stop blockchain client/privacy manager running as docker container.
 
 ## Config
 
@@ -43,7 +59,7 @@ Two config files are required: [Node Manager](#Node-Manager-config-file) and [Pe
 ### Node Manager config file
 
 | Field  | Type | Description |
-| --- | --- | --- |
+| :---: | :---: | :--- |
 | `name` | `string` | Name for the node manager |
 | `disableStrictMode` | `bool` | Strict mode prevents blockchain client nodes involved in the consensus from being hibernated.  This protects against an essential node being shut down and preventing the chain from progressing. |
 | `upcheckPollingInterval` | `int` | Interval (in seconds) for performing an upcheck on the blockchain client and privacy manager to determine if they have been started/stopped by a third party (i.e. not node manager) |
@@ -60,7 +76,7 @@ Two config files are required: [Node Manager](#Node-Manager-config-file) and [Pe
 The RPC server that exposes Node Manager's API.
 
 | Field  | Type | Description |
-| --- | --- | --- |
+| :---: | :---: | :--- |
 | `rpcAddress` | `string` | Listen address for the Node Manager API |
 | `rpcCorsList` | `[]string` | List of domains from which to accept cross origin requests (browser enforced) |
 | `rpcvHosts` | `[]string` |  List of virtual hostnames from which to accept requests (server enforced) |
@@ -71,7 +87,7 @@ The RPC server that exposes Node Manager's API.
 The proxy server for a single blockchain client or privacy manager service.  Multiple proxies can be configured.
 
 | Field  | Type | Description |
-| --- | --- | --- |
+| :---: | :---: | :--- |
 | `name` | `string` | Name of the proxy server |
 | `type` | `string` | `http` or `ws` |
 | `proxyAddress` | `string` | Listen address for the proxy server |
@@ -88,7 +104,7 @@ The proxy server for a single blockchain client or privacy manager service.  Mul
 The blockchain client to be managed by the Node Manager.
 
 | Field  | Type | Description |
-| --- | --- | --- |
+| :---: | :---: | :--- |
 | `type` | `string` | `goquorum` or `besu` |
 | `consensus` | `string` | `raft`, `istanbul`, or `clique` |
 | `rpcUrl` | `string` | RPC URL of blockchain client.  Used when performing consensus checks. |
@@ -100,7 +116,7 @@ The blockchain client to be managed by the Node Manager.
 The privacy manager to be managed by the Node Manager.
 
 | Field  | Type | Description |
-| --- | --- | --- |
+| :---: | :---: | :--- |
 | `publicKey` | `string` | Privacy manager's base64-encoded public key |
 | `process` | `object` | See [process](#process) |
 | `tlsConfig` | `object` | See [clientTLS](#clientTLS) |
@@ -110,7 +126,7 @@ The privacy manager to be managed by the Node Manager.
 The blockchain client or privacy manager process.  Can be a standalone shell process or a Docker container. 
 
 | Field  | Type | Description |
-| --- | --- | --- |
+| :---: | :---: | :--- |
 | `name` | `string` | `bcclnt` or `privman` |
 | `controlType` | `string` | `shell` or `docker` |
 | `containerId` | `string` | Docker container ID.  Required if `controlType = docker` |
@@ -123,7 +139,7 @@ The blockchain client or privacy manager process.  Can be a standalone shell pro
 How Node Manager should determine whether the process is running or not.
 
 | Field  | Type | Description |
-| --- | --- | --- |
+| :---: | :---: | :--- |
 | `url` | `string` | Process upcheck URL |
 | `returnType` | `string` | `string` or `rpcresult`. Provides support for REST upcheck endpoints and RPC endpoints |
 | `method` | `string` | `GET` or `POST`. HTTP request method required for upcheck endpoint  |
@@ -135,7 +151,7 @@ How Node Manager should determine whether the process is running or not.
 1-way and mutual (2-way) TLS can be configured as required.
 
 | Field  | Type | Description |
-| --- | --- | --- |
+| :---: | :---: | :--- |
 | `keyFile` | `string` | Path to `.pem` encoded key file |
 | `certificateFile` | `string` | Path to `.pem` encoded certificate file |
 | `clientCaCertificateFile` | `string` | Path to `.pem` encoded CA certificate file to validate client |
@@ -146,7 +162,7 @@ How Node Manager should determine whether the process is running or not.
 1-way and mutual (2-way) TLS can be configured as required.
 
 | Field  | Type | Description |
-| --- | --- | --- |
+| :---: | :---: | :--- |
 | `insecureSkipVerify` | `bool` | Skip verification of server certificate if `true` |
 | `caCertificateFile` | `string` | Path to `.pem` encoded CA certificate file to validate server |
 | `keyFile` | `string` | Path to `.pem` encoded key file |
@@ -169,16 +185,28 @@ Node manager always reads the latest information from this config before perform
  to the config file takes effect immediately.
 
 | Field  | Type | Description |
-| --- | --- | --- |
-| `peers` | `[]object` | See [peer](#peer) |
+| :---: | :---: | :--- |
+| `peers` | `[]object` | See [peer](#peer) for details |
 
 ##### peer
 
 Another active Node Manager in the network.  Multiple peers can be configured.
 
 | Field  | Type | Description |
-| --- | --- | --- |
+| :--- | :---: | :--- |
 | `name` | `string` | Name of the peer |
 | `privacyManagerKey` | `string` | Public key of the peer's privacy manager |
 | `rpcUrl` | `string` | URL of the peer's RPC server |
 | `tlsConfig` | `object` | See [clientTLS](#clientTLS) |
+
+### Error handling for user
+User requests to node manager will fail under the following scenarios.
+
+| Scenario  | Error message received by user | Action required |
+| --- | --- | --- |
+| Node Manager receives a request from user while block chain client and privacy manager are being stopped by it due to inactivity. | 500 (Internal Server Error) - `node is being shutdown, try after sometime` | Retry after some time. |  
+| Node Manager receives a request from user while block chain client and privacy manager are being started up by it due to activity. | 500 (Internal Server Error) - `node is being started, try after sometime` | Retry after some time. |  
+| Node Manager receives a private transaction request from user and participant node(of the transaction) managed by node manager is down. | 500 (Internal Server Error) - `Some participant nodes are down` | Retry after some time. |  
+| Node Manager receives a request from user when starting/stopping of block chain client or privacy manager by node manager failed. | 500 (Internal Server Error) - `node is not ready to accept request` | Investigate the cause of failure and fix the issue. |  
+
+Node Manager will consider its peer is down and proceed with processing if it is not able to get a response from its peer node manager when it tries to check the status for stopping nodes or handling private transaction.
