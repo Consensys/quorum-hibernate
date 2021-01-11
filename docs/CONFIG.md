@@ -43,7 +43,7 @@ docker build . -t node-manager
 ```
 #### Run
 
-Configuration files must be supplied to the Docker container. Refer to sample config files [config.toml](config.docker.local.toml) and [nodemanager.toml](nodemanger.docker.local.toml)
+Configuration files must be supplied to the Docker container. Refer to sample config files [config.toml](../examples/docker/nodemanager-config.sample.toml) and [nodemanager.toml](../examples/docker/peers.sample.toml)
 ```bash
 docker run -p <port mapping> -v /var/run/docker.sock:/var/run/docker.sock --mount type=bind,source=<path to config>,target=/config.toml node-manager:latest
 
