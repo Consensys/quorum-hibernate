@@ -176,11 +176,6 @@ func TestProxy_IsValid_ProxyAddress(t *testing.T) {
 			proxyAddr: "",
 			wantErr:   proxyAddressField + " is empty",
 		},
-		{
-			name:      "invalid url",
-			proxyAddr: "://no-scheme",
-			wantErr:   proxyAddressField + ` parse "://no-scheme": missing protocol scheme`,
-		},
 	}
 
 	for _, tt := range tests {

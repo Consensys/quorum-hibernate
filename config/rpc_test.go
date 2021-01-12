@@ -86,11 +86,6 @@ func TestRPCServer_IsValid_RPCAddress(t *testing.T) {
 			rpcAddr: "",
 			wantErr: rpcAddressField + " is empty",
 		},
-		{
-			name:    "invalid url",
-			rpcAddr: "://no-scheme",
-			wantErr: rpcAddressField + ` parse "://no-scheme": missing protocol scheme`,
-		},
 	}
 
 	for _, tt := range tests {

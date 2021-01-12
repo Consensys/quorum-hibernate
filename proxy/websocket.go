@@ -112,6 +112,12 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		log.Debug("ServeHTTP-WS - req set origin", "origin", origin)
 		requestHeader.Add("Origin", origin)
 	}
+
+	if auth := req.Header.Get("Authorization"); auth != "" {
+		requestHeader.Add("Authorization", auth)
+		log.Debug("Authorization header set", "value", auth)
+	}
+
 	for _, prot := range req.Header[http.CanonicalHeaderKey("Sec-WebSocket-Protocol")] {
 		log.Debug("ServeHTTP-WS - request header", "prot", prot, "key", "Sec-WebSocket-Protocol")
 		requestHeader.Add("Sec-WebSocket-Protocol", prot)
