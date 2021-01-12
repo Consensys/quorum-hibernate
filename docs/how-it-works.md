@@ -51,7 +51,7 @@ Node Manager ensures that hibernation would not result in a break in consensus. 
 
 The above sequence diagram outlines the waking process for the following scenario:
 
-1. Node *A* and Node *B* are both running Node Manager, GoQuorum Blockchain Client, and Tessera Privacy Manager
+1. Node *A* and Node *B* are both running Node Manager, GoQuorum Blockchain Client and Tessera Privacy Manager
 2. All GoQuorum and Tessera nodes are hibernated due to inactivity
 3. Node Manager *A* (acting as a proxy for GoQuorum *A*) receives a new private transaction
 
@@ -68,8 +68,8 @@ In more detail:
 * **1.2:** If the local GoQuorum or Tessera are down, Node Manager *A* wakes them up.
 
 * **1.3.1 to 1.3.4:** Node Manager *A* asks Node Manager *B* for its status. Node Manager *B* checks the status of its linked GoQuorum and Tessera. 
-  * If they are down Node Manager *B* initiates its wake up process. Node Manager *A* aborts the private transaction send. See [Understandin Client Errors](./deployment.md#Understanding-Client-Errors) for more info.
-  * If they are up Node Manager *B* responds appropriately.  Node Manager *A* continue the private transaction send. 
+  * If they are down Node Manager *B* initiates its wake up process. Node Manager *A* aborts the private transaction send. See [Understanding Client Errors](./deployment.md#Understanding-Client-Errors) for more info.
+  * If they are up Node Manager *B* responds appropriately.  Node Manager *A* continues the private transaction send. 
 
 * **1.4:** Once all nodes are up, Node Manager *A* forwards the request to Node *A*'s GoQuorum for processing.
 
