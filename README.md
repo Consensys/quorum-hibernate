@@ -22,7 +22,7 @@ Node Manager provides a solution to this problem by monitoring a node's API traf
     golang 1.15+
 ### Build
 ```bash
-go build [-o node-manager]
+go install
 ```
 ### Run
 ```bash
