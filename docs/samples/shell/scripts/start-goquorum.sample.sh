@@ -1,8 +1,8 @@
 #!/bin/bash
-## Sample script to start a single GoQuorum node using bash.
-##
-## Usage: ./start-goquorum.sample.sh <node-id>
-## -----------------------------------------------------------------------------
+# Sample script to start a single GoQuorum node using bash.
+#
+# Usage: ./start-goquorum.sample.sh <node-id>
+# -----------------------------------------------------------------------------
 
 if [ -z "$1" ]; then
   echo "err: no node-id provided"
