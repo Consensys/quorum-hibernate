@@ -18,7 +18,13 @@ Node Manager provides a solution to this problem by monitoring a node's API traf
 * 1-way and 2-way (mutual) TLS supported on all of Node Manager's servers, clients, and proxies.
 
 ## Build & Run
-
+### Pre-Requisites
+    golang 1.15+
+### Build
+```bash
+go build [-o node-manager]
+```
+### Run
 ```bash
 node-manager --config path/to/config.json --verbosity 3
 ```
@@ -27,6 +33,8 @@ node-manager --config path/to/config.json --verbosity 3
 | :---: | :--- |
 | `--config` | Path to `.json` or `.toml` [configuration file](docs/config.md) |
 | `--verbosity` | Logging level (`0` = `ERROR`, `1` = `WARN`, `2` = `INFO`, `3` = `DEBUG`) |
+
+### Docker
 
 Alternatively the [`quorumengineering/node-manager`](https://hub.docker.com/r/quorumengineering/node-manager) Docker image can be used, for example:
 
