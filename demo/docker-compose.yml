@@ -17,17 +17,18 @@ x-quorum-def:
         - /bin/sh
         - -c
         - |
-            PRIVATE_CONFIG=/qdata/tessera/tm.ipc
+            TESSERA_IPC=/qdata/tessera/tm.ipc
+            RETRY=10
 
             for i in $$(seq 1 100)
                 do
                 set -e
-                if [ -S $${PRIVATE_CONFIG}] && \
-                    [ "I'm up!" == "$$(wget --timeout $${UDS_WAIT} -qO- --proxy off 172.16.239.10$${NODE_ID}:9000/upcheck)" ];
+                if [ -S $${TESSERA_IPC} ] && \
+                    [ "I'm up!" == "$$(wget --timeout $${RETRY} -qO- --proxy off tessera$${NODE_ID}:9000/upcheck)" ];
                 then break
                 else
                     echo "Waiting for Tessera..."
-                    sleep 10
+                    sleep $${RETRY}
                 fi
             done
 
@@ -41,9 +42,12 @@ x-quorum-def:
             cp $${RESOURCES}/keys/key$${NODE_ID} $${DDIR}/keystore/
             cp $${RESOURCES}/permissioned-nodes.json $${DDIR}/permissioned-nodes.json
             cp $${RESOURCES}/permissioned-nodes.json $${DDIR}/static-nodes.json
+            cp $${RESOURCES}/genesis.json $${DDIR}
+            cp $${RESOURCES}/passwords.txt $${DDIR}
+
             NETWORK_ID=$$(cat $${RESOURCES}/genesis.json | grep chainId | awk -F " " '{print $$2}' | awk -F "," '{print $$1}')
             geth --datadir $${DDIR} init $${RESOURCES}/genesis.json
-            geth \
+            PRIVATE_CONFIG=$${TESSERA_IPC} geth \
                 --identity node$${NODE_ID}-raft \
                 --datadir $${DDIR} \
                 --permissioned \
@@ -60,7 +64,7 @@ x-quorum-def:
                 --unlock 0 \
                 --allow-insecure-unlock \
                 --nousb \
-                --password /examples/passwords.txt \
+                --password $${DDIR}/passwords.txt \
                 --raft --raftport 50400
 x-tessera-def:
     &tessera-def
@@ -79,12 +83,13 @@ x-tessera-def:
         - /bin/sh
         - -c
         - |
+            RESOURCES=/resources/tessera
             DDIR=/qdata/tessera
             rm -rf $${DDIR}
             mkdir -p $${DDIR}
 
-            cp /resources/$${NODE_ID}.pub $${DDIR}
-            cp /resources/$${NODE_ID}.key $${DDIR}
+            cp $${RESOURCES}/keys//$${NODE_ID}.pub $${DDIR}
+            cp $${RESOURCES}/keys/$${NODE_ID}.key $${DDIR}
 
             cat <<EOF > $${DDIR}/tessera-config.json
             {
@@ -151,7 +156,7 @@ x-node-manager-def:
         - "9000"
         - "9080"
     healthcheck:
-        test: [ "CMD", "wget", "--spider", "--proxy", "off", "http://localhost:8545" ]
+        test: [ "CMD", "curl", "-H", "\"Content-Type:application/json\"", "-d", "'{\"jsonrpc\":2.0, \"id\":1, \"method\":\"node.IsNodeUp\", \"params\":[]}'", "http://localhost:8081"]
         interval: 3s
         timeout: 3s
         retries: 10
@@ -160,11 +165,61 @@ x-node-manager-def:
         - /bin/sh
         - -c
         - |
+            apk add curl
+
+            TESSERA_IPC=/qdata/tessera/tm.ipc
+            GOQUORUM_IPC=/qdata/goquorum/geth.ipc
+            RETRY=10
+
+            for i in $$(seq 1 100)
+                do
+                set -e
+                if [ -S $${TESSERA_IPC} ] && [ -S $${GOQUORUM_IPC} ]
+                then break
+                else
+                    echo "Waiting for Tessera & GoQuorum..."
+                    sleep $${RETRY}
+                fi
+            done
+
+            DDIR=/qdata/nodemanager
+
+            rm -rf $${DDIR}
+            mkdir -p $${DDIR}
+
+            cat <<EOF > $${DDIR}/peers-config.json
+            {
+            	"peers": [
+            	    {
+            	    	"name": "node1",
+            	    	"privacyManagerKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
+            	    	"rpcUrl": "http://localhost:8081"
+            	    },
+            	    {
+            	    	"name": "node2",
+            	    	"privacyManagerKey": "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=",
+            	    	"rpcUrl": "http://localhost:8082"
+            	    },
+            	    {
+            	    	"name": "node3",
+            	    	"privacyManagerKey": "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=",
+            	    	"rpcUrl": "http://localhost:8083"
+            	    },
+            	    {
+            	    	"name": "node4",
+            	    	"privacyManagerKey": "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=",
+            	    	"rpcUrl": "http://localhost:8084"
+            	    }
+            	]
+            }
+            EOF
+            cat $${DDIR}/peers-config.json
+
             cat <<EOF > $${DDIR}/node-manager-config.json
             {
                 "name": "node1",
                 "upcheckPollingInterval": 1,
-                "peersConfigFile": "$${DDIR}/node-manager-peers-config.json",
+                "peersConfigFile": "$${DDIR}/peers-config.json",
                 "inactivityTime": 60,
                 "disableStrictMode": true,
                 "proxies": [
@@ -172,7 +227,7 @@ x-node-manager-def:
                         "name": "geth-rpc",
                         "type": "http",
                         "proxyAddress": "0.0.0.0:9091",
-                        "upstreamAddress": "http://quorum$${NODE_ID}:22000",
+                        "upstreamAddress": "http://quorum$${NODE_ID}:8545",
                         "proxyPaths": ["/"],
                         "readTimeout": 15,
                         "writeTimeout": 15
@@ -181,7 +236,7 @@ x-node-manager-def:
                         "name": "tessera",
                         "type": "http",
                         "proxyAddress": "0.0.0.0:9391",
-                        "upstreamAddress": "http://tessera$${NODE_ID}:9001",
+                        "upstreamAddress": "http://tessera$${NODE_ID}:9000",
                         "proxyPaths": ["/"],
                         "ignorePathsForActivity": ["/upcheck", "/partyinfo", "/partyinfo/validate"],
                         "readTimeout": 15,
@@ -196,13 +251,13 @@ x-node-manager-def:
                 "blockchainClient": {
                     "type": "goquorum",
                     "consensus": "raft",
-                    "rpcUrl": "http://host.docker.internal:22000",
+                    "rpcUrl": "http://quorum$${NODE_ID}:8545",
                     "process": {
                         "name": "bcclnt",
                         "controlType": "docker",
                         "containerId": "quorum$${NODE_ID}",
                         "upcheckConfig": {
-                            "url": "http://quorum$${NODE_ID}:22000",
+                            "url": "http://quorum$${NODE_ID}:8545",
                             "method": "POST",
                             "body": "{\"jsonrpc\":\"2.0\", \"method\":\"eth_blockNumber\", \"params\":[], \"id\":67}",
                             "returnType": "rpcresult"
@@ -216,7 +271,7 @@ x-node-manager-def:
                         "controlType": "docker",
                         "containerId": "tessera$${NODE_ID}",
                         "upcheckConfig": {
-                            "url": "http://tessera$${NODE_ID}:9001/upcheck",
+                            "url": "http://tessera$${NODE_ID}:9000/upcheck",
                             "method": "GET",
                             "body": "",
                             "returnType": "string",
@@ -233,8 +288,6 @@ services:
     quorum1:
         <<: *quorum-def
         hostname: quorum1
-        ports:
-            - "22000:8545"
         volumes:
             - vol1:/qdata
             - ./resources/goquorum:/resources/goquorum:ro
@@ -243,154 +296,148 @@ services:
         environment:
             - NODE_ID=1
         networks:
-            quorum-examples-net:
-                ipv4_address: 172.16.239.11
-#    quorum2:
-#        <<: *quorum-def
-#        hostname: quorum2
-#        ports:
-#            - "22001:8545"
-#        volumes:
-#            - vol2:/qdata
-#            - ./examples/7nodes:/examples:ro
-#        depends_on:
-#            - tessera2
-#        environment:
-#            - NODE_ID=2
-#        networks:
-#            quorum-examples-net:
-#                ipv4_address: 172.16.239.12
-#    quorum3:
-#        <<: *quorum-def
-#        hostname: quorum3
-#        ports:
-#            - "22002:8545"
-#        volumes:
-#            - vol3:/qdata
-#            - ./examples/7nodes:/examples:ro
-#        depends_on:
-#            - tessera3
-#        environment:
-#            - NODE_ID=3
-#        networks:
-#            quorum-examples-net:
-#                ipv4_address: 172.16.239.13
-#    quorum4:
-#        <<: *quorum-def
-#        hostname: quorum4
-#        ports:
-#            - "22003:8545"
-#        volumes:
-#            - vol4:/qdata
-#            - ./examples/7nodes:/examples:ro
-#        depends_on:
-#            - tessera4
-#        environment:
-#            - NODE_ID=4
-#        networks:
-#            quorum-examples-net:
-#                ipv4_address: 172.16.239.14
+            node-manager-example-net:
+                ipv4_address: 172.10.203.11
+    quorum2:
+        <<: *quorum-def
+        hostname: quorum2
+        volumes:
+            - vol2:/qdata
+            - ./resources/goquorum:/resources/goquorum:ro
+        depends_on:
+            - tessera2
+        environment:
+            - NODE_ID=2
+        networks:
+            node-manager-example-net:
+                ipv4_address: 172.10.203.12
+    quorum3:
+        <<: *quorum-def
+        hostname: quorum3
+        volumes:
+            - vol3:/qdata
+            - ./resources/goquorum:/resources/goquorum:ro
+        depends_on:
+            - tessera3
+        environment:
+            - NODE_ID=3
+        networks:
+            node-manager-example-net:
+                ipv4_address: 172.10.203.13
+    quorum4:
+        <<: *quorum-def
+        hostname: quorum4
+        volumes:
+            - vol4:/qdata
+            - ./resources/goquorum:/resources/goquorum:ro
+        depends_on:
+            - tessera4
+        environment:
+            - NODE_ID=4
+        networks:
+            node-manager-example-net:
+                ipv4_address: 172.10.203.14
     tessera1:
         <<: *tessera-def
         hostname: tessera1
-        ports:
-            - "9081:9080"
         volumes:
             - vol1:/qdata
-            - ./resources/keys/tessera:/resources:ro
+            - ./resources/tessera:/resources/tessera:ro
         networks:
-            quorum-examples-net:
-                ipv4_address: 172.16.239.101
+            node-manager-example-net:
+                ipv4_address: 172.10.203.101
         environment:
         - NODE_ID=1
-#    tessera2:
-#        <<: *tessera-def
-#        hostname: tessera2
-#        ports:
-#            - "9082:9080"
-#        volumes:
-#            - vol2:/qdata
-#            - ./examples/7nodes:/examples:ro
-#        networks:
-#            quorum-examples-net:
-#                ipv4_address: 172.16.239.102
-#        environment:
-#            - NODE_ID=2
-#    tessera3:
-#        <<: *tessera-def
-#        hostname: tessera3
-#        ports:
-#            - "9083:9080"
-#        volumes:
-#            - vol3:/qdata
-#            - ./examples/7nodes:/examples:ro
-#        networks:
-#            quorum-examples-net:
-#                ipv4_address: 172.16.239.103
-#        environment:
-#            - NODE_ID=3
-#    tessera4:
-#        <<: *tessera-def
-#        hostname: tessera4
-#        ports:
-#            - "9084:9080"
-#        volumes:
-#            - vol4:/qdata
-#            - ./examples/7nodes:/examples:ro
-#        networks:
-#            quorum-examples-net:
-#                ipv4_address: 172.16.239.104
-#        environment:
-#            - NODE_ID=4
-#    nodemanager1:
-#        <<: *node-manager-def
-#        hostname: nodemanager1
-#        depends_on:
-#            - quorum1
-#        networks:
-#            quorum-examples-net:
-#                ipv4_address: 172.16.239.201
-#        environment:
-#            - NODE_ID=1
-#    nodemanager2:
-#        <<: *node-manager-def
-#        hostname: nodemanager2
-#        depends_on:
-#            - quorum2
-#        networks:
-#            quorum-examples-net:
-#                ipv4_address: 172.16.239.202
-#        environment:
-#            - NODE_ID=2
-#    nodemanager3:
-#        <<: *node-manager-def
-#        hostname: nodemanager3
-#        depends_on:
-#            - quorum3
-#        networks:
-#            quorum-examples-net:
-#                ipv4_address: 172.16.239.203
-#        environment:
-#            - NODE_ID=3
-#    nodemanager4:
-#        <<: *node-manager-def
-#        hostname: nodemanager4
-#        depends_on:
-#            - quorum4
-#        networks:
-#            quorum-examples-net:
-#                ipv4_address: 172.16.239.204
-#        environment:
-#            - NODE_ID=4
+    tessera2:
+        <<: *tessera-def
+        hostname: tessera2
+        volumes:
+            - vol2:/qdata
+            - ./resources/tessera:/resources/tessera:ro
+        networks:
+            node-manager-example-net:
+                ipv4_address: 172.10.203.102
+        environment:
+            - NODE_ID=2
+    tessera3:
+        <<: *tessera-def
+        hostname: tessera3
+        volumes:
+            - vol3:/qdata
+            - ./resources/tessera:/resources/tessera:ro
+        networks:
+            node-manager-example-net:
+                ipv4_address: 172.10.203.103
+        environment:
+            - NODE_ID=3
+    tessera4:
+        <<: *tessera-def
+        hostname: tessera4
+        volumes:
+            - vol4:/qdata
+            - ./resources/tessera:/resources/tessera:ro
+        networks:
+            node-manager-example-net:
+                ipv4_address: 172.10.203.104
+        environment:
+            - NODE_ID=4
+    nodemanager1:
+        <<: *node-manager-def
+        hostname: nodemanager1
+        depends_on:
+            - quorum1
+        networks:
+            node-manager-example-net:
+                ipv4_address: 172.10.203.201
+        environment:
+            - NODE_ID=1
+        volumes:
+            - vol1:/qdata
+    nodemanager2:
+        <<: *node-manager-def
+        hostname: nodemanager2
+        depends_on:
+            - quorum2
+        networks:
+            node-manager-example-net:
+                ipv4_address: 172.10.203.202
+        environment:
+            - NODE_ID=2
+        volumes:
+            - vol2:/qdata
+    nodemanager3:
+        <<: *node-manager-def
+        hostname: nodemanager3
+        depends_on:
+            - quorum3
+        networks:
+            node-manager-example-net:
+                ipv4_address: 172.10.203.203
+        environment:
+            - NODE_ID=3
+        volumes:
+            - vol3:/qdata
+    nodemanager4:
+        <<: *node-manager-def
+        hostname: nodemanager4
+        depends_on:
+            - quorum4
+        networks:
+            node-manager-example-net:
+                ipv4_address: 172.10.203.204
+        environment:
+            - NODE_ID=4
+        volumes:
+            - vol4:/qdata
 
 networks:
-    quorum-examples-net:
-        name: quorum-examples-net
+    node-manager-example-net:
+        name: node-manager-example-net
         driver: bridge
         ipam:
             driver: default
             config:
-                - subnet: 172.16.239.0/24
+                - subnet: 172.10.203.0/24
 
 volumes:
     "vol1":
