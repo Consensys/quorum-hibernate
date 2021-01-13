@@ -137,8 +137,8 @@ x-tessera-def:
                     "passwords": [],
                     "keyData": [
                         {
-                            "publicKey": "$${PUBLIC_KEY}",
-                            "config": $${PRIVATE_KEY_CONFIG}
+                            "publicKeyFile": "$${DDIR}/keys/tessera/$${NODE_ID}.pub",
+                            "privateKeyFile": "$${DDIR}/keys/tessera/$${NODE_ID}.key"
                         }
                     ]
                 },
@@ -265,8 +265,6 @@ services:
         environment:
         - PRIVATE_CONFIG=${PRIVATE_CONFIG:-/qdata/tm/tm.ipc}
         - NODE_ID=1
-        - PUBLIC_KEY=BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo=
-        - PRIVATE_KEY_CONFIG={"data":{"bytes":"Wl+xSyXVuuqzpvznOS7dOobhcn4C5auxkFRi7yLtgtA="},"type":"unlocked"}
     nodemanager1:
         <<: *node-manager-def
         hostname: nodemanager1
@@ -307,8 +305,6 @@ services:
         environment:
             - PRIVATE_CONFIG=${PRIVATE_CONFIG:-/qdata/tm/tm.ipc}
             - NODE_ID=2
-            - PUBLIC_KEY=QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=
-            - PRIVATE_KEY_CONFIG={"data":{"bytes":"nDFwJNHSiT1gNzKBy9WJvMhmYRkW3TzFUmPsNzR6oFk="},"type":"unlocked"}
     nodemanager2:
         <<: *node-manager-def
         hostname: nodemanager2
@@ -349,8 +345,6 @@ services:
         environment:
             - PRIVATE_CONFIG=${PRIVATE_CONFIG:-/qdata/tm/tm.ipc}
             - NODE_ID=3
-            - PUBLIC_KEY=1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=
-            - PRIVATE_KEY_CONFIG={"data":{"bytes":"tMxUVR8bX7aq/TbpVHc2QV3SN2iUuExBwefAuFsO0Lg="},"type":"unlocked"}
     nodemanager3:
         <<: *node-manager-def
         hostname: nodemanager3
@@ -391,8 +385,6 @@ services:
         environment:
             - PRIVATE_CONFIG=${PRIVATE_CONFIG:-/qdata/tm/tm.ipc}
             - NODE_ID=4
-            - PUBLIC_KEY=oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=
-            - PRIVATE_KEY_CONFIG={"data":{"bytes":"grQjd3dBp4qFs8/5Jdq7xjz++aUx/LXAqISFyPWaCRw="},"type":"unlocked"}
     nodemanager4:
         <<: *node-manager-def
         hostname: nodemanager4
