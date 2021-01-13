@@ -10,6 +10,12 @@
 
 * Node Manager does not require a Privacy Manager.  All Privacy Manager related [config](../config.md) fields are optional.
 
+* When using `shell` Blockchain Client and Privacy Manager:
+    * If running multiple Blockchain Clients or Privacy Managers on the same host, ensure that Node Manager's configured start and stop scripts only impact a single node at a time to prevent unexpected behaviour
+    * In start scripts redirect process output to a log file
+    * In start scripts use `&` to run the process in the background 
+    * See [samples/shell](samples/shell) for examples
+
 ## Adding Node Manager to an existing deployment
 
 1. Construct the Node Manager config as required by the existing deployment 
@@ -18,8 +24,6 @@
 1. Update/inform clients to use the proxy addresses for all requests.  
    
 **If clients continue to use the direct Blockchain Client and Privacy Manager API addresses instead of Node Manager's proxy addresses, Node Manager will be unable to accurately determine activity. This will likely lead to inconsistent behaviour.**
-
-
 
 ## Understanding Client Errors
 The following table describes scenarios where user-submitted requests are expected to fail.  The Action describes the necessary steps to continue:
