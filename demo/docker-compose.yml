@@ -17,34 +17,32 @@ x-quorum-def:
         - /bin/sh
         - -c
         - |
-            UDS_WAIT=10
+            PRIVATE_CONFIG=/qdata/tessera/tm.ipc
 
             for i in $$(seq 1 100)
                 do
                 set -e
-                if [ -S $${PRIVATE_CONFIG}
-] && \
+                if [ -S $${PRIVATE_CONFIG}] && \
                     [ "I'm up!" == "$$(wget --timeout $${UDS_WAIT} -qO- --proxy off 172.16.239.10$${NODE_ID}:9000/upcheck)" ];
                 then break
                 else
-                    echo "Sleep $${UDS_WAIT} seconds. Waiting for Tessera."
-                    sleep $${UDS_WAIT}
+                    echo "Waiting for Tessera..."
+                    sleep 10
                 fi
             done
 
-            DDIR=/qdata/dd
+            RESOURCES=/resources/goquorum
+            DDIR=/qdata/goquorum
+
             rm -rf $${DDIR}
             mkdir -p $${DDIR}/keystore
             mkdir -p $${DDIR}/geth
-            cp /examples/raft/nodekey$${NODE_ID} $${DDIR}/geth/nodekey
-            cp /examples/keys/key$${NODE_ID} $${DDIR}/keystore/
-            cp /examples/disallowed-nodes.json $${DDIR}/
-            cat /examples/permissioned-nodes.json | sed 's/^\(.*\)@.*\?\(.*\)raftport=5040\([0-9]\)\(.*\)$$/\1@172.16.239.1\3:21000?discport=0\&raftport=50400\4/g' > $${DDIR}/static-nodes.json
-            cp $${DDIR}/static-nodes.json $${DDIR}/permissioned-nodes.json
-            cat $${DDIR}/static-nodes.json
-            GENESIS_FILE="/examples/genesis.json"
-            NETWORK_ID=$$(cat $${GENESIS_FILE} | grep chainId | awk -F " " '{print $$2}' | awk -F "," '{print $$1}')
-            geth --datadir $${DDIR} init $${GENESIS_FILE}
+            cp $${RESOURCES}/raft/nodekey$${NODE_ID} $${DDIR}/nodekey
+            cp $${RESOURCES}/keys/key$${NODE_ID} $${DDIR}/keystore/
+            cp $${RESOURCES}/permissioned-nodes.json $${DDIR}/permissioned-nodes.json
+            cp $${RESOURCES}/permissioned-nodes.json $${DDIR}/static-nodes.json
+            NETWORK_ID=$$(cat $${RESOURCES}/genesis.json | grep chainId | awk -F " " '{print $$2}' | awk -F "," '{print $$1}')
+            geth --datadir $${DDIR} init $${RESOURCES}/genesis.json
             geth \
                 --identity node$${NODE_ID}-raft \
                 --datadir $${DDIR} \
@@ -57,7 +55,7 @@ x-quorum-def:
                 --rpcvhosts "*" \
                 --rpcaddr 0.0.0.0 \
                 --rpcport 8545 \
-                --rpcapi admin,eth,debug,miner,net,shh,txpool,personal,web3,quorum,${QUORUM_CONSENSUS:-istanbul} \
+                --rpcapi admin,eth,debug,miner,net,shh,txpool,personal,web3,quorum,raft \
                 --port 21000 \
                 --unlock 0 \
                 --allow-insecure-unlock \
@@ -72,7 +70,7 @@ x-tessera-def:
         - "9080"
     restart: "no"
     healthcheck:
-        test: [ "CMD-SHELL", "[ -S /ddir/tm.ipc ] || exit 1" ]
+        test: [ "CMD-SHELL", "[ -S /qdata/tessera/tm.ipc ] || exit 1" ]
         interval: 3s
         timeout: 3s
         retries: 20
@@ -239,11 +237,10 @@ services:
             - "22000:8545"
         volumes:
             - vol1:/qdata
-            - ./examples/7nodes:/examples:ro
+            - ./resources/goquorum:/resources/goquorum:ro
         depends_on:
             - tessera1
         environment:
-            - PRIVATE_CONFIG=${PRIVATE_CONFIG:-/qdata/tm/tm.ipc}
             - NODE_ID=1
         networks:
             quorum-examples-net:
@@ -259,7 +256,6 @@ services:
 #        depends_on:
 #            - tessera2
 #        environment:
-#            - PRIVATE_CONFIG=${PRIVATE_CONFIG:-/qdata/tm/tm.ipc}
 #            - NODE_ID=2
 #        networks:
 #            quorum-examples-net:
@@ -275,7 +271,6 @@ services:
 #        depends_on:
 #            - tessera3
 #        environment:
-#            - PRIVATE_CONFIG=${PRIVATE_CONFIG:-/qdata/tm/tm.ipc}
 #            - NODE_ID=3
 #        networks:
 #            quorum-examples-net:
@@ -291,7 +286,6 @@ services:
 #        depends_on:
 #            - tessera4
 #        environment:
-#            - PRIVATE_CONFIG=${PRIVATE_CONFIG:-/qdata/tm/tm.ipc}
 #            - NODE_ID=4
 #        networks:
 #            quorum-examples-net:
