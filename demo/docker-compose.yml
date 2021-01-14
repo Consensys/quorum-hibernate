@@ -1,4 +1,5 @@
-# Creates a 4 node privacy-enabled Raft network.  Each node is managed by its own Node Manager.
+# Creates a 5 node privacy-enabled Raft network.  Each node is managed by its own Node Manager.
+# 2 of the Node Managers have consensus mode strict disabled so that they can be hibernated after inactivity.
 version: "3.6"
 x-quorum-def:
     &quorum-def
@@ -88,7 +89,7 @@ x-tessera-def:
             rm -rf $${DDIR}
             mkdir -p $${DDIR}
 
-            cp $${RESOURCES}/keys//$${NODE_ID}.pub $${DDIR}
+            cp $${RESOURCES}/keys/$${NODE_ID}.pub $${DDIR}
             cp $${RESOURCES}/keys/$${NODE_ID}.key $${DDIR}
 
             cat <<EOF > $${DDIR}/tessera-config.json
@@ -102,35 +103,32 @@ x-tessera-def:
                 },
                 "serverConfigs":[
                     {
-                        "app":"ThirdParty",
-                        "serverAddress": "http://nodemanager$${NODE_ID}:9080",
-                        "bindingAddress": "http://tessera$${NODE_ID}:9080",
-                        "communicationType" : "REST"
-                    },
-                    {
                         "app":"Q2T",
                         "serverAddress": "unix:$${DDIR}/tm.ipc",
                         "communicationType" : "REST"
                     },
                     {
                         "app":"P2P",
-                        "serverAddress": "http://nodemanager$${NODE_ID}:9000",
+                        "serverAddress": "http://nodemanager$${NODE_ID}:9391",
                         "bindingAddress": "http://tessera$${NODE_ID}:9000",
                         "communicationType" : "REST"
                     }
                 ],
                 "peer": [
                     {
-                        "url": "http://nodemanager1:9000"
+                        "url": "http://nodemanager1:9391/"
                     },
                     {
-                        "url": "http://nodemanager2:9000"
+                        "url": "http://nodemanager2:9391/"
                     },
                     {
-                        "url": "http://nodemanager3:9000"
+                        "url": "http://nodemanager3:9391/"
                     },
                     {
-                        "url": "http://nodemanager4:9000"
+                        "url": "http://nodemanager4:9391/"
+                    },
+                    {
+                        "url": "http://nodemanager5:9391/"
                     }
                 ],
                 "keys": {
@@ -165,11 +163,11 @@ x-node-manager-def:
         - /bin/sh
         - -c
         - |
-            apk add curl
-
             TESSERA_IPC=/qdata/tessera/tm.ipc
             GOQUORUM_IPC=/qdata/goquorum/geth.ipc
             RETRY=10
+
+            apk add curl
 
             for i in $$(seq 1 100)
                 do
@@ -183,6 +181,9 @@ x-node-manager-def:
             done
 
             DDIR=/qdata/nodemanager
+            RESOURCES=/resources/tessera
+
+            TESSERA_PUBLIC_KEY=$$(cat $${RESOURCES}/keys/$${NODE_ID}.pub)
 
             rm -rf $${DDIR}
             mkdir -p $${DDIR}
@@ -192,36 +193,52 @@ x-node-manager-def:
             	"peers": [
             	    {
             	    	"name": "node1",
-            	    	"privacyManagerKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
-            	    	"rpcUrl": "http://localhost:8081"
+            	    	"privacyManagerKey": "BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo=",
+            	    	"rpcUrl": "http://nodemanager1:8081"
             	    },
             	    {
             	    	"name": "node2",
             	    	"privacyManagerKey": "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=",
-            	    	"rpcUrl": "http://localhost:8082"
+            	    	"rpcUrl": "http://nodemanager2:8081"
             	    },
             	    {
             	    	"name": "node3",
             	    	"privacyManagerKey": "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=",
-            	    	"rpcUrl": "http://localhost:8083"
+            	    	"rpcUrl": "http://nodemanager3:8081"
             	    },
             	    {
             	    	"name": "node4",
-            	    	"privacyManagerKey": "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=",
-            	    	"rpcUrl": "http://localhost:8084"
-            	    }
+            	    	"privacyManagerKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
+            	    	"rpcUrl": "http://nodemanager4:8081"
+            	    },
+                    {
+                        "name": "node5",
+                        "privacyManagerKey": "R56gy4dn24YOjwyesTczYa8m5xhP6hF2uTMCju/1xkY=",
+                        "rpcUrl": "http://nodemanager5:8081"
+                    }
             	]
             }
             EOF
             cat $${DDIR}/peers-config.json
 
+            DISABLE_STRICT_MODE=false
+            if [ $${NODE_ID} = "4" ] || [ $${NODE_ID} = "5" ]
+            then
+                DISABLE_STRICT_MODE=true
+            fi
+
             cat <<EOF > $${DDIR}/node-manager-config.json
             {
-                "name": "node1",
-                "upcheckPollingInterval": 1,
+                "name": "node$${NODE_ID}",
+                "upcheckPollingInterval": 30,
                 "peersConfigFile": "$${DDIR}/peers-config.json",
                 "inactivityTime": 60,
-                "disableStrictMode": true,
+                "disableStrictMode": $${DISABLE_STRICT_MODE},
+                "server": {
+                    "rpcAddress": "0.0.0.0:8081",
+                    "rpcCorsList": ["*"],
+                    "rpcvHosts": ["*"]
+                },
                 "proxies": [
                     {
                         "name": "geth-rpc",
@@ -243,11 +260,6 @@ x-node-manager-def:
                         "writeTimeout": 15
                     }
                 ],
-                "server": {
-                    "rpcAddress": "0.0.0.0:8081",
-                    "rpcCorsList": ["*"],
-                    "rpcvHosts": ["*"]
-                },
                 "blockchainClient": {
                     "type": "goquorum",
                     "consensus": "raft",
@@ -255,7 +267,7 @@ x-node-manager-def:
                     "process": {
                         "name": "bcclnt",
                         "controlType": "docker",
-                        "containerId": "quorum$${NODE_ID}",
+                        "containerId": "demo_quorum$${NODE_ID}_1",
                         "upcheckConfig": {
                             "url": "http://quorum$${NODE_ID}:8545",
                             "method": "POST",
@@ -265,11 +277,11 @@ x-node-manager-def:
                     }
                 },
                 "privacyManager": {
-                    "publicKey": "BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo=",
+                    "publicKey": "$${TESSERA_PUBLIC_KEY}",
                     "process": {
                         "name": "privman",
                         "controlType": "docker",
-                        "containerId": "tessera$${NODE_ID}",
+                        "containerId": "demo_tessera$${NODE_ID}_1",
                         "upcheckConfig": {
                             "url": "http://tessera$${NODE_ID}:9000/upcheck",
                             "method": "GET",
@@ -296,7 +308,7 @@ services:
         environment:
             - NODE_ID=1
         networks:
-            node-manager-example-net:
+            node-manager-demo-net:
                 ipv4_address: 172.10.203.11
     quorum2:
         <<: *quorum-def
@@ -309,7 +321,7 @@ services:
         environment:
             - NODE_ID=2
         networks:
-            node-manager-example-net:
+            node-manager-demo-net:
                 ipv4_address: 172.10.203.12
     quorum3:
         <<: *quorum-def
@@ -322,7 +334,7 @@ services:
         environment:
             - NODE_ID=3
         networks:
-            node-manager-example-net:
+            node-manager-demo-net:
                 ipv4_address: 172.10.203.13
     quorum4:
         <<: *quorum-def
@@ -335,8 +347,21 @@ services:
         environment:
             - NODE_ID=4
         networks:
-            node-manager-example-net:
+            node-manager-demo-net:
                 ipv4_address: 172.10.203.14
+    quorum5:
+        <<: *quorum-def
+        hostname: quorum5
+        volumes:
+            - vol5:/qdata
+            - ./resources/goquorum:/resources/goquorum:ro
+        depends_on:
+            - tessera5
+        environment:
+            - NODE_ID=5
+        networks:
+            node-manager-demo-net:
+                ipv4_address: 172.10.203.15
     tessera1:
         <<: *tessera-def
         hostname: tessera1
@@ -344,7 +369,7 @@ services:
             - vol1:/qdata
             - ./resources/tessera:/resources/tessera:ro
         networks:
-            node-manager-example-net:
+            node-manager-demo-net:
                 ipv4_address: 172.10.203.101
         environment:
         - NODE_ID=1
@@ -355,7 +380,7 @@ services:
             - vol2:/qdata
             - ./resources/tessera:/resources/tessera:ro
         networks:
-            node-manager-example-net:
+            node-manager-demo-net:
                 ipv4_address: 172.10.203.102
         environment:
             - NODE_ID=2
@@ -366,7 +391,7 @@ services:
             - vol3:/qdata
             - ./resources/tessera:/resources/tessera:ro
         networks:
-            node-manager-example-net:
+            node-manager-demo-net:
                 ipv4_address: 172.10.203.103
         environment:
             - NODE_ID=3
@@ -377,62 +402,115 @@ services:
             - vol4:/qdata
             - ./resources/tessera:/resources/tessera:ro
         networks:
-            node-manager-example-net:
+            node-manager-demo-net:
                 ipv4_address: 172.10.203.104
         environment:
             - NODE_ID=4
+    tessera5:
+        <<: *tessera-def
+        hostname: tessera5
+        volumes:
+            - vol5:/qdata
+            - ./resources/tessera:/resources/tessera:ro
+        networks:
+            node-manager-demo-net:
+                ipv4_address: 172.10.203.105
+        environment:
+            - NODE_ID=5
     nodemanager1:
         <<: *node-manager-def
         hostname: nodemanager1
         depends_on:
             - quorum1
         networks:
-            node-manager-example-net:
+            node-manager-demo-net:
                 ipv4_address: 172.10.203.201
         environment:
             - NODE_ID=1
         volumes:
             - vol1:/qdata
+            - ./resources/tessera:/resources/tessera:ro
+            - /var/run/docker.sock:/var/run/docker.sock
+        ports:
+            - "53001:8081"
+            - "53101:9091"
+            - "53201:9391"
     nodemanager2:
         <<: *node-manager-def
         hostname: nodemanager2
         depends_on:
             - quorum2
         networks:
-            node-manager-example-net:
+            node-manager-demo-net:
                 ipv4_address: 172.10.203.202
         environment:
             - NODE_ID=2
         volumes:
             - vol2:/qdata
+            - ./resources/tessera:/resources/tessera:ro
+            - /var/run/docker.sock:/var/run/docker.sock
+        ports:
+            - "53002:8081"
+            - "53102:9091"
+            - "53202:9391"
     nodemanager3:
         <<: *node-manager-def
         hostname: nodemanager3
         depends_on:
             - quorum3
         networks:
-            node-manager-example-net:
+            node-manager-demo-net:
                 ipv4_address: 172.10.203.203
         environment:
             - NODE_ID=3
         volumes:
             - vol3:/qdata
+            - ./resources/tessera:/resources/tessera:ro
+            - /var/run/docker.sock:/var/run/docker.sock
+        ports:
+            - "53003:8081"
+            - "53103:9091"
+            - "53203:9391"
     nodemanager4:
         <<: *node-manager-def
         hostname: nodemanager4
         depends_on:
             - quorum4
         networks:
-            node-manager-example-net:
+            node-manager-demo-net:
                 ipv4_address: 172.10.203.204
         environment:
             - NODE_ID=4
         volumes:
             - vol4:/qdata
+            - ./resources/tessera:/resources/tessera:ro
+            - /var/run/docker.sock:/var/run/docker.sock
+        ports:
+            - "53004:8081"
+            - "53104:9091"
+            - "53204:9391"
+    nodemanager5:
+        <<: *node-manager-def
+        hostname: nodemanager5
+        depends_on:
+            - quorum5
+        networks:
+            node-manager-demo-net:
+                ipv4_address: 172.10.203.205
+        environment:
+            - NODE_ID=5
+        volumes:
+            - vol5:/qdata
+            - ./resources/tessera:/resources/tessera:ro
+            - /var/run/docker.sock:/var/run/docker.sock
+        ports:
+            - "53005:8081"
+            - "53105:9091"
+            - "53205:9391"
 
 networks:
-    node-manager-example-net:
-        name: node-manager-example-net
+    node-manager-demo-net:
+        name: node-manager-demo-net
         driver: bridge
         ipam:
             driver: default
@@ -444,3 +522,4 @@ volumes:
     "vol2":
     "vol3":
     "vol4":
+    "vol5":
