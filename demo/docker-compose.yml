@@ -33,7 +33,6 @@ x-quorum-def:
             RESOURCES=/resources/goquorum
             DDIR=/qdata/goquorum
 
-            rm -rf $${DDIR}
             mkdir -p $${DDIR}/keystore
             mkdir -p $${DDIR}/geth
             cp $${RESOURCES}/raft/nodekey$${NODE_ID} $${DDIR}/nodekey
@@ -80,7 +79,8 @@ x-tessera-def:
         - |
             RESOURCES=/resources/tessera
             DDIR=/qdata/tessera
-            rm -rf $${DDIR}
+            TESSERA_IPC=$${DDIR}/tm.ipc
+            rm $${TESSERA_IPC}
             mkdir -p $${DDIR}
 
             cp $${RESOURCES}/keys/$${NODE_ID}.pub $${DDIR}
@@ -98,7 +98,7 @@ x-tessera-def:
                 "serverConfigs":[
                     {
                         "app":"Q2T",
-                        "serverAddress": "unix:$${DDIR}/tm.ipc",
+                        "serverAddress": "unix:$${TESSERA_IPC}",
                         "communicationType" : "REST"
                     },
                     {
