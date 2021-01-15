@@ -1,3 +1,13 @@
+![logo](logo.png)
+
+- [Introduction](#Introduction)
+- [Features](#Features)
+- [Build & Run](#Build-&-Run)
+- [Configuration](#Configuration)
+- [Deployment/Usage](#Deployment/Usage)
+- [Architecture](#Architecture)
+- [Sample Configurations](#Sample-Configurations)
+
 # Node Manager
 
 ## Introduction
@@ -10,6 +20,9 @@ Node Manager provides a solution to this problem by monitoring a node's API traf
 * Monitors a linked Blockchain Client and Privacy Manager for inactivity.
     * Supported Blockchain Clients: **GoQuorum** and **Besu**.
     * Supported Privacy Managers: **Tessera**.
+    * Supported consensus
+        * GoQuorum: Istanbul BFT, Raft and Clique
+        * Besu: Clique
 * Acts as a proxy for the Blockchain Client and Privacy Manager.
 * Hibernates the linked Blockchain Client and Privacy Manager if the period of inactivity exceeds a configurable limit.
 * Restarts (wakes up) the Blockchain Client and Privacy Manager when new transaction or API requests are received.
@@ -54,8 +67,8 @@ See [docs/config.md](docs/config.md) for a full description of all configuration
 ## Deployment/Usage
 See [docs/deployment.md](docs/deployment.md) for details on adding and using Node Manager in networks. 
 
-## How It Works
-See [docs/how-it-works.md](docs/how-it-works.md) for an overview of the processes used by Node Manager and common errors.
+## Architecture
+See [docs/architecture.md](docs/architecture.md) for an overview of the processes used by Node Manager and common errors.
 
 ## Sample Configurations
 See [docs/samples](docs/samples) for sample configuration files for various network types.
