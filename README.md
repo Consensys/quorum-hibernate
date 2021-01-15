@@ -52,4 +52,6 @@ See [docs/how-it-works.md](docs/how-it-works.md) for an overview of the processe
 ## Sample Configurations
 See [docs/samples](docs/samples) for sample configuration files for various network types.
 
+## Demo
+See [demo](demo) for a Docker Compose demo network that can be used for initial experimentation with Node Manager. 
 
