@@ -155,6 +155,8 @@ func (n *NodeControl) GetNodeConfig() *config.Node {
 }
 
 func (n *NodeControl) GetNodeStatus() core.NodeStatus {
+	n.nodeStatusMux.Lock()
+	defer n.nodeStatusMux.Unlock()
 	return n.nodeStatus
 }
 
@@ -169,12 +171,14 @@ func (n *NodeControl) GetTxHandler() privatetx.TxHandler {
 func (n *NodeControl) SetClntStatus(ns core.ClientStatus) {
 	defer n.clntStatusMux.Unlock()
 	n.clntStatusMux.Lock()
+	log.Debug("SetClntStatus", "old", n.clientStatus, "new", ns)
 	n.clientStatus = ns
 }
 
 func (n *NodeControl) SetNodeStatus(ns core.NodeStatus) {
 	defer n.nodeStatusMux.Unlock()
 	n.nodeStatusMux.Lock()
+	log.Debug("SetNodeStatus", "old", n.nodeStatus, "new", ns)
 	n.nodeStatus = ns
 }
 
@@ -231,7 +235,7 @@ func (n *NodeControl) fetchCurrentClientStatuses() (bool, bool) {
 
 // IsNodeBusy returns error if the node manager is busy with shutdown/startup
 func (n *NodeControl) IsNodeBusy() error {
-	switch n.nodeStatus {
+	switch n.GetNodeStatus() {
 	case core.ShutdownInprogress:
 		return errors.New(core.NodeIsBeingShutdown)
 	case core.StartupInprogress:
@@ -306,6 +310,7 @@ func (n *NodeControl) StartNodeMonitor() {
 					log.Error("StartNodeMonitor - stopping failed")
 					n.stopClntCompleteCh <- false
 				} else {
+					log.Debug("StartNodeMonitor - stopping complete")
 					n.stopClntCompleteCh <- true
 				}
 			case <-n.startClntCh:
@@ -314,6 +319,7 @@ func (n *NodeControl) StartNodeMonitor() {
 					log.Error("StartNodeMonitor - starting failed")
 					n.startClntCompleteCh <- false
 				} else {
+					log.Debug("StartNodeMonitor - starting complete")
 					n.startClntCompleteCh <- true
 				}
 			case <-n.stopCh:
@@ -394,6 +400,7 @@ func (n *NodeControl) StopClient() bool {
 
 	bcStatus, pmStatus := n.stopProcesses()
 	if bcStatus && pmStatus {
+		log.Debug("StopClient - bcclnt and privman processes stopped")
 		n.SetClntStatus(core.Down)
 
 		// for IBFT and Clique, since we rely on block signed data
@@ -403,7 +410,9 @@ func (n *NodeControl) StopClient() bool {
 		n.SetNodeStatus(core.ConsensusWait)
 		time.Sleep(CONSENSUS_WAIT_TIME * time.Second)
 		n.SetNodeStatus(core.OK)
-
+		log.Debug("StopClient", "nodeStatus", n.GetNodeStatus())
+	} else {
+		log.Error("StopClient - bcclnt and privman processes not stopped")
 	}
 	// if stopping of blockchain client or privacy manager fails Status will remain as ShutdownInprogress and node manager will not process any requests from clients
 	// it will need some manual intervention to set it to the correct status
