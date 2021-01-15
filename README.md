@@ -2,7 +2,7 @@
 
 - [Introduction](#Introduction)
 - [Features](#Features)
-- [Build & Run](#Build-&-Run)
+- [Build & Run](#Build-&amp;-Run)
 - [Configuration](#Configuration)
 - [Deployment/Usage](#Deployment/Usage)
 - [Architecture](#Architecture)
