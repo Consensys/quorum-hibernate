@@ -2,7 +2,7 @@
 
 - [Introduction](#Introduction)
 - [Features](#Features)
-- [Build & Run](#Build-\&-Run)
+- [Build & Run](#Build-and-Run)
 - [Configuration](#Configuration)
 - [Deployment/Usage](#Deployment/Usage)
 - [Architecture](#Architecture)
@@ -30,7 +30,7 @@ Node Manager provides a solution to this problem by monitoring a node's API traf
 * Periodically wakes up the node (configurable) to allow it to sync with the network and ensure it does not fall too far behind. 
 * 1-way and 2-way (mutual) TLS supported on all of Node Manager's servers, clients, and proxies.
 
-## Build & Run
+## Build and Run
 ### Pre-Requisites
     golang 1.15+
 ### Build
