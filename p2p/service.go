@@ -244,7 +244,7 @@ func (pm *PeerManager) peerStatus() (int, []NodeStatusInfo) {
 	}
 	wg.Wait()
 	<-resDoneCh
-	log.Info("peerStatus - completed", "status", statusArr)
+	log.Info("peerStatus - completed", "status", fmt.Sprintf("%+v", statusArr))
 	return expResCnt, statusArr
 }
 
