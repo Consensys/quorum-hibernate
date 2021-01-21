@@ -1,6 +1,6 @@
 # Configuration
 
-For starting Node Manager, two configuration files are required: [Node Manager config](#node-manager-config-file) and [peers config](#Peers-config-file). Both `json` and `toml` formats are supported.  Sample configurations can be found in (samples)[samples].
+For starting Node Manager, two configuration files are required: [Node Manager config](#node-manager-config-file) and [peers config](#Peers-config-file). Both `json` and `toml` formats are supported.  Sample configurations can be found in [samples](samples).
 
 ## Node Manager config file
 
