@@ -17,15 +17,15 @@ Node Manager provides a solution to this problem by monitoring a node's API traf
 
 ## Features
 
-* Monitors a linked Blockchain Client and Privacy Manager for inactivity.
-    * Supported Blockchain Clients: **GoQuorum** and **Besu**.
+* Monitors a linked Ethereum Client and Privacy Manager for inactivity.
+    * Supported Ethereum Clients: **GoQuorum** and **Besu**.
     * Supported Privacy Managers: **Tessera**.
     * Supported consensus
         * GoQuorum: Istanbul BFT, Raft and Clique
         * Besu: Clique
-* Acts as a proxy for the Blockchain Client and Privacy Manager.
-* Hibernates the linked Blockchain Client and Privacy Manager if the period of inactivity exceeds a configurable limit.
-* Restarts (wakes up) the Blockchain Client and Privacy Manager when new transaction or API requests are received.
+* Acts as a proxy for the Ethereum Client and Privacy Manager.
+* Hibernates the linked Ethereum Client and Privacy Manager if the period of inactivity exceeds a configurable limit.
+* Restarts (wakes up) the Ethereum Client and Privacy Manager when new transaction or API requests are received.
 * Does not require the entire network to be using Node Managers.
 * Periodically wakes up the node (configurable) to allow it to sync with the network and ensure it does not fall too far behind. 
 * 1-way and 2-way (mutual) TLS supported on all of Node Manager's servers, clients, and proxies.
@@ -59,7 +59,7 @@ docker run \
     quorumengineering/node-manager:latest -config /config.json
 ```
 
-*Note: `-v /var/run/docker.sock:/var/run/docker.sock` allows the Node Manager container to start/stop Blockchain Client/Privacy Manager containers.*
+*Note: `-v /var/run/docker.sock:/var/run/docker.sock` allows the Node Manager container to start/stop Ethereum Client/Privacy Manager containers.*
 
 ## Configuration
 See [docs/config.md](docs/config.md) for a full description of all configuration options.

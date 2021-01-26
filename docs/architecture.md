@@ -8,7 +8,7 @@ The above diagram depicts a simple 3 node privacy-enabled network where each nod
 
 Each Node Manager:
 
-* Acts as a proxy for its linked Blockchain Client and Privacy Manager.  As all incoming traffic goes through Node Manager, it is able to monitor the activity on the linked nodes. 
+* Acts as a proxy for its linked Ethereum Client and Privacy Manager.  As all incoming traffic goes through Node Manager, it is able to monitor the activity on the linked nodes. 
   
 * Communicates with other Node Managers to retrieve the statuses of their linked nodes.
 
@@ -18,11 +18,11 @@ Each Node Manager:
 
 The above sequence diagram outlines the process of hibernating a node after the configured inactivity period has been reached.  In more detail:
 
-* **1.1:** Node Manager monitors the incoming requests for the linked Blockchain Client and Privacy Manager to determine whether the node is active.  The inactivity timer is reset on incoming proxy requests.
+* **1.1:** Node Manager monitors the incoming requests for the linked Ethereum Client and Privacy Manager to determine whether the node is active.  The inactivity timer is reset on incoming proxy requests.
 
 * **1.2:** If the node has been inactive for more than the configured period, Node Manager initiates the pre-hibernation process.
 
-* **1.2.1 to 1.2.3:** Node Manager checks if the node is safe to hibernate by fetching network and consensus information from the Blockchain Client. These checks ensure the network will continue to be operational if the node hibernates. See [Consensus Checks](#Consensus-Checks) for further details.
+* **1.2.1 to 1.2.3:** Node Manager checks if the node is safe to hibernate by fetching network and consensus information from the Ethereum Client. These checks ensure the network will continue to be operational if the node hibernates. See [Consensus Checks](#Consensus-Checks) for further details.
   
   * If the validation is successful, Node Manager proceeds with hibernating the node.
   * If the validation is unsuccessful, Node Manager aborts the hibernation process, resets the inactivity timer and waits for the next inactivity trigger to attempt hibernation again.
@@ -32,7 +32,7 @@ The above sequence diagram outlines the process of hibernating a node after the 
   * If no other Node Managers have initiated hibernation, Node Manager proceeds with hibernating the node.
   * If another Node Manager has initiated hibernation or did not respond, Node Manager aborts the hibernation process, resets the inactivity timer and waits for the next inactivity trigger to attempt hibernation again.
 
-* **1.4:** Node Manager hibernates the local Blockchain Client and Privacy Manager.
+* **1.4:** Node Manager hibernates the local Ethereum Client and Privacy Manager.
 
 ### Consensus Checks
 
@@ -51,7 +51,7 @@ Node Manager ensures that hibernation would not result in a break in consensus. 
 
 The above sequence diagram outlines the waking process for the following scenario:
 
-1. Node *A* and Node *B* are both running Node Manager, GoQuorum Blockchain Client and Tessera Privacy Manager
+1. Node *A* and Node *B* are both running Node Manager, GoQuorum Ethereum Client and Tessera Privacy Manager
 2. All GoQuorum and Tessera nodes are hibernated due to inactivity
 3. Node Manager *A* (acting as a proxy for GoQuorum *A*) receives a new private transaction
 
