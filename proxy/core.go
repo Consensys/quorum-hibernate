@@ -6,10 +6,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/ConsenSysQuorum/node-manager/core"
+	"github.com/ConsenSys/quorum-hibernate/core"
 
-	"github.com/ConsenSysQuorum/node-manager/log"
-	"github.com/ConsenSysQuorum/node-manager/node"
+	"github.com/ConsenSys/quorum-hibernate/log"
+	"github.com/ConsenSys/quorum-hibernate/node"
 )
 
 // Proxy represents a proxy server

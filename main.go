@@ -6,11 +6,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ConsenSysQuorum/node-manager/config"
-	"github.com/ConsenSysQuorum/node-manager/log"
-	"github.com/ConsenSysQuorum/node-manager/node"
-	"github.com/ConsenSysQuorum/node-manager/proxy"
-	"github.com/ConsenSysQuorum/node-manager/rpc"
+	"github.com/ConsenSys/quorum-hibernate/config"
+	"github.com/ConsenSys/quorum-hibernate/log"
+	"github.com/ConsenSys/quorum-hibernate/node"
+	"github.com/ConsenSys/quorum-hibernate/proxy"
+	"github.com/ConsenSys/quorum-hibernate/rpc"
 	"github.com/sirupsen/logrus"
 )
 

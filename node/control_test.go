@@ -3,8 +3,8 @@ package node
 import (
 	"testing"
 
-	"github.com/ConsenSysQuorum/node-manager/core"
-	"github.com/ConsenSysQuorum/node-manager/process"
+	"github.com/ConsenSys/quorum-hibernate/core"
+	"github.com/ConsenSys/quorum-hibernate/process"
 	"github.com/stretchr/testify/require"
 )
 

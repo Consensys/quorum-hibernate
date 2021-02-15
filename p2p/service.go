@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/ConsenSysQuorum/node-manager/config"
+	"github.com/ConsenSys/quorum-hibernate/config"
 
-	"github.com/ConsenSysQuorum/node-manager/core"
-	"github.com/ConsenSysQuorum/node-manager/log"
+	"github.com/ConsenSys/quorum-hibernate/core"
+	"github.com/ConsenSys/quorum-hibernate/log"
 )
 
 const (

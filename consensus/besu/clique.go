@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ConsenSysQuorum/node-manager/config"
+	"github.com/ConsenSys/quorum-hibernate/config"
 
-	"github.com/ConsenSysQuorum/node-manager/consensus"
-	"github.com/ConsenSysQuorum/node-manager/core"
-	"github.com/ConsenSysQuorum/node-manager/log"
+	"github.com/ConsenSys/quorum-hibernate/consensus"
+	"github.com/ConsenSys/quorum-hibernate/core"
+	"github.com/ConsenSys/quorum-hibernate/log"
 )
 
 type CliqueConsensus struct {

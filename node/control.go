@@ -6,15 +6,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ConsenSysQuorum/node-manager/config"
-	cons "github.com/ConsenSysQuorum/node-manager/consensus"
-	besu "github.com/ConsenSysQuorum/node-manager/consensus/besu"
-	qnm "github.com/ConsenSysQuorum/node-manager/consensus/quorum"
-	"github.com/ConsenSysQuorum/node-manager/core"
-	"github.com/ConsenSysQuorum/node-manager/log"
-	"github.com/ConsenSysQuorum/node-manager/p2p"
-	"github.com/ConsenSysQuorum/node-manager/privatetx"
-	proc "github.com/ConsenSysQuorum/node-manager/process"
+	"github.com/ConsenSys/quorum-hibernate/config"
+	cons "github.com/ConsenSys/quorum-hibernate/consensus"
+	besu "github.com/ConsenSys/quorum-hibernate/consensus/besu"
+	qnm "github.com/ConsenSys/quorum-hibernate/consensus/quorum"
+	"github.com/ConsenSys/quorum-hibernate/core"
+	"github.com/ConsenSys/quorum-hibernate/log"
+	"github.com/ConsenSys/quorum-hibernate/p2p"
+	"github.com/ConsenSys/quorum-hibernate/privatetx"
+	proc "github.com/ConsenSys/quorum-hibernate/process"
 )
 
 const CONSENSUS_WAIT_TIME = 60
