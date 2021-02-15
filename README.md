@@ -1,21 +1,20 @@
 ![logo](logo.png)
 
-- [Node Hibernate](#node-hibernate)
-  - [Introduction](#introduction)
-  - [Features](#features)
-  - [Build and Run](#build-and-run)
-    - [Pre-Requisites](#pre-requisites)
-    - [Build](#build)
-    - [Run](#run)
-    - [Docker](#docker)
-  - [Configuration](#configuration)
-  - [Deployment/Usage](#deploymentusage)
-  - [Architecture](#architecture)
-  - [Sample Configurations](#sample-configurations)
-  - [Demo](#demo)
-
 # Quorum Hibernate
 
+- [Introduction](#introduction)
+- [Features](#features)
+- [Build and Run](#build-and-run)
+  - [Pre-Requisites](#pre-requisites)
+  - [Build](#build)
+  - [Run](#run)
+  - [Docker](#docker)
+- [Configuration](#configuration)
+- [Deployment/Usage](#deploymentusage)
+- [Architecture](#architecture)
+- [Sample Configurations](#sample-configurations)
+- [Demo](#demo)
+  
 ## Introduction
 
 In large networks it is likely that some nodes do not receive or initiate transactions for extended periods of time. These nodes incur a potentially unwanted infrastructure cost. 
