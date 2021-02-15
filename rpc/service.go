@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ConsenSysQuorum/node-manager/config"
-	"github.com/ConsenSysQuorum/node-manager/log"
-	"github.com/ConsenSysQuorum/node-manager/node"
+	"github.com/ConsenSys/quorum-hibernate/config"
+	"github.com/ConsenSys/quorum-hibernate/log"
+	"github.com/ConsenSys/quorum-hibernate/node"
 	"github.com/gorilla/rpc/v2"
 	"github.com/gorilla/rpc/v2/json"
 	"github.com/rs/cors"

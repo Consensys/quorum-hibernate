@@ -1,7 +1,7 @@
 package node
 
 import (
-	"github.com/ConsenSysQuorum/node-manager/core"
+	"github.com/ConsenSys/quorum-hibernate/core"
 )
 
 // TODO(cjh) for testing so methods can be mocked

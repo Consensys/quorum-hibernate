@@ -3,10 +3,10 @@ package node
 import (
 	"net/http"
 
-	"github.com/ConsenSysQuorum/node-manager/config"
+	"github.com/ConsenSys/quorum-hibernate/config"
 
-	"github.com/ConsenSysQuorum/node-manager/log"
-	"github.com/ConsenSysQuorum/node-manager/p2p"
+	"github.com/ConsenSys/quorum-hibernate/log"
+	"github.com/ConsenSys/quorum-hibernate/p2p"
 )
 
 type NodeRPCAPIs struct {

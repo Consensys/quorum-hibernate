@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ConsenSysQuorum/node-manager/config"
+	"github.com/ConsenSys/quorum-hibernate/config"
 
-	"github.com/ConsenSysQuorum/node-manager/log"
+	"github.com/ConsenSys/quorum-hibernate/log"
 )
 
 type QuorumTxHandler struct {

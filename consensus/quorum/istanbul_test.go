@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/ConsenSysQuorum/node-manager/config"
+	"github.com/ConsenSys/quorum-hibernate/config"
 	"github.com/stretchr/testify/require"
 )
 

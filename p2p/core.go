@@ -1,8 +1,8 @@
 package p2p
 
 import (
-	"github.com/ConsenSysQuorum/node-manager/config"
-	"github.com/ConsenSysQuorum/node-manager/core"
+	"github.com/ConsenSys/quorum-hibernate/config"
+	"github.com/ConsenSys/quorum-hibernate/core"
 )
 
 type PeerPrivateTxPrepResult struct {

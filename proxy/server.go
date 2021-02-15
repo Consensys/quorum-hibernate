@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ConsenSysQuorum/node-manager/config"
-	"github.com/ConsenSysQuorum/node-manager/log"
-	"github.com/ConsenSysQuorum/node-manager/node"
+	"github.com/ConsenSys/quorum-hibernate/config"
+	"github.com/ConsenSys/quorum-hibernate/log"
+	"github.com/ConsenSys/quorum-hibernate/node"
 )
 
 // ProxyServer represents a proxy server

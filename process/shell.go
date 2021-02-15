@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ConsenSysQuorum/node-manager/config"
+	"github.com/ConsenSys/quorum-hibernate/config"
 
-	"github.com/ConsenSysQuorum/node-manager/log"
+	"github.com/ConsenSys/quorum-hibernate/log"
 )
 
 // ShellProcessControl represents process control for a shell process

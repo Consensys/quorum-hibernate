@@ -3,7 +3,7 @@ package node
 import (
 	"time"
 
-	"github.com/ConsenSysQuorum/node-manager/log"
+	"github.com/ConsenSys/quorum-hibernate/log"
 )
 
 // InactivityResyncMonitor tracks inactivity of the node and starts the blcokchain client and privacy manager based on resync timer

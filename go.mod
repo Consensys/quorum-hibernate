@@ -1,4 +1,4 @@
-module github.com/ConsenSysQuorum/node-manager
+module github.com/ConsenSys/quorum-hibernate
 
 go 1.15
 

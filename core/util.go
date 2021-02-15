@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ConsenSysQuorum/node-manager/log"
+	"github.com/ConsenSys/quorum-hibernate/log"
 )
 
 var defaultClient *http.Client

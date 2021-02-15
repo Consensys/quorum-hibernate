@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/ConsenSysQuorum/node-manager/core"
-	"github.com/ConsenSysQuorum/node-manager/log"
+	"github.com/ConsenSys/quorum-hibernate/core"
+	"github.com/ConsenSys/quorum-hibernate/log"
 )
 
 type Node struct {
