@@ -1,5 +1,5 @@
-# Creates a 5 node privacy-enabled Raft network.  Each node is managed by its own Node Manager.
-# 2 of the Node Managers have consensus mode strict disabled so that they can be hibernated after inactivity.
+# Creates a 5 node privacy-enabled Raft network.  Each node is managed by its own Node Hibernator.
+# 2 of the Node Hibernators have consensus mode strict disabled so that they can be hibernated after inactivity.
 version: "3.6"
 x-quorum-def:
     &quorum-def
@@ -103,26 +103,26 @@ x-tessera-def:
                     },
                     {
                         "app":"P2P",
-                        "serverAddress": "http://nodemanager$${NODE_ID}:9391",
+                        "serverAddress": "http://nodehibernator$${NODE_ID}:9391",
                         "bindingAddress": "http://tessera$${NODE_ID}:9000",
                         "communicationType" : "REST"
                     }
                 ],
                 "peer": [
                     {
-                        "url": "http://nodemanager1:9391/"
+                        "url": "http://nodehibernator1:9391/"
                     },
                     {
-                        "url": "http://nodemanager2:9391/"
+                        "url": "http://nodehibernator2:9391/"
                     },
                     {
-                        "url": "http://nodemanager3:9391/"
+                        "url": "http://nodehibernator3:9391/"
                     },
                     {
-                        "url": "http://nodemanager4:9391/"
+                        "url": "http://nodehibernator4:9391/"
                     },
                     {
-                        "url": "http://nodemanager5:9391/"
+                        "url": "http://nodehibernator5:9391/"
                     }
                 ],
                 "keys": {
@@ -140,9 +140,9 @@ x-tessera-def:
             cat $${DDIR}/tessera-config.json
             java -Xms128M -Xmx128M -jar /tessera/tessera-app.jar --configfile $${DDIR}/tessera-config.json --debug
 
-x-node-manager-def:
-    &node-manager-def
-    image: quorumengineering/node-manager:21.01.0
+x-node-hibernator-def:
+    &node-hibernator-def
+    image: quorumengineering/node-hibernator:21.01.0
     restart: "no"
     expose:
         - "8081"
@@ -175,7 +175,7 @@ x-node-manager-def:
                 fi
             done
 
-            DDIR=/qdata/nodemanager
+            DDIR=/qdata/nodehibernator
             RESOURCES=/resources/tessera
 
             TESSERA_PUBLIC_KEY=$$(cat $${RESOURCES}/keys/$${NODE_ID}.pub)
@@ -189,27 +189,27 @@ x-node-manager-def:
             	    {
             	    	"name": "node1",
             	    	"privacyManagerKey": "BULeR8JyUWhiuuCMU/HLA0Q5pzkYT+cHII3ZKBey3Bo=",
-            	    	"rpcUrl": "http://nodemanager1:8081"
+            	    	"rpcUrl": "http://nodehibernator1:8081"
             	    },
             	    {
             	    	"name": "node2",
             	    	"privacyManagerKey": "QfeDAys9MPDs2XHExtc84jKGHxZg/aj52DTh0vtA3Xc=",
-            	    	"rpcUrl": "http://nodemanager2:8081"
+            	    	"rpcUrl": "http://nodehibernator2:8081"
             	    },
             	    {
             	    	"name": "node3",
             	    	"privacyManagerKey": "1iTZde/ndBHvzhcl7V68x44Vx7pl8nwx9LqnM/AfJUg=",
-            	    	"rpcUrl": "http://nodemanager3:8081"
+            	    	"rpcUrl": "http://nodehibernator3:8081"
             	    },
             	    {
             	    	"name": "node4",
             	    	"privacyManagerKey": "oNspPPgszVUFw0qmGFfWwh1uxVUXgvBxleXORHj07g8=",
-            	    	"rpcUrl": "http://nodemanager4:8081"
+            	    	"rpcUrl": "http://nodehibernator4:8081"
             	    },
                     {
                         "name": "node5",
                         "privacyManagerKey": "R56gy4dn24YOjwyesTczYa8m5xhP6hF2uTMCju/1xkY=",
-                        "rpcUrl": "http://nodemanager5:8081"
+                        "rpcUrl": "http://nodehibernator5:8081"
                     }
             	]
             }
@@ -222,7 +222,7 @@ x-node-manager-def:
                 DISABLE_STRICT_MODE=true
             fi
 
-            cat <<EOF > $${DDIR}/node-manager-config.json
+            cat <<EOF > $${DDIR}/node-hibernator-config.json
             {
                 "name": "node$${NODE_ID}",
                 "upcheckPollingInterval": 30,
@@ -288,8 +288,8 @@ x-node-manager-def:
                 }
             }
             EOF
-            cat $${DDIR}/node-manager-config.json
-            node-manager --config $${DDIR}/node-manager-config.json --verbosity 3
+            cat $${DDIR}/node-hibernator-config.json
+            node-hibernator --config $${DDIR}/node-hibernator-config.json --verbosity 3
 
 services:
     quorum1:
@@ -303,7 +303,7 @@ services:
         environment:
             - NODE_ID=1
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.11
     quorum2:
         <<: *quorum-def
@@ -316,7 +316,7 @@ services:
         environment:
             - NODE_ID=2
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.12
     quorum3:
         <<: *quorum-def
@@ -329,7 +329,7 @@ services:
         environment:
             - NODE_ID=3
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.13
     quorum4:
         <<: *quorum-def
@@ -342,7 +342,7 @@ services:
         environment:
             - NODE_ID=4
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.14
     quorum5:
         <<: *quorum-def
@@ -355,7 +355,7 @@ services:
         environment:
             - NODE_ID=5
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.15
     tessera1:
         <<: *tessera-def
@@ -364,7 +364,7 @@ services:
             - vol1:/qdata
             - ./resources/tessera:/resources/tessera:ro
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.101
         environment:
         - NODE_ID=1
@@ -375,7 +375,7 @@ services:
             - vol2:/qdata
             - ./resources/tessera:/resources/tessera:ro
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.102
         environment:
             - NODE_ID=2
@@ -386,7 +386,7 @@ services:
             - vol3:/qdata
             - ./resources/tessera:/resources/tessera:ro
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.103
         environment:
             - NODE_ID=3
@@ -397,7 +397,7 @@ services:
             - vol4:/qdata
             - ./resources/tessera:/resources/tessera:ro
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.104
         environment:
             - NODE_ID=4
@@ -408,17 +408,17 @@ services:
             - vol5:/qdata
             - ./resources/tessera:/resources/tessera:ro
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.105
         environment:
             - NODE_ID=5
-    nodemanager1:
-        <<: *node-manager-def
-        hostname: nodemanager1
+    nodehibernator1:
+        <<: *node-hibernator-def
+        hostname: nodehibernator1
         depends_on:
             - quorum1
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.201
         environment:
             - NODE_ID=1
@@ -430,13 +430,13 @@ services:
             - "53001:8081"
             - "53101:9091"
             - "53201:9391"
-    nodemanager2:
-        <<: *node-manager-def
-        hostname: nodemanager2
+    nodehibernator2:
+        <<: *node-hibernator-def
+        hostname: nodehibernator2
         depends_on:
             - quorum2
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.202
         environment:
             - NODE_ID=2
@@ -448,13 +448,13 @@ services:
             - "53002:8081"
             - "53102:9091"
             - "53202:9391"
-    nodemanager3:
-        <<: *node-manager-def
-        hostname: nodemanager3
+    nodehibernator3:
+        <<: *node-hibernator-def
+        hostname: nodehibernator3
         depends_on:
             - quorum3
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.203
         environment:
             - NODE_ID=3
@@ -466,13 +466,13 @@ services:
             - "53003:8081"
             - "53103:9091"
             - "53203:9391"
-    nodemanager4:
-        <<: *node-manager-def
-        hostname: nodemanager4
+    nodehibernator4:
+        <<: *node-hibernator-def
+        hostname: nodehibernator4
         depends_on:
             - quorum4
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.204
         environment:
             - NODE_ID=4
@@ -484,13 +484,13 @@ services:
             - "53004:8081"
             - "53104:9091"
             - "53204:9391"
-    nodemanager5:
-        <<: *node-manager-def
-        hostname: nodemanager5
+    nodehibernator5:
+        <<: *node-hibernator-def
+        hostname: nodehibernator5
         depends_on:
             - quorum5
         networks:
-            node-manager-demo-net:
+            node-hibernator-demo-net:
                 ipv4_address: 172.10.203.205
         environment:
             - NODE_ID=5
@@ -504,8 +504,8 @@ services:
             - "53205:9391"
 
 networks:
-    node-manager-demo-net:
-        name: node-manager-demo-net
+    node-hibernator-demo-net:
+        name: node-hibernator-demo-net
         driver: bridge
         ipam:
             driver: default

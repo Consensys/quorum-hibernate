@@ -1,19 +1,26 @@
 ![logo](logo.png)
 
-- [Introduction](#Introduction)
-- [Features](#Features)
-- [Build & Run](#Build-and-Run)
-- [Configuration](#Configuration)
-- [Deployment/Usage](#Deployment/Usage)
-- [Architecture](#Architecture)
-- [Sample Configurations](#Sample-Configurations)
+- [Node Hibernate](#node-hibernate)
+  - [Introduction](#introduction)
+  - [Features](#features)
+  - [Build and Run](#build-and-run)
+    - [Pre-Requisites](#pre-requisites)
+    - [Build](#build)
+    - [Run](#run)
+    - [Docker](#docker)
+  - [Configuration](#configuration)
+  - [Deployment/Usage](#deploymentusage)
+  - [Architecture](#architecture)
+  - [Sample Configurations](#sample-configurations)
+  - [Demo](#demo)
 
-# Node Manager
+# Node Hibernate
 
 ## Introduction
+
 In large networks it is likely that some nodes do not receive or initiate transactions for extended periods of time. These nodes incur a potentially unwanted infrastructure cost. 
 
-Node Manager provides a solution to this problem by monitoring a node's API traffic and stopping (hibernating) the node if it has not had any API activity for a significant period of time.
+Node Hibernate provides a solution to this problem by monitoring a node's API traffic and stopping (hibernating) the node if it has not had any API activity for a significant period of time.
 
 ## Features
 
@@ -28,7 +35,7 @@ Node Manager provides a solution to this problem by monitoring a node's API traf
 * Restarts (wakes up) the Ethereum Client and Privacy Manager when new transaction or API requests are received.
 * Does not require the entire network to be using Node Managers.
 * Periodically wakes up the node (configurable) to allow it to sync with the network and ensure it does not fall too far behind. 
-* 1-way and 2-way (mutual) TLS supported on all of Node Manager's servers, clients, and proxies.
+* 1-way and 2-way (mutual) TLS supported on all of Node Hibernator's servers, clients, and proxies.
 
 ## Build and Run
 ### Pre-Requisites
@@ -39,7 +46,7 @@ go install
 ```
 ### Run
 ```bash
-node-manager --config path/to/config.json --verbosity 3
+node-hibernator --config path/to/config.json --verbosity 3
 ```
 
 | Flag | Description |
@@ -49,30 +56,30 @@ node-manager --config path/to/config.json --verbosity 3
 
 ### Docker
 
-Alternatively the [`quorumengineering/node-manager`](https://hub.docker.com/r/quorumengineering/node-manager) Docker image can be used, for example:
+Alternatively the [`quorumengineering/node-hibernator`](https://hub.docker.com/r/quorumengineering/node-hibernator) Docker image can be used, for example:
 
 ```bash
 docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 8081:8081 -p 9091:9091 -p 9391:9391 \
-    --mount type=bind,source=/path/to/nm.json,target=/config.json --mount type=bind,source=/path/to/peers.json,target=/peers.json \
-    quorumengineering/node-manager:latest -config /config.json
+    --mount type=bind,source=/path/to/nh.json,target=/config.json --mount type=bind,source=/path/to/peers.json,target=/peers.json \
+    quorumengineering/node-hibernator:latest -config /config.json
 ```
 
-*Note: `-v /var/run/docker.sock:/var/run/docker.sock` allows the Node Manager container to start/stop Ethereum Client/Privacy Manager containers.*
+*Note: `-v /var/run/docker.sock:/var/run/docker.sock` allows the Node Hibernator container to start/stop Ethereum Client/Privacy Manager containers.*
 
 ## Configuration
 See [docs/config.md](docs/config.md) for a full description of all configuration options.
 
 ## Deployment/Usage
-See [docs/deployment.md](docs/deployment.md) for details on adding and using Node Manager in networks. 
+See [docs/deployment.md](docs/deployment.md) for details on adding and using Node Hibernator in networks. 
 
 ## Architecture
-See [docs/architecture.md](docs/architecture.md) for an overview of the processes used by Node Manager and common errors.
+See [docs/architecture.md](docs/architecture.md) for an overview of the processes used by Node Hibernator and common errors.
 
 ## Sample Configurations
 See [docs/samples](docs/samples) for sample configuration files for various network types.
 
 ## Demo
-See [demo](demo) for a Docker Compose demo network that can be used for initial experimentation with Node Manager. 
+See [demo](demo) for a Docker Compose demo network that can be used for initial experimentation with Node Hibernator. 
 

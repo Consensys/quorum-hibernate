@@ -21,14 +21,14 @@ func (a *PeerArr) IsValid() error {
 	return nil
 }
 
-type NodeManagerList struct {
-	Peers PeerArr `toml:"peers" json:"peers"` // node manger config list of other node manager
+type NodeHibernatorList struct {
+	Peers PeerArr `toml:"peers" json:"peers"` // node hibernator config list of other node hibernator
 }
 
 type Peer struct {
-	Name       string     `toml:"name" json:"name"`                           // Name of the other node manager
-	PrivManKey string     `toml:"privacyManagerKey" json:"privacyManagerKey"` // PrivManKey managed by the other node manager
-	RpcUrl     string     `toml:"rpcUrl" json:"rpcUrl"`                       // RPC url of the other node manager
+	Name       string     `toml:"name" json:"name"`                           // Name of the other node hibernator
+	PrivManKey string     `toml:"privacyManagerKey" json:"privacyManagerKey"` // PrivManKey managed by the other node hibernator
+	RpcUrl     string     `toml:"rpcUrl" json:"rpcUrl"`                       // RPC url of the other node hibernator
 	TLSConfig  *ClientTLS `toml:"tlsConfig" json:"tlsConfig"`                 // tls config
 }
 

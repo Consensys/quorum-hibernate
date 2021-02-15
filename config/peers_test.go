@@ -3,9 +3,10 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"testing"
+
 	"github.com/naoina/toml"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func minimumValidPeer() Peer {
@@ -17,7 +18,7 @@ func minimumValidPeer() Peer {
 	}
 }
 
-func TestNodeManagerList_Unmarshal(t *testing.T) {
+func TestNodeHibernatorList_Unmarshal(t *testing.T) {
 	tests := []struct {
 		name, configTemplate string
 	}{
@@ -50,7 +51,7 @@ func TestNodeManagerList_Unmarshal(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			conf := fmt.Sprintf(tt.configTemplate, peersField, nameField, privacyManagerKeyField, rpcUrlField, tlsConfigField)
 
-			want := NodeManagerList{
+			want := NodeHibernatorList{
 				Peers: []*Peer{
 					{
 						Name:       "mypeer",
@@ -62,7 +63,7 @@ func TestNodeManagerList_Unmarshal(t *testing.T) {
 			}
 
 			var (
-				got NodeManagerList
+				got NodeHibernatorList
 				err error
 			)
 

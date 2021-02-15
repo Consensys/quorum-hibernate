@@ -39,24 +39,24 @@ func (pm *PeerManager) getConfigByPrivManKey(key string) *config.Peer {
 func (pm *PeerManager) readPeersConfig() []*config.Peer {
 	newPeers, err := pm.configReader.Read()
 	if err != nil {
-		log.Error("readPeersConfig - error updating node manager config. will use old config", "path", pm.cfg.BasicConfig.PeersConfigFile, "err", err)
+		log.Error("readPeersConfig - error updating node hibernator config. will use old config", "path", pm.cfg.BasicConfig.PeersConfigFile, "err", err)
 		return pm.cfg.Peers
 	}
 	if err = newPeers.IsValid(); err != nil {
-		log.Error("readPeersConfig - error validation of node manager config failed.", "err", err)
+		log.Error("readPeersConfig - error validation of node hibernator config failed.", "err", err)
 		return pm.cfg.Peers
 	}
 
 	log.Debug("readPeersConfig - loaded new config", "cfg", newPeers)
 	if len(newPeers) == 0 {
-		log.Warn("readPeersConfig - node manager list is empty after reload")
+		log.Warn("readPeersConfig - node hibernator list is empty after reload")
 	}
-	log.Debug("readPeersConfig - node manager config", "new cfg", newPeers)
+	log.Debug("readPeersConfig - node hibernator config", "new cfg", newPeers)
 	pm.cfg.Peers = newPeers
 	return pm.cfg.Peers
 }
 
-// TODO if a node manager is down/not reachable should we mark it as down and proceed?
+// TODO if a node hibernator is down/not reachable should we mark it as down and proceed?
 // ValidatePeerPrivateTxStatus validates participants readiness status to process private tx
 func (pm *PeerManager) ValidatePeerPrivateTxStatus(participantKeys []string) (bool, error) {
 	statusArr := pm.peerPrivateTxStatus(participantKeys)
@@ -117,27 +117,27 @@ func (pm *PeerManager) peerPrivateTxStatus(participantKeys []string) []bool {
 	}()
 
 	for _, key := range participantKeys {
-		nmCfg := pm.getConfigByPrivManKey(key)
+		nhCfg := pm.getConfigByPrivManKey(key)
 
-		if nmCfg != nil {
+		if nhCfg != nil {
 			wg.Add(1)
-			go func(nmc *config.Peer) {
+			go func(nhc *config.Peer) {
 				defer wg.Done()
 				result := PeerPrivateTxPrepResult{}
 				var client *http.Client
-				if nmc.TLSConfig != nil {
-					client = core.NewHttpClient(nmc.TLSConfig.TlsCfg)
+				if nhc.TLSConfig != nil {
+					client = core.NewHttpClient(nhc.TLSConfig.TlsCfg)
 				}
-				if err := core.CallRPC(client, nmc.RpcUrl, preparePvtTxReq, &result); err != nil {
+				if err := core.CallRPC(client, nhc.RpcUrl, preparePvtTxReq, &result); err != nil {
 					log.Error("peerPrivateTxStatus rpc failed", "err", err)
 					result.Error = err
 				} else if result.Error != nil {
 					log.Error("peerPrivateTxStatus rpc result failed", "err", result.Error)
 				}
 				resCh <- result
-			}(nmCfg)
+			}(nhCfg)
 		} else {
-			log.Warn("peerPrivateTxStatus - privacy manager key not found, probably node not managed by node manager", "key", key)
+			log.Warn("peerPrivateTxStatus - privacy manager key not found, probably node not managed by node hibernator", "key", key)
 		}
 
 	}
@@ -169,9 +169,9 @@ func (pm *PeerManager) ValidatePeers() ([]NodeStatusInfo, error) {
 	return statusArr, nil
 }
 
-func (pm *PeerManager) getPeersCount(nmCfgs []*config.Peer) int {
+func (pm *PeerManager) getPeersCount(nhCfgs []*config.Peer) int {
 	nodeManagerCount := 0
-	for _, n := range nmCfgs {
+	for _, n := range nhCfgs {
 		//skip self
 		if pm.isPeerSelf(n.Name) {
 			continue
@@ -225,14 +225,14 @@ func (pm *PeerManager) peerStatus() (int, []NodeStatusInfo) {
 			continue
 		}
 		wg.Add(1)
-		go func(nmc *config.Peer) {
+		go func(nhc *config.Peer) {
 			defer wg.Done()
 			var res = PeerNodeStatusResult{}
 			var client *http.Client
-			if nmc.TLSConfig != nil {
-				client = core.NewHttpClient(nmc.TLSConfig.TlsCfg)
+			if nhc.TLSConfig != nil {
+				client = core.NewHttpClient(nhc.TLSConfig.TlsCfg)
 			}
-			if err := core.CallRPC(client, nmc.RpcUrl, nodeStatusReq, &res); err != nil {
+			if err := core.CallRPC(client, nhc.RpcUrl, nodeStatusReq, &res); err != nil {
 				log.Error("peerStatus - ClientStatus - failed", "err", err)
 			}
 			if res.Error != nil {

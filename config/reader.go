@@ -9,7 +9,7 @@ import (
 	"github.com/naoina/toml"
 )
 
-type NodeManagerReader interface {
+type NodeHibernatorReader interface {
 	Read() (Basic, error)
 }
 
@@ -17,11 +17,11 @@ type PeersReader interface {
 	Read() (PeerArr, error)
 }
 
-func NewNodeManagerReader(f string) (NodeManagerReader, error) {
+func NewNodeHibernatorReader(f string) (NodeHibernatorReader, error) {
 	if strings.HasSuffix(f, ".toml") {
-		return tomlNodeManagerReader{file: f}, nil
+		return tomlNodeHibernatorReader{file: f}, nil
 	} else if strings.HasSuffix(f, ".json") {
-		return jsonNodeManagerReader{file: f}, nil
+		return jsonNodeHibernatorReader{file: f}, nil
 	}
 	return nil, errors.New("unsupported config file format")
 }
@@ -35,11 +35,11 @@ func NewPeersReader(f string) (PeersReader, error) {
 	return nil, errors.New("unsupported config file format")
 }
 
-type tomlNodeManagerReader struct {
+type tomlNodeHibernatorReader struct {
 	file string
 }
 
-func (r tomlNodeManagerReader) Read() (Basic, error) {
+func (r tomlNodeHibernatorReader) Read() (Basic, error) {
 	f, err := os.Open(r.file)
 	if err != nil {
 		return Basic{}, err
@@ -53,11 +53,11 @@ func (r tomlNodeManagerReader) Read() (Basic, error) {
 	return input, nil
 }
 
-type jsonNodeManagerReader struct {
+type jsonNodeHibernatorReader struct {
 	file string
 }
 
-func (r jsonNodeManagerReader) Read() (Basic, error) {
+func (r jsonNodeHibernatorReader) Read() (Basic, error) {
 	f, err := os.Open(r.file)
 	if err != nil {
 		return Basic{}, err
@@ -81,7 +81,7 @@ func (r tomlPeersReader) Read() (PeerArr, error) {
 		return nil, err
 	}
 	defer f.Close()
-	var input NodeManagerList
+	var input NodeHibernatorList
 	if err = toml.NewDecoder(f).Decode(&input); err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (r jsonPeersReader) Read() (PeerArr, error) {
 		return nil, err
 	}
 	defer f.Close()
-	var input NodeManagerList
+	var input NodeHibernatorList
 	if err = json.NewDecoder(f).Decode(&input); err != nil {
 		return nil, err
 	}

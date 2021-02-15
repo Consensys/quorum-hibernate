@@ -5,16 +5,16 @@ import (
 )
 
 type Basic struct {
-	Name                 string            `toml:"name" json:"name"`                                     // name of this node manager
+	Name                 string            `toml:"name" json:"name"`                                     // name of this node hibernator
 	DisableStrictMode    bool              `toml:"disableStrictMode" json:"disableStrictMode"`           // strict mode keeps consensus nodes alive always
 	UpchkPollingInterval int               `toml:"upcheckPollingInterval" json:"upcheckPollingInterval"` // up check polling interval in seconds for the blockchainClient and privacyManager
-	PeersConfigFile      string            `toml:"peersConfigFile" json:"peersConfigFile"`               // node manager config file path
-	InactivityTime       int               `toml:"inactivityTime" json:"inactivityTime"`                 // inactivity time for blockchain client and privacy manager
+	PeersConfigFile      string            `toml:"peersConfigFile" json:"peersConfigFile"`               // node hibernator config file path
+	InactivityTime       int               `toml:"inactivityTime" json:"inactivityTime"`                 // inactivity time for blockchain client and privacy hibernator
 	ResyncTime           int               `toml:"resyncTime" json:"resyncTime"`                         // time after which client should be started to sync up with network
 	BlockchainClient     *BlockchainClient `toml:"blockchainClient" json:"blockchainClient"`             // configuration related to the blockchain client to be managed
-	PrivacyManager       *PrivacyManager   `toml:"privacyManager" json:"privacyManager"`                 // configuration related to the privacy manager to be managed
-	Server               *RPCServer        `toml:"server" json:"server"`                                 // RPC server config of this node manager
-	Proxies              []*Proxy          `toml:"proxies" json:"proxies"`                               // proxies managed by this node manager
+	PrivacyManager       *PrivacyManager   `toml:"privacyManager" json:"privacyManager"`                 // configuration related to the privacy hibernator to be managed
+	Server               *RPCServer        `toml:"server" json:"server"`                                 // RPC server config of this node hibernator
+	Proxies              []*Proxy          `toml:"proxies" json:"proxies"`                               // proxies managed by this node hibernator
 }
 
 func (c Basic) IsResyncTimerSet() bool {
