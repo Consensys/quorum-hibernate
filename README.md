@@ -14,7 +14,7 @@
   - [Sample Configurations](#sample-configurations)
   - [Demo](#demo)
 
-# Node Hibernate
+# Quorum Hibernate
 
 ## Introduction
 
