@@ -1,14 +1,14 @@
 # Configuration
 
-For starting Node Manager, two configuration files are required: [Node Manager config](#node-manager-config-file) and [peers config](#Peers-config-file). Both `json` and `toml` formats are supported.  Sample configurations can be found in [samples](samples).
+For starting Node Hibernator, two configuration files are required: [Node Hibernator config](#node-hibernator-config-file) and [peers config](#Peers-config-file). Both `json` and `toml` formats are supported.  Sample configurations can be found in [samples](samples).
 
-## Node Manager config file
+## Node Hibernator config file
 
 | Field  | Type | Description |
 | :---: | :---: | :--- |
-| `name` | `string` | Name for the Node Manager |
+| `name` | `string` | Name for the Node Hibernator |
 | `disableStrictMode` | `bool` | Strict mode prevents Ethereum Client nodes involved in the consensus from being hibernated.  This protects against an essential node being shut down and preventing the chain from progressing. It is set to `false` by default. For `raft` consensus it is recommended to set it to `true` as there would be more `follower` nodes in the network. |
-| `upcheckPollingInterval` | `int` | Interval (in seconds) for performing an upcheck on the Ethereum Client and Privacy Manager to determine if they have been started/stopped by a third party (i.e. not Node Manager) |
+| `upcheckPollingInterval` | `int` | Interval (in seconds) for performing an upcheck on the Ethereum Client and Privacy Manager to determine if they have been started/stopped by a third party (i.e. not Node Hibernator) |
 | `peersConfigFile` | `string` | Path to a [Peers config file](#Peers-config-file) |
 | `inactivityTime` | `int` | Inactivity period (in seconds) to allow on either the Ethereum Client or Privacy Manager before hibernating both |
 | `resyncTime` | `int` | Time (in seconds) after which a hibernating node pair should be restarted to allow the node to sync with the chain.  Regularly syncing a node with the chain during periods of inactivity will reduce the time needed to prepare the node when receiving a client request. |
@@ -19,11 +19,11 @@ For starting Node Manager, two configuration files are required: [Node Manager c
 
 ### server
 
-The RPC server that exposes Node Manager's API.
+The RPC server that exposes Node Hibernator's API.
 
 | Field  | Type | Description |
 | :---: | :---: | :--- |
-| `rpcAddress` | `string` | Listen address for the Node Manager API |
+| `rpcAddress` | `string` | Listen address for the Node Hibernator API |
 | `rpcCorsList` | `[]string` | List of domains from which to accept cross origin requests (browser enforced) |
 | `rpcvHosts` | `[]string` |  List of virtual hostnames from which to accept requests (server enforced) |
 | `tlsConfig` | `object` | (Optional) See [serverTLS](#serverTLS) |
@@ -47,7 +47,7 @@ The proxy server for a single Ethereum Client or Privacy Manager service.  Multi
 
 ### blockchainClient
 
-The Ethereum Client to be managed by the Node Manager.
+The Ethereum Client to be managed by the Node Hibernator.
 
 | Field  | Type | Description |
 | :---: | :---: | :--- |
@@ -59,7 +59,7 @@ The Ethereum Client to be managed by the Node Manager.
 
 ### privacyManager
 
-The Privacy Manager to be managed by the Node Manager.
+The Privacy Manager to be managed by the Node Hibernator.
 
 | Field  | Type | Description |
 | :---: | :---: | :--- |
@@ -82,7 +82,7 @@ The Ethereum Client or Privacy Manager process.  Can be a standalone shell proce
 
 ### upcheckConfig
 
-How Node Manager should determine whether the process is running or not.
+How Node Hibernator should determine whether the process is running or not.
 
 | Field  | Type | Description |
 | :---: | :---: | :--- |
@@ -125,9 +125,9 @@ The TLS cipher suites used by default are:
 
 ## Peers config file
 
-It contains list of other Node Managers in the network. This config can be updated whenever there is a change. 
-It is used by Node Manager to check the status of other Node Managers when it decides to stop the nodes.
-Node Manager always reads the latest information from this config before performing the checks. Any updates
+It contains list of other Node Hibernators in the network. This config can be updated whenever there is a change. 
+It is used by Node Hibernator to check the status of other Node Hibernators when it decides to stop the nodes.
+Node Hibernator always reads the latest information from this config before performing the checks. Any updates
  to the config file takes effect immediately.
  If there are no peers it can be empty.
 
@@ -137,7 +137,7 @@ Node Manager always reads the latest information from this config before perform
 
 ### peer
 
-Another active Node Manager in the network.  Multiple peers can be configured.
+Another active Node Hibernator in the network.  Multiple peers can be configured.
 
 | Field  | Type | Description |
 | :--- | :---: | :--- |

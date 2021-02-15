@@ -7,7 +7,7 @@ import (
 )
 
 type Proxy struct {
-	Name                   string     `toml:"name" json:"name"`                                     // name of node manager process
+	Name                   string     `toml:"name" json:"name"`                                     // name of node hibernator process
 	Type                   string     `toml:"type" json:"type"`                                     // proxy scheme - http or ws
 	ProxyAddr              string     `toml:"proxyAddress" json:"proxyAddress"`                     // proxy address
 	UpstreamAddr           string     `toml:"upstreamAddress" json:"upstreamAddress"`               // upstream address of the proxy address

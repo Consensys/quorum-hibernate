@@ -9,7 +9,7 @@ import (
 	"github.com/ConsenSys/quorum-hibernate/config"
 	cons "github.com/ConsenSys/quorum-hibernate/consensus"
 	besu "github.com/ConsenSys/quorum-hibernate/consensus/besu"
-	qnm "github.com/ConsenSys/quorum-hibernate/consensus/quorum"
+	qnh "github.com/ConsenSys/quorum-hibernate/consensus/quorum"
 	"github.com/ConsenSys/quorum-hibernate/core"
 	"github.com/ConsenSys/quorum-hibernate/log"
 	"github.com/ConsenSys/quorum-hibernate/p2p"
@@ -19,7 +19,7 @@ import (
 
 const CONSENSUS_WAIT_TIME = 60
 
-// NodeControl represents a node manager controller.
+// NodeControl represents a node hibernator controller.
 // It implements ControllerApiService
 // It tracks blockchain client/privacyManager processes' inactivity and it allows inactivity to be reset when
 // there is some activity.
@@ -29,7 +29,7 @@ const CONSENSUS_WAIT_TIME = 60
 type NodeControl struct {
 	config              *config.Node             // config of this node
 	im                  *InactivityResyncMonitor // inactivity monitor
-	nm                  *p2p.PeerManager         // node manager to communicate with other node manager
+	nh                  *p2p.PeerManager         // node hibernator to communicate with other node hibernator
 	bcclntProcess       proc.Process             // blockchain client process controller
 	pmclntProcess       proc.Process             // privacy manager process controller
 	bcclntHttpClient    *http.Client             // blockchain client http client
@@ -39,7 +39,7 @@ type NodeControl struct {
 	withPrivMan         bool                     // indicates if the node is running with a privacy manage
 	consValid           bool                     // indicates if network level consensus is valid
 	clientStatus        core.ClientStatus        // combined status of blockchain client and privacy manager processes
-	nodeStatus          core.NodeStatus          // status of node manager
+	nodeStatus          core.NodeStatus          // status of node hibernator
 	inactivityResetCh   chan bool                // channel to reset inactivity
 	syncResetCh         chan bool                // channel to reset sync timer
 	stopClntCh          chan bool                // channel to request stop node
@@ -62,7 +62,7 @@ func (n *NodeControl) ClientStatus() core.ClientStatus {
 func NewNodeControl(cfg *config.Node) *NodeControl {
 	node := &NodeControl{
 		config:              cfg,
-		nm:                  p2p.NewPeerManager(cfg),
+		nh:                  p2p.NewPeerManager(cfg),
 		withPrivMan:         cfg.BasicConfig.PrivacyManager != nil,
 		nodeStatus:          core.OK,
 		inactivityResetCh:   make(chan bool, 1),
@@ -133,11 +133,11 @@ func getRandomBufferTime(inactivityTime int) int {
 func populateConsensusHandler(n *NodeControl) {
 	if n.config.BasicConfig.IsGoQuorumClient() {
 		if n.config.BasicConfig.IsRaft() {
-			n.consensus = qnm.NewRaftConsensus(n.config, n.bcclntHttpClient)
+			n.consensus = qnh.NewRaftConsensus(n.config, n.bcclntHttpClient)
 		} else if n.config.BasicConfig.IsIstanbul() {
-			n.consensus = qnm.NewIstanbulConsensus(n.config, n.bcclntHttpClient)
+			n.consensus = qnh.NewIstanbulConsensus(n.config, n.bcclntHttpClient)
 		} else if n.config.BasicConfig.IsClique() {
-			n.consensus = qnm.NewCliqueConsensus(n.config, n.bcclntHttpClient)
+			n.consensus = qnh.NewCliqueConsensus(n.config, n.bcclntHttpClient)
 		}
 	} else if n.config.BasicConfig.IsBesuClient() {
 		if n.config.BasicConfig.IsClique() {
@@ -233,7 +233,7 @@ func (n *NodeControl) fetchCurrentClientStatuses() (bool, bool) {
 	return bcclntStatus, pmStatus
 }
 
-// IsNodeBusy returns error if the node manager is busy with shutdown/startup
+// IsNodeBusy returns error if the node hibernator is busy with shutdown/startup
 func (n *NodeControl) IsNodeBusy() error {
 	switch n.GetNodeStatus() {
 	case core.ShutdownInprogress:
@@ -380,7 +380,7 @@ func (n *NodeControl) StopClient() bool {
 
 	if consensusNode && !n.config.BasicConfig.DisableStrictMode {
 		// consensus node running in strict mode. node cannot be brought down
-		log.Info("StopClient - node manager running in strict mode. consensus node cannot be shut down")
+		log.Info("StopClient - node hibernator running in strict mode. consensus node cannot be shut down")
 		return false
 	}
 
@@ -391,7 +391,7 @@ func (n *NodeControl) StopClient() bool {
 	time.Sleep(time.Duration(w) * time.Millisecond)
 	n.SetNodeStatus(core.ShutdownInprogress)
 
-	if peersStatus, err = n.nm.ValidatePeers(); err != nil {
+	if peersStatus, err = n.nh.ValidatePeers(); err != nil {
 		n.SetNodeStatus(core.OK)
 		log.Error("StopClient - node cannot be shutdown, p2p validation failed", "err", err)
 		return false
@@ -414,7 +414,7 @@ func (n *NodeControl) StopClient() bool {
 	} else {
 		log.Error("StopClient - bcclnt and privman processes not stopped")
 	}
-	// if stopping of blockchain client or privacy manager fails Status will remain as ShutdownInprogress and node manager will not process any requests from clients
+	// if stopping of blockchain client or privacy manager fails Status will remain as ShutdownInprogress and node hibernator will not process any requests from clients
 	// it will need some manual intervention to set it to the correct status
 	return bcStatus && pmStatus
 }
@@ -480,13 +480,13 @@ func (n *NodeControl) StartClient() bool {
 		n.SetClntStatus(core.Up)
 		n.SetNodeStatus(core.OK)
 	}
-	// if start up of blockchain client or privacy manager fails Status will remain as StartupInprogress and node manager will not process any requests from clients
+	// if start up of blockchain client or privacy manager fails Status will remain as StartupInprogress and node hibernator will not process any requests from clients
 	// it will need some manual intervention to set it to the correct status
 	return gs && ts
 }
 
-func (n *NodeControl) PrepareNodeManagerForPrivateTx(privateFor []string) (bool, error) {
-	return n.nm.ValidatePeerPrivateTxStatus(privateFor)
+func (n *NodeControl) PrepareNodeHibernatorForPrivateTx(privateFor []string) (bool, error) {
+	return n.nh.ValidatePeerPrivateTxStatus(privateFor)
 }
 
 func (n *NodeControl) GetInactivityTimeCount() int {

@@ -20,29 +20,29 @@ func NewInactivityResyncMonitor(qn *NodeControl) *InactivityResyncMonitor {
 	return &InactivityResyncMonitor{qn, 0, make(chan bool)}
 }
 
-func (nm *InactivityResyncMonitor) Start() {
-	go nm.trackInactivity()
-	go nm.trackResyncTimer()
+func (nh *InactivityResyncMonitor) Start() {
+	go nh.trackInactivity()
+	go nh.trackResyncTimer()
 }
 
 // trackInactivity tracks node's inactivity time in seconds.
 // when inactive time exceeds limit(as per config) it requests the node to be shutdown
-func (nm *InactivityResyncMonitor) trackInactivity() {
+func (nh *InactivityResyncMonitor) trackInactivity() {
 	timer := time.NewTicker(time.Second)
 	defer timer.Stop()
-	log.Info("trackInactivity - node inactivity tracker started", "inactivityTime", nm.nodeCtrl.config.BasicConfig.InactivityTime)
+	log.Info("trackInactivity - node inactivity tracker started", "inactivityTime", nh.nodeCtrl.config.BasicConfig.InactivityTime)
 	for {
 		select {
 		case <-timer.C:
-			if nm.inactiveTimeCount == nm.nodeCtrl.config.BasicConfig.InactivityTime {
-				nm.processInactivity()
+			if nh.inactiveTimeCount == nh.nodeCtrl.config.BasicConfig.InactivityTime {
+				nh.processInactivity()
 			} else {
-				log.Trace("trackInactivity - inactivity ticking", "inactive seconds", nm.inactiveTimeCount)
-				nm.inactiveTimeCount++
+				log.Trace("trackInactivity - inactivity ticking", "inactive seconds", nh.inactiveTimeCount)
+				nh.inactiveTimeCount++
 			}
-		case <-nm.nodeCtrl.inactivityResetCh:
-			nm.ResetInactivity()
-		case <-nm.stopCh:
+		case <-nh.nodeCtrl.inactivityResetCh:
+			nh.ResetInactivity()
+		case <-nh.stopCh:
 			log.Info("trackInactivity - stopped inactivity monitor")
 			return
 		}
@@ -51,26 +51,26 @@ func (nm *InactivityResyncMonitor) trackInactivity() {
 
 // trackResyncTimer brings up the node after certain period of hibernation to
 // resync with the network
-func (nm *InactivityResyncMonitor) trackResyncTimer() {
-	if !nm.nodeCtrl.config.BasicConfig.IsResyncTimerSet() {
+func (nh *InactivityResyncMonitor) trackResyncTimer() {
+	if !nh.nodeCtrl.config.BasicConfig.IsResyncTimerSet() {
 		// resyncing feature not enabled. return
 		return
 	}
-	resyncTime := time.Duration(nm.nodeCtrl.config.BasicConfig.ResyncTime) * time.Second
+	resyncTime := time.Duration(nh.nodeCtrl.config.BasicConfig.ResyncTime) * time.Second
 	timer := time.NewTimer(resyncTime)
 	defer timer.Stop()
 
-	log.Info("trackResyncTimer - node resync tracker started", "resyncTime", nm.nodeCtrl.config.BasicConfig.ResyncTime)
+	log.Info("trackResyncTimer - node resync tracker started", "resyncTime", nh.nodeCtrl.config.BasicConfig.ResyncTime)
 
 	for {
 		select {
 		case <-timer.C:
-			nm.processResyncRequest()
+			nh.processResyncRequest()
 
-		case <-nm.nodeCtrl.syncResetCh:
+		case <-nh.nodeCtrl.syncResetCh:
 			timer.Reset(resyncTime)
 
-		case <-nm.stopCh:
+		case <-nh.stopCh:
 			log.Info("trackResyncTimer - stopped inactivity monitor")
 			return
 		}
@@ -78,13 +78,13 @@ func (nm *InactivityResyncMonitor) trackResyncTimer() {
 
 }
 
-func (nm *InactivityResyncMonitor) processResyncRequest() {
-	if err := nm.nodeCtrl.IsNodeBusy(); err == nil {
-		nm.ResetInactivity()
+func (nh *InactivityResyncMonitor) processResyncRequest() {
+	if err := nh.nodeCtrl.IsNodeBusy(); err == nil {
+		nh.ResetInactivity()
 		// restart node for sync. node shut down will happen based on inactivity
-		nm.nodeCtrl.RequestStartClient()
+		nh.nodeCtrl.RequestStartClient()
 		log.Info("trackResyncTimer - requested node start, waiting for start complete")
-		status := nm.nodeCtrl.WaitStartClient()
+		status := nh.nodeCtrl.WaitStartClient()
 		log.Info("trackResyncTimer - resuming resync timer", "start status", status)
 	} else {
 		log.Warn("trackResyncTimer - failed to start node", "err", err)
@@ -92,39 +92,39 @@ func (nm *InactivityResyncMonitor) processResyncRequest() {
 }
 
 // processInactivity requests the node to be stopped if the node  is not busy.
-func (nm *InactivityResyncMonitor) processInactivity() {
+func (nh *InactivityResyncMonitor) processInactivity() {
 
-	log.Info("processInactivity - going to try stop node as it has been inactive", "inactivetime", nm.nodeCtrl.config.BasicConfig.InactivityTime)
-	if err := nm.nodeCtrl.IsNodeBusy(); err != nil {
+	log.Info("processInactivity - going to try stop node as it has been inactive", "inactivetime", nh.nodeCtrl.config.BasicConfig.InactivityTime)
+	if err := nh.nodeCtrl.IsNodeBusy(); err != nil {
 		log.Info("processInactivity - node is busy", "msg", err.Error())
 		// reset inactivity as node is busy, to prevent shutdown right after node start up
-		nm.ResetInactivity()
+		nh.ResetInactivity()
 	} else {
 		// at the end of inactivity period force status check with
 		// client. This is to handle scenarios where in the node was
-		// brought up in the backend bypassing node manager
-		if nm.nodeCtrl.CheckClientUpStatus(true) {
-			nm.nodeCtrl.RequestStopClient()
+		// brought up in the backend bypassing node hibernator
+		if nh.nodeCtrl.CheckClientUpStatus(true) {
+			nh.nodeCtrl.RequestStopClient()
 			log.Info("processInactivity - requested node shutdown, waiting for shutdown complete")
-			status := nm.nodeCtrl.WaitStopClient()
+			status := nh.nodeCtrl.WaitStopClient()
 			log.Info("processInactivity - resuming inactivity time tracker", "shutdown status", status)
 		} else {
 			log.Info("processInactivity - node is already down")
 		}
-		nm.ResetInactivity()
+		nh.ResetInactivity()
 	}
 }
 
-func (nm *InactivityResyncMonitor) ResetInactivity() {
-	wasInactive := nm.inactiveTimeCount
-	nm.inactiveTimeCount = 0
+func (nh *InactivityResyncMonitor) ResetInactivity() {
+	wasInactive := nh.inactiveTimeCount
+	nh.inactiveTimeCount = 0
 	log.Info("ResetInactivity - inactivity reset", "was inactive for (seconds)", wasInactive)
 }
 
-func (nm *InactivityResyncMonitor) Stop() {
-	close(nm.stopCh)
+func (nh *InactivityResyncMonitor) Stop() {
+	close(nh.stopCh)
 }
 
-func (nm *InactivityResyncMonitor) GetInactivityTimeCount() int {
-	return nm.inactiveTimeCount
+func (nh *InactivityResyncMonitor) GetInactivityTimeCount() int {
+	return nh.inactiveTimeCount
 }

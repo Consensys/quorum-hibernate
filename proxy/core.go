@@ -53,7 +53,7 @@ func HandlePrivateTx(body []byte, ps *ProxyServer) error {
 	}
 	if participants != nil {
 		log.Info("HandlePrivateTx - participants", "keys", participants)
-		if status, err := ps.nodeCtrl.PrepareNodeManagerForPrivateTx(participants); err != nil {
+		if status, err := ps.nodeCtrl.PrepareNodeHibernatorForPrivateTx(participants); err != nil {
 			return fmt.Errorf("HandlePrivateTx - preparePrivateTx failed err=%v", err)
 		} else if !status {
 			return fmt.Errorf("HandlePrivateTx - preparePrivateTx failed some participants are down err=%v", err)

@@ -14,13 +14,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type NodeManagerApp struct {
+type NodeHibernatorApp struct {
 	node         *node.NodeControl
 	proxyServers []proxy.Proxy
 	rpcService   *rpc.RPCService
 }
 
-var nmApp = NodeManagerApp{}
+var nhApp = NodeHibernatorApp{}
 
 func main() {
 	var verbosity int
@@ -36,7 +36,7 @@ func main() {
 		log.Error("unable to load config", "err", err)
 		return
 	}
-	log.Debug("main - node config", "basic", nodeConfig.BasicConfig, "nms", nodeConfig.Peers)
+	log.Debug("main - node config", "basic", nodeConfig.BasicConfig, "nhs", nodeConfig.Peers)
 	rpcBackendErrCh := make(chan error)
 	proxyBackendErrCh := make(chan error)
 	if !Start(nodeConfig, err, proxyBackendErrCh, rpcBackendErrCh) {
@@ -46,23 +46,23 @@ func main() {
 }
 
 func Start(nodeConfig *config.Node, err error, proxyBackendErrCh chan error, rpcBackendErrCh chan error) bool {
-	nmApp.node = node.NewNodeControl(nodeConfig)
-	if nmApp.proxyServers, err = proxy.MakeProxyServices(nmApp.node, proxyBackendErrCh); err != nil {
+	nhApp.node = node.NewNodeControl(nodeConfig)
+	if nhApp.proxyServers, err = proxy.MakeProxyServices(nhApp.node, proxyBackendErrCh); err != nil {
 		log.Error("Start - creating proxies failed", "err", err)
 		return false
 	}
-	nmApp.rpcService = rpc.NewRPCService(nmApp.node, nmApp.node.GetRPCConfig(), rpcBackendErrCh)
+	nhApp.rpcService = rpc.NewRPCService(nhApp.node, nhApp.node.GetRPCConfig(), rpcBackendErrCh)
 
 	// start node service
-	nmApp.node.Start()
+	nhApp.node.Start()
 
 	// start proxies
-	for _, p := range nmApp.proxyServers {
+	for _, p := range nhApp.proxyServers {
 		p.Start()
 	}
 
 	// start rpc server
-	if err := nmApp.rpcService.Start(); err != nil {
+	if err := nhApp.rpcService.Start(); err != nil {
 		log.Info("Start - rpc server failed", "err", err)
 		return false
 	}
@@ -92,25 +92,25 @@ func waitForShutdown(rpcBackendErrCh chan error, proxyBackendErrCh chan error) {
 }
 
 func readNodeConfigFromFile(configFile string) (*config.Node, error) {
-	nmReader, err := config.NewNodeManagerReader(configFile)
+	nhReader, err := config.NewNodeHibernatorReader(configFile)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debug("readNodeConfigFromFile - loading node manager config file")
-	nmConfig, err := nmReader.Read()
+	log.Debug("readNodeConfigFromFile - loading node hibernator config file")
+	nhConfig, err := nhReader.Read()
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debug("readNodeConfigFromFile - validating node manager config file")
+	log.Debug("readNodeConfigFromFile - validating node hibernator config file")
 	// validate config rules
-	if err = nmConfig.IsValid(); err != nil {
+	if err = nhConfig.IsValid(); err != nil {
 		return nil, err
 	}
 
 	log.Debug("readNodeConfigFromFile - loading peers config file")
-	peersReader, err := config.NewPeersReader(nmConfig.PeersConfigFile)
+	peersReader, err := config.NewPeersReader(nhConfig.PeersConfigFile)
 	if err != nil {
 		return nil, err
 	}
@@ -126,16 +126,16 @@ func readNodeConfigFromFile(configFile string) (*config.Node, error) {
 	}
 
 	return &config.Node{
-		BasicConfig: &nmConfig,
+		BasicConfig: &nhConfig,
 		Peers:       peersConfig,
 	}, nil
 }
 
 func Shutdown() {
-	for _, p := range nmApp.proxyServers {
+	for _, p := range nhApp.proxyServers {
 		p.Stop()
 	}
-	nmApp.rpcService.Stop()
-	nmApp.node.Stop()
+	nhApp.rpcService.Stop()
+	nhApp.node.Stop()
 	log.ErrWriter.Close()
 }

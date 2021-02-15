@@ -1,4 +1,4 @@
-name: Node manager docker push
+name: Node hibernate docker push
 
 on:
   push:

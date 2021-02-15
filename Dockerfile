@@ -9,12 +9,12 @@ RUN curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-${
   && rm docker-${DOCKERVERSION}.tgz
 
 
-COPY . /node-manager
-RUN cd /node-manager && go build -o node-manager
+COPY . /node-hibernator
+RUN cd /node-hibernator && go build -o node-hibernator
 
 # Deployment
 FROM alpine:latest
 
-COPY --from=builder /node-manager/node-manager /usr/local/bin/
+COPY --from=builder /node-hibernator/node-hibernator /usr/local/bin/
 
-ENTRYPOINT ["node-manager"]
+ENTRYPOINT ["node-hibernator"]

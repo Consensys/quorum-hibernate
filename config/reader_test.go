@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestNewNodeManagerReader(t *testing.T) {
+func TestNewNodeHibernatorReader(t *testing.T) {
 	tests := []struct {
 		name     string
 		file     string
@@ -16,30 +16,30 @@ func TestNewNodeManagerReader(t *testing.T) {
 		{
 			name:     "toml",
 			file:     "conf.toml",
-			wantImpl: tomlNodeManagerReader{},
+			wantImpl: tomlNodeHibernatorReader{},
 		},
 		{
 			name:     "json",
 			file:     "conf.json",
-			wantImpl: jsonNodeManagerReader{},
+			wantImpl: jsonNodeHibernatorReader{},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r, err := NewNodeManagerReader(tt.file)
+			r, err := NewNodeHibernatorReader(tt.file)
 			require.IsType(t, tt.wantImpl, r)
 			require.NoError(t, err)
 		})
 	}
 }
 
-func TestNewNodeManagerReader_UnsupportedFileFormat(t *testing.T) {
-	_, err := NewNodeManagerReader("conf.yaml")
+func TestNewNodeHibernatorReader_UnsupportedFileFormat(t *testing.T) {
+	_, err := NewNodeHibernatorReader("conf.yaml")
 	require.EqualError(t, err, "unsupported config file format")
 }
 
-func TestNodeManagerReader_Read(t *testing.T) {
+func TestNodeHibernatorReader_Read(t *testing.T) {
 	tests := []struct {
 		name   string
 		config string
@@ -49,7 +49,7 @@ func TestNodeManagerReader_Read(t *testing.T) {
 			config: `
 name = "node1"
 upcheckPollingInterval = 1
-peersConfigFile = "./test/shell/nm1.toml"
+peersConfigFile = "./test/shell/nh1.toml"
 inactivityTime = 60
 disableStrictMode = true
 
@@ -94,7 +94,7 @@ upcheckConfig = { url = "http://localhost:9001/upcheck", method = "GET", body = 
 {
 	"name": "node1",
 	"upcheckPollingInterval": 1,
-	"peersConfigFile": "./test/shell/nm1.toml",
+	"peersConfigFile": "./test/shell/nh1.toml",
 	"inactivityTime": 60,
 	"disableStrictMode": true,
 	"proxies": [
@@ -148,18 +148,18 @@ upcheckConfig = { url = "http://localhost:9001/upcheck", method = "GET", body = 
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f, err := ioutil.TempFile("", "qnmconfig")
+			f, err := ioutil.TempFile("", "qnhconfig")
 			require.NoError(t, err)
 			defer os.Remove(f.Name())
 
 			_, err = f.Write([]byte(tt.config))
 			require.NoError(t, err)
 
-			var r NodeManagerReader
+			var r NodeHibernatorReader
 			if tt.name == "toml" {
-				r = tomlNodeManagerReader{file: f.Name()}
+				r = tomlNodeHibernatorReader{file: f.Name()}
 			} else if tt.name == "json" {
-				r = jsonNodeManagerReader{file: f.Name()}
+				r = jsonNodeHibernatorReader{file: f.Name()}
 			}
 			got, err := r.Read()
 			require.NoError(t, err)
@@ -167,7 +167,7 @@ upcheckConfig = { url = "http://localhost:9001/upcheck", method = "GET", body = 
 			want := Basic{
 				Name:                 "node1",
 				UpchkPollingInterval: 1,
-				PeersConfigFile:      "./test/shell/nm1.toml",
+				PeersConfigFile:      "./test/shell/nh1.toml",
 				InactivityTime:       60,
 				DisableStrictMode:    true,
 				Server: &RPCServer{

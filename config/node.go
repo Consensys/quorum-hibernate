@@ -10,8 +10,8 @@ import (
 )
 
 type Node struct {
-	BasicConfig *Basic  `toml:"basicConfig" json:"basicConfig"` // basic config of this node manager
-	Peers       PeerArr // node manager config of other node manager
+	BasicConfig *Basic  `toml:"basicConfig" json:"basicConfig"` // basic config of this node hibernator
+	Peers       PeerArr // node hibernator config of other node hibernators
 }
 
 func (c Node) IsConsensusValid(client *http.Client) error {

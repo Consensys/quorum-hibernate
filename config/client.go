@@ -6,17 +6,17 @@ import (
 )
 
 type BlockchainClient struct {
-	ClientType      string     `toml:"type" json:"type"`           // client used by this node manager. it should be goquorum or besu
+	ClientType      string     `toml:"type" json:"type"`           // client used by this node hibernator. it should be goquorum or besu
 	Consensus       string     `toml:"consensus" json:"consensus"` // consensus used by blockchain client. ex: raft / istanbul / clique
-	BcClntRpcUrl    string     `toml:"rpcUrl" json:"rpcUrl"`       // RPC url of blockchain client managed by this node manager
+	BcClntRpcUrl    string     `toml:"rpcUrl" json:"rpcUrl"`       // RPC url of blockchain client managed by this node hibernator
 	BcClntTLSConfig *ClientTLS `toml:"tlsConfig" json:"tlsConfig"` // blockchain client TLS config
-	BcClntProcess   *Process   `toml:"process" json:"process"`     // blockchain client process managed by this node manager
+	BcClntProcess   *Process   `toml:"process" json:"process"`     // blockchain client process managed by this node hibernator
 }
 
 type PrivacyManager struct {
-	PrivManKey       string     `toml:"publicKey" json:"publicKey"` // public key of privacy manager managed by this node manager
-	PrivManTLSConfig *ClientTLS `toml:"tlsConfig" json:"tlsConfig"` // Privacy manager TLS config
-	PrivManProcess   *Process   `toml:"process" json:"process"`     // privacy manager process managed by this node manager
+	PrivManKey       string     `toml:"publicKey" json:"publicKey"` // public key of privacy hibernator managed by this node hibernator
+	PrivManTLSConfig *ClientTLS `toml:"tlsConfig" json:"tlsConfig"` // Privacy hibernator TLS config
+	PrivManProcess   *Process   `toml:"process" json:"process"`     // privacy hibernator process managed by this node hibernator
 }
 
 func (c *BlockchainClient) IsRaft() bool {

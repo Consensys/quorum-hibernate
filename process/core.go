@@ -42,7 +42,7 @@ func ExecuteShellCommand(cmdArr []string) error {
 	}
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: true, // SIGINT interrupts the entire process group - to prevent SIGINT of node-manager killing this child process, give the child its own process group
+		Setpgid: true, // SIGINT interrupts the entire process group - to prevent SIGINT of node-hibernator killing this child process, give the child its own process group
 	}
 
 	errOut := &bytes.Buffer{}
